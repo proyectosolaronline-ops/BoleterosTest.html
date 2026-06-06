@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero Inteligente - Sistema de Apoyo al Operador</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Manifest para PWA -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkJvbGV0ZXJvIEludGVsaWdlbnRlIiwKICAic2hvcnRfbmFtZSI6ICJCb2xldGVybyIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzFlMjkzYiIsCiAgInRoZW1lX2NvbG9yIjogIiNmZmQ2MDAiLAogICJpY29ucyI6IFtdCn0=">
+    
+    <style>
+        /* ========== RESET Y CONSISTENCIA VISUAL ABSOLUTA ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* ========== BARRA SUPERIOR ========== */
+        .header {
+            background: #1e293b;
+            padding: 2vh 4vw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 8vh;
+            border-bottom: 2px solid #f59e0b;
+            flex-shrink: 0;
+        }
+        
+        .header-title {
+            font-size: 4vw;
+            font-weight: 700;
+            color: #fbbf24;
+            letter-spacing: -0.5px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 2vw;
+            font-size: 3vw;
+        }
+        
+        .status-dot {
+            width: 3vw;
+            height: 3vw;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.offline {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ========== LOCALIDAD ACTUAL ========== */
+        .current-location {
+            background: #1e293b;
+            padding: 3vh 4vw;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+            flex-shrink: 0;
+        }
+        
+        .location-label {
+            font-size: 3.5vw;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .location-name {
+            font-size: 6vw;
+            font-weight: 800;
+            color: #fbbf24;
+            margin-top: 1vh;
+        }
+        
+        /* ========== ÁREA PRINCIPAL (MAPA) ========== */
+        .map-container {
+            flex: 1;
+            background: #1e293b;
+            position: relative;
+            min-height: 0;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Overlay de simulación */
+        .simulation-badge {
+            position: absolute;
+            top: 2vh;
+            left: 4vw;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 1vh 3vw;
+            border-radius: 8px;
+            font-size: 2.5vw;
+            font-weight: 600;
+            z-index: 1000;
+        }
+        
+        /* ========== BOTÓN PRINCIPAL ========== */
+        .action-button {
+            background: #f59e0b;
+            color: #0f172a;
+            border: none;
+            width: 90vw;
+            height: 12vh;
+            margin: 2vh auto;
+            border-radius: 16px;
+            font-size: 5vw;
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3vw;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+            flex-shrink: 0;
+        }
+        
+        .action-button:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
+        }
+        
+        .action-button.disabled {
+            background: #475569;
+            color: #94a3b8;
+            box-shadow: none;
+            pointer-events: none;
+        }
+        
+        /* ========== MODAL DE DESTINO ========== */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            padding: 4vh 4vw;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-title {
+            font-size: 5vw;
+            font-weight: 700;
+            color: #fbbf24;
+            text-align: center;
+            margin-bottom: 3vh;
+        }
+        
+        .modal-subtitle {
+            font-size: 3.5vw;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 4vh;
+        }
+        
+        .destination-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2vh;
+        }
+        
+        .destination-item {
+            background: #1e293b;
+            padding: 3vh 4vw;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .destination-item:active {
+            border-color: #f59e0b;
+            background: #0f172a;
+        }
+        
+        .destination-name {
+            font-size: 4.5vw;
+            font-weight: 600;
+        }
+        
+        .destination-fare {
+            font-size: 5vw;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        
+        .modal-cancel {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 3vh;
+            border-radius: 12px;
+            font-size: 4.5vw;
+            font-weight: 700;
+            margin-top: 2vh;
+            cursor: pointer;
+        }
+        
+        /* ========== MODAL DE CONFIRMACIÓN ========== */
+        .confirmation-content {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .fare-total {
+            font-size: 20vw;
+            font-weight: 900;
+            color: #22c55e;
+            line-height: 1;
+            margin: 3vh 0;
+        }
+        
+        .fare-details {
+            font-size: 4vw;
+            color: #94a3b8;
+            margin-bottom: 2vh;
+        }
+        
+        .passenger-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6vw;
+            margin: 3vh 0;
+        }
+        
+        .passenger-btn {
+            width: 12vw;
+            height: 12vw;
+            border-radius: 50%;
+            border: 2px solid #f59e0b;
+            background: #1e293b;
+            color: #fbbf24;
+            font-size: 8vw;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .passenger-count {
+            font-size: 10vw;
+            font-weight: 900;
+            color: #f8fafc;
+        }
+        
+        .confirm-button {
+            background: #22c55e;
+            color: #0f172a;
+            border: none;
+            padding: 3vh;
+            border-radius: 12px;
+            font-size: 5vw;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 3vh;
+        }
+    </style>
+</head>
+<body>
+    <!-- BARRA SUPERIOR -->
+    <div class="header">
+        <div class="header-title">🎫 Boletero</div>
+        <div class="status">
+            <span id="statusText">Offline</span>
+            <div class="status-dot offline" id="statusDot"></div>
+        </div>
+    </div>
+    
+    <!-- LOCALIDAD ACTUAL -->
+    <div class="current-location">
+        <div class="location-label">📍 Localidad Actual</div>
+        <div class="location-name" id="currentLocationName">Florencia</div>
+    </div>
+    
+    <!-- MAPA -->
+    <div class="map-container">
+        <div id="map"></div>
+        <div class="simulation-badge">🔴 SIMULACIÓN</div>
+    </div>
+    
+    <!-- BOTÓN PRINCIPAL -->
+    <button class="action-button" id="passengerButton" onclick="openDestinationModal()">
+        <span>🚌</span>
+        <span>SUBIÓ PASAJERO</span>
+    </button>
+    
+    <!-- MODAL DE DESTINO -->
+    <div class="modal" id="destinationModal">
+        <div class="modal-title">¿A dónde va?</div>
+        <div class="modal-subtitle">Seleccione el destino del pasajero</div>
+        <div class="destination-list" id="destinationList">
+            <!-- Se llena dinámicamente -->
+        </div>
+        <button class="modal-cancel" onclick="closeDestinationModal()">❌ CANCELAR</button>
+    </div>
+    
+    <!-- MODAL DE CONFIRMACIÓN -->
+    <div class="modal" id="confirmationModal">
+        <div class="confirmation-content">
+            <div class="modal-title">Confirmar Cobro</div>
+            <div class="fare-details">
+                <div id="confirmationRoute">Florencia → El Puente</div>
+                <div>Tarifa unitaria: $<span id="confirmationUnitFare">10</span></div>
+            </div>
+            <div class="passenger-control">
+                <button class="passenger-btn" onclick="changePassengers(-1)">−</button>
+                <div class="passenger-count" id="passengerCount">1</div>
+                <button class="passenger-btn" onclick="changePassengers(1)">+</button>
+            </div>
+            <div class="fare-total">$<span id="fareTotal">10</span></div>
+            <button class="confirm-button" onclick="confirmSale()">✅ COBRAR Y GUARDAR</button>
+            <button class="modal-cancel" onclick="closeConfirmationModal()">❌ CANCELAR</button>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // ========== DATOS DE EJEMPLO (Simularían los de Google Sheets) ==========
+        const routeData = {
+            nombre: "Ruta Norte",
+            localidades: [
+                { id: "LOC001", nombre: "Florencia", lat: 19.4326, lon: -99.1332, radio: 500, orden: 1 },
+                { id: "LOC002", nombre: "El Puente", lat: 19.4450, lon: -99.1380, radio: 400, orden: 2 },
+                { id: "LOC003", nombre: "La Loma", lat: 19.4580, lon: -99.1450, radio: 600, orden: 3 },
+                { id: "LOC004", nombre: "Florinda Mesa", lat: 19.4750, lon: -99.1550, radio: 450, orden: 4 }
+            ],
+            tarifas: {
+                "LOC001-LOC002": 10,
+                "LOC001-LOC003": 15,
+                "LOC001-LOC004": 25,
+                "LOC002-LOC003": 10,
+                "LOC002-LOC004": 20,
+                "LOC003-LOC004": 15
+            }
+        };
+        
+        // ========== ESTADO DEL SISTEMA ==========
+        let currentState = {
+            ubicacionActual: null,
+            localidadActual: null,
+            online: false,
+            selectedDestination: null,
+            passengerCount: 1
+        };
+        
+        // Guardar en LocalStorage
+        function saveToLocal(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+        
+        function loadFromLocal(key) {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        }
+        
+        // ========== INICIALIZACIÓN DEL MAPA ==========
+        const map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([19.4450, -99.1380], 13);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Marcador del camión
+        const busIcon = L.divIcon({
+            html: '🚌',
+            className: 'bus-marker',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+        
+        const busMarker = L.marker([19.4326, -99.1332], { icon: busIcon }).addTo(map);
+        
+        // Círculos de radio de localidades
+        routeData.localidades.forEach(loc => {
+            L.circle([loc.lat, loc.lon], {
+                radius: loc.radio,
+                color: '#f59e0b',
+                fillColor: '#f59e0b',
+                fillOpacity: 0.1,
+                weight: 1
+            }).addTo(map);
+            
+            L.marker([loc.lat, loc.lon], {
+                icon: L.divIcon({
+                    html: `<div style="background:#1e293b;color:#fbbf24;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid #f59e0b">${loc.nombre}</div>`,
+                    className: ''
+                })
+            }).addTo(map);
+        });
+        
+        // ========== SIMULACIÓN DE MOVIMIENTO GPS ==========
+        const routePoints = [
+            [19.4326, -99.1332],
+            [19.4380, -99.1350],
+            [19.4420, -99.1365],
+            [19.4450, -99.1380],
+            [19.4500, -99.1400],
+            [19.4550, -99.1425],
+            [19.4580, -99.1450],
+            [19.4650, -99.1480],
+            [19.4700, -99.1510],
+            [19.4750, -99.1550]
+        ];
+        
+        let currentPointIndex = 0;
+        let isMoving = true;
+        
+        function findNearestLocation(lat, lon) {
+            let nearest = null;
+            let minDistance = Infinity;
+            
+            routeData.localidades.forEach(loc => {
+                const distance = calculateDistance(lat, lon, loc.lat, loc.lon);
+                if (distance <= loc.radio && distance < minDistance) {
+                    minDistance = distance;
+                    nearest = loc;
+                }
+            });
+            
+            return nearest;
+        }
+        
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // metros
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        function simulateMovement() {
+            if (!isMoving) return;
+            
+            if (currentPointIndex < routePoints.length) {
+                const [lat, lon] = routePoints[currentPointIndex];
+                busMarker.setLatLng([lat, lon]);
+                map.setView([lat, lon], 13);
+                
+                const nearestLocation = findNearestLocation(lat, lon);
+                if (nearestLocation) {
+                    currentState.localidadActual = nearestLocation;
+                    document.getElementById('currentLocationName').textContent = nearestLocation.nombre;
+                }
+                
+                currentPointIndex++;
+            } else {
+                currentPointIndex = 0;
+            }
+            
+            setTimeout(simulateMovement, 2000);
+        }
+        
+        // ========== SIMULACIÓN DE PARADA ==========
+        function simulateStop() {
+            isMoving = false;
+            document.getElementById('passengerButton').classList.remove('disabled');
+        }
+        
+        function simulateResume() {
+            isMoving = true;
+            document.getElementById('passengerButton').classList.add('disabled');
+            simulateMovement();
+        }
+        
+        // ========== MODALES ==========
+        function openDestinationModal() {
+            if (!currentState.localidadActual) {
+                alert('Esperando localización...');
+                return;
+            }
+            
+            const currentLoc = currentState.localidadActual;
+            const destinations = routeData.localidades.filter(loc => loc.orden > currentLoc.orden);
+            
+            const listContainer = document.getElementById('destinationList');
+            listContainer.innerHTML = '';
+            
+            destinations.forEach(dest => {
+                const fareKey = `${currentLoc.id}-${dest.id}`;
+                const fare = routeData.tarifas[fareKey] || 'N/A';
+                
+                const item = document.createElement('div');
+                item.className = 'destination-item';
+                item.innerHTML = `
+                    <span class="destination-name">${dest.nombre}</span>
+                    <span class="destination-fare">$${fare}</span>
+                `;
+                item.onclick = () => openConfirmationModal(dest, fare);
+                listContainer.appendChild(item);
+            });
+            
+            document.getElementById('destinationModal').classList.add('active');
+            simulateStop();
+        }
+        
+        function closeDestinationModal() {
+            document.getElementById('destinationModal').classList.remove('active');
+            simulateResume();
+        }
+        
+        function openConfirmationModal(destination, unitFare) {
+            currentState.selectedDestination = destination;
+            currentState.passengerCount = 1;
+            
+            document.getElementById('confirmationRoute').textContent = 
+                `${currentState.localidadActual.nombre} → ${destination.nombre}`;
+            document.getElementById('confirmationUnitFare').textContent = unitFare;
+            document.getElementById('passengerCount').textContent = '1';
+            document.getElementById('fareTotal').textContent = unitFare;
+            
+            document.getElementById('destinationModal').classList.remove('active');
+            document.getElementById('confirmationModal').classList.add('active');
+        }
+        
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').classList.remove('active');
+            simulateResume();
+        }
+        
+        function changePassengers(delta) {
+            currentState.passengerCount = Math.max(1, Math.min(10, currentState.passengerCount + delta));
+            document.getElementById('passengerCount').textContent = currentState.passengerCount;
+            
+            const unitFare = parseInt(document.getElementById('confirmationUnitFare').textContent);
+            document.getElementById('fareTotal').textContent = unitFare * currentState.passengerCount;
+        }
+        
+        function confirmSale() {
+            const record = {
+                fecha: new Date().toISOString(),
+                origen: currentState.localidadActual.nombre,
+                destino: currentState.selectedDestination.nombre,
+                cantidad: currentState.passengerCount,
+                total: parseInt(document.getElementById('fareTotal').textContent)
+            };
+            
+            // Guardar en LocalStorage
+            const history = loadFromLocal('viajes') || [];
+            history.push(record);
+            saveToLocal('viajes', history);
+            
+            console.log('✅ Venta registrada:', record);
+            console.log('📦 Historial completo:', history);
+            
+            alert(`✅ COBRO EXITOSO\n\n${record.origen} → ${record.destino}\n${record.cantidad} pasajero(s)\nTotal: $${record.total}\n\nGuardado en memoria local.`);
+            
+            closeConfirmationModal();
+        }
+        
+        // ========== INICIALIZACIÓN ==========
+        function init() {
+            // Cargar datos de ejemplo (simulando Google Sheets)
+            saveToLocal('ruta', routeData);
+            
+            // Iniciar simulación de movimiento
+            simulateMovement();
+            
+            // Iniciar con botón deshabilitado (en movimiento)
+            document.getElementById('passengerButton').classList.add('disabled');
+            
+            // Configurar estado offline
+            document.getElementById('statusText').textContent = 'Offline';
+            document.getElementById('statusDot').classList.add('offline');
+            
+            console.log('🚌 Boletero Inteligente Iniciado');
+            console.log('📍 Ruta:', routeData.nombre);
+            console.log('💾 Datos guardados en LocalStorage');
+            console.log('🔴 Modo Simulación activado');
+            console.log('📱 Consistencia Visual: vh/vw aplicados');
+        }
+        
+        // Arrancar
+        init();
+    </script>
+</body>
+</html>

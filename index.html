@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* ========== BARRA SUPERIOR ========== */
+        .header {
+            background: #1e293b;
+            padding: 2vh 4vw;
+            height: 8vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 2px solid #f59e0b;
+            flex-shrink: 0;
+        }
+        
+        .header-title {
+            font-size: 5vw;
+            font-weight: 700;
+            color: #fbbf24;
+            letter-spacing: 1px;
+        }
+        
+        /* ========== CONTENIDO PRINCIPAL ========== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3vh 4vw;
+            gap: 3vh;
+        }
+        
+        /* ========== BOTÓN LOCALIDAD GPS CON MAPA ========== */
+        .btn-localidad {
+            background: #1e293b;
+            border: 2px solid #f59e0b;
+            border-radius: 18px;
+            width: 100%;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .btn-localidad:active {
+            border-color: #fbbf24;
+        }
+        
+        .btn-localidad .info-bar {
+            background: #1e293b;
+            padding: 2vh 5vw;
+            text-align: center;
+            flex-shrink: 0;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .btn-localidad .label {
+            font-size: 3vw;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .btn-localidad .localidad-nombre {
+            font-size: 7vw;
+            font-weight: 900;
+            color: #fbbf24;
+        }
+        
+        .btn-localidad .precision {
+            font-size: 2.8vw;
+            color: #22c55e;
+            margin-top: 0.5vh;
+        }
+        
+        .btn-localidad .mapa-contenedor {
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+        
+        #mapaGPS {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* ========== BOTÓN PASAJERO A BORDO ========== */
+        .btn-pasajero {
+            background: #f59e0b;
+            color: #0f172a;
+            border: none;
+            width: 100%;
+            padding: 4vh 5vw;
+            border-radius: 18px;
+            font-size: 6vw;
+            font-weight: 800;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .btn-pasajero:active {
+            transform: scale(0.97);
+        }
+        
+        /* ========== MODAL DESTINO ========== */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.98);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            padding: 4vh 4vw;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-title {
+            font-size: 6vw;
+            font-weight: 700;
+            color: #fbbf24;
+            text-align: center;
+            margin-bottom: 2vh;
+        }
+        
+        .modal-origen {
+            font-size: 4vw;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 4vh;
+        }
+        
+        .destino-lista {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2vh;
+        }
+        
+        .destino-item {
+            background: #1e293b;
+            padding: 3.5vh 5vw;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .destino-item:active {
+            border-color: #f59e0b;
+            background: #0f172a;
+        }
+        
+        .destino-nombre {
+            font-size: 5vw;
+            font-weight: 600;
+        }
+        
+        .destino-tarifa {
+            font-size: 5.5vw;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        
+        .modal-cerrar {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 3.5vh;
+            border-radius: 14px;
+            font-size: 5vw;
+            font-weight: 700;
+            margin-top: 2vh;
+            cursor: pointer;
+        }
+        
+        /* ========== MODAL COBRO ========== */
+        .cobro-contenido {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .cobro-ruta {
+            font-size: 5vw;
+            color: #94a3b8;
+            margin-bottom: 1vh;
+        }
+        
+        .cobro-unitario {
+            font-size: 4vw;
+            color: #64748b;
+            margin-bottom: 3vh;
+        }
+        
+        .cantidad-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8vw;
+            margin: 3vh 0;
+        }
+        
+        .cantidad-btn {
+            width: 14vw;
+            height: 14vw;
+            border-radius: 50%;
+            border: 2px solid #f59e0b;
+            background: #1e293b;
+            color: #fbbf24;
+            font-size: 9vw;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cantidad-numero {
+            font-size: 12vw;
+            font-weight: 900;
+            color: #f8fafc;
+        }
+        
+        .cobro-total {
+            font-size: 22vw;
+            font-weight: 900;
+            color: #22c55e;
+            line-height: 1;
+            margin: 2vh 0;
+        }
+        
+        .cobro-confirmar {
+            background: #22c55e;
+            color: #0f172a;
+            border: none;
+            padding: 3.5vh;
+            border-radius: 14px;
+            font-size: 5.5vw;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 2vh;
+        }
+    </style>
+</head>
+<body>
+    <!-- BARRA SUPERIOR -->
+    <div class="header">
+        <div class="header-title">🎫 SISTEMA BOLETERO</div>
+    </div>
+    
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <!-- BOTÓN LOCALIDAD GPS CON MAPA -->
+        <div class="btn-localidad" id="btnLocalidad">
+            <div class="info-bar">
+                <div class="label">📍 LOCALIDAD GPS</div>
+                <div class="localidad-nombre" id="nombreLocalidad">Florencia</div>
+                <div class="precision">Precisión: <span id="precisionGPS">3m</span></div>
+            </div>
+            <div class="mapa-contenedor">
+                <div id="mapaGPS"></div>
+            </div>
+        </div>
+        
+        <!-- BOTÓN PASAJERO A BORDO -->
+        <button class="btn-pasajero" id="btnPasajero" onclick="abrirModalDestino()">
+            🚌 PASAJERO A BORDO
+        </button>
+    </div>
+    
+    <!-- MODAL DESTINO -->
+    <div class="modal" id="modalDestino">
+        <div class="modal-title">SELECCIONAR DESTINO</div>
+        <div class="modal-origen">Origen: <span id="origenDestino">Florencia</span></div>
+        <div class="destino-lista" id="listaDestinos"></div>
+        <button class="modal-cerrar" onclick="cerrarModalDestino()">❌ CANCELAR</button>
+    </div>
+    
+    <!-- MODAL COBRO -->
+    <div class="modal" id="modalCobro">
+        <div class="cobro-contenido">
+            <div class="modal-title">COBRAR</div>
+            <div class="cobro-ruta" id="cobroRuta">Florencia → El Puente</div>
+            <div class="cobro-unitario">Unitario: $<span id="cobroUnitario">10</span></div>
+            
+            <div class="cantidad-control">
+                <button class="cantidad-btn" onclick="cambiarCantidad(-1)">−</button>
+                <div class="cantidad-numero" id="cantidadPasajeros">1</div>
+                <button class="cantidad-btn" onclick="cambiarCantidad(1)">+</button>
+            </div>
+            
+            <div class="cobro-total">$<span id="totalCobro">10</span></div>
+            
+            <button class="cobro-confirmar" onclick="confirmarCobro()">✅ COBRAR</button>
+            <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // ========== DATOS DE LA RUTA ==========
+        const ruta = {
+            nombre: "Ruta Norte",
+            localidades: [
+                { id: "LOC001", nombre: "Florencia", lat: 19.4326, lon: -99.1332, orden: 1 },
+                { id: "LOC002", nombre: "El Puente", lat: 19.4450, lon: -99.1380, orden: 2 },
+                { id: "LOC003", nombre: "La Loma", lat: 19.4580, lon: -99.1450, orden: 3 },
+                { id: "LOC004", nombre: "Florinda Mesa", lat: 19.4750, lon: -99.1550, orden: 4 }
+            ],
+            tarifas: {
+                "LOC001-LOC002": 10,
+                "LOC001-LOC003": 15,
+                "LOC001-LOC004": 25,
+                "LOC002-LOC003": 10,
+                "LOC002-LOC004": 20,
+                "LOC003-LOC004": 15
+            }
+        };
+        
+        // ========== MAPA LEAFLET ==========
+        const mapa = L.map('mapaGPS', {
+            zoomControl: false,
+            attributionControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            touchZoom: false
+        }).setView([19.4450, -99.1380], 13);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(mapa);
+        
+        // Marcador del camión
+        const iconoBus = L.divIcon({
+            html: '🚌',
+            className: 'bus-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+        
+        const marcadorBus = L.marker([19.4326, -99.1332], { icon: iconoBus }).addTo(mapa);
+        
+        // ========== ESTADO ==========
+        let estado = {
+            localidadActual: ruta.localidades[0],
+            destinoSeleccionado: null,
+            cantidadPasajeros: 1,
+            tarifaUnitaria: 0
+        };
+        
+        // ========== PUNTOS DE LA RUTA PARA MOVIMIENTO GPS ==========
+        const puntosRuta = [
+            [19.4326, -99.1332], [19.4350, -99.1340], [19.4380, -99.1350],
+            [19.4410, -99.1365], [19.4450, -99.1380], [19.4480, -99.1400],
+            [19.4520, -99.1420], [19.4550, -99.1435], [19.4580, -99.1450],
+            [19.4620, -99.1475], [19.4680, -99.1500], [19.4720, -99.1530],
+            [19.4750, -99.1550]
+        ];
+        
+        let indicePunto = 0;
+        
+        function actualizarGPS() {
+            if (indicePunto >= puntosRuta.length) {
+                indicePunto = 0;
+            }
+            
+            const [lat, lon] = puntosRuta[indicePunto];
+            
+            // Mover marcador
+            marcadorBus.setLatLng([lat, lon]);
+            mapa.setView([lat, lon], 13);
+            
+            // Detectar localidad
+            let localidadDetectada = null;
+            let menorDistancia = Infinity;
+            
+            ruta.localidades.forEach(loc => {
+                const dist = calcularDistancia(lat, lon, loc.lat, loc.lon);
+                if (dist < 500 && dist < menorDistancia) {
+                    menorDistancia = dist;
+                    localidadDetectada = loc;
+                }
+            });
+            
+            if (localidadDetectada && localidadDetectada.id !== estado.localidadActual.id) {
+                estado.localidadActual = localidadDetectada;
+                document.getElementById('nombreLocalidad').textContent = localidadDetectada.nombre;
+            }
+            
+            // Precisión GPS simulada
+            const precision = Math.floor(Math.random() * 8) + 2;
+            document.getElementById('precisionGPS').textContent = precision + 'm';
+            
+            indicePunto++;
+            setTimeout(actualizarGPS, 1000);
+        }
+        
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // ========== MODAL DESTINO ==========
+        function abrirModalDestino() {
+            const locActual = estado.localidadActual;
+            const destinos = ruta.localidades.filter(loc => loc.orden > locActual.orden);
+            
+            document.getElementById('origenDestino').textContent = locActual.nombre;
+            
+            const lista = document.getElementById('listaDestinos');
+            lista.innerHTML = '';
+            
+            destinos.forEach(dest => {
+                const claveTarifa = `${locActual.id}-${dest.id}`;
+                const tarifa = ruta.tarifas[claveTarifa] || 'N/A';
+                
+                const item = document.createElement('div');
+                item.className = 'destino-item';
+                item.innerHTML = `
+                    <span class="destino-nombre">📍 ${dest.nombre}</span>
+                    <span class="destino-tarifa">$${tarifa}</span>
+                `;
+                item.onclick = () => abrirModalCobro(dest, tarifa);
+                lista.appendChild(item);
+            });
+            
+            document.getElementById('modalDestino').classList.add('active');
+        }
+        
+        function cerrarModalDestino() {
+            document.getElementById('modalDestino').classList.remove('active');
+        }
+        
+        // ========== MODAL COBRO ==========
+        function abrirModalCobro(destino, tarifa) {
+            estado.destinoSeleccionado = destino;
+            estado.tarifaUnitaria = tarifa;
+            estado.cantidadPasajeros = 1;
+            
+            document.getElementById('cobroRuta').textContent = 
+                `${estado.localidadActual.nombre} → ${destino.nombre}`;
+            document.getElementById('cobroUnitario').textContent = tarifa;
+            document.getElementById('cantidadPasajeros').textContent = '1';
+            document.getElementById('totalCobro').textContent = tarifa;
+            
+            document.getElementById('modalDestino').classList.remove('active');
+            document.getElementById('modalCobro').classList.add('active');
+        }
+        
+        function cerrarModalCobro() {
+            document.getElementById('modalCobro').classList.remove('active');
+        }
+        
+        function cambiarCantidad(delta) {
+            estado.cantidadPasajeros = Math.max(1, Math.min(10, estado.cantidadPasajeros + delta));
+            document.getElementById('cantidadPasajeros').textContent = estado.cantidadPasajeros;
+            document.getElementById('totalCobro').textContent = estado.tarifaUnitaria * estado.cantidadPasajeros;
+        }
+        
+        function confirmarCobro() {
+            const registro = {
+                fecha: new Date().toISOString(),
+                origen: estado.localidadActual.nombre,
+                destino: estado.destinoSeleccionado.nombre,
+                cantidad: estado.cantidadPasajeros,
+                total: estado.tarifaUnitaria * estado.cantidadPasajeros
+            };
+            
+            const historial = JSON.parse(localStorage.getItem('viajes') || '[]');
+            historial.push(registro);
+            localStorage.setItem('viajes', JSON.stringify(historial));
+            
+            alert(`✅ COBRO EXITOSO\n\n${registro.origen} → ${registro.destino}\n${registro.cantidad} pasajero(s)\nTotal: $${registro.total}`);
+            
+            cerrarModalCobro();
+        }
+        
+        // ========== INICIO ==========
+        localStorage.setItem('ruta', JSON.stringify(ruta));
+        actualizarGPS();
+    </script>
+</body>
+</html>

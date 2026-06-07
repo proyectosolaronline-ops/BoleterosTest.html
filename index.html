@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero Inteligente</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--morado:#a855f7;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+        }
+        .header{
+            background:var(--gris);padding:1.5vh 4vw;height:7vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.4vh solid var(--amarillo);flex-shrink:0;gap:3vw;
+        }
+        .header-izq{display:flex;flex-direction:column;flex:1;min-width:0}
+        .header-titulo{font-size:4.5vw;font-weight:700;color:var(--amarillo-texto)}
+        .header-ruta{font-size:2.5vw;color:var(--gris-texto)}
+        .btn-gps-mini{
+            width:8vw;height:8vw;min-width:32px;min-height:32px;border-radius:50%;
+            border:0.3vh solid var(--verde);background:transparent;color:var(--verde);
+            font-size:5vw;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .btn-gps-mini.activo{background:var(--verde);color:var(--negro);animation:pulso 2s infinite}
+        @keyframes pulso{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}50%{box-shadow:0 0 0 2vw rgba(34,197,94,0)}}
+
+        .main-content{flex:1;display:flex;flex-direction:column;padding:2vh 4vw;gap:1.5vh;min-height:0}
+
+        .indicadores{display:flex;gap:1.5vw;flex-shrink:0}
+        .indicador{flex:1;padding:1.5vh 2vw;border-radius:1.5vh;text-align:center;font-weight:700}
+        .indicador-abordo{background:var(--gris);border:0.3vh solid var(--verde)}
+        .indicador-abordo .indicador-numero{font-size:7vw;color:var(--verde);line-height:1}
+        .indicador-abordo .indicador-etiqueta{font-size:2.5vw;color:var(--gris-texto);text-transform:uppercase;letter-spacing:1px}
+        .indicador-bajan{background:var(--gris);border:0.3vh solid var(--naranja)}
+        .indicador-bajan .indicador-numero{font-size:7vw;color:var(--naranja);line-height:1}
+        .indicador-bajan .indicador-etiqueta{font-size:2.5vw;color:var(--gris-texto);text-transform:uppercase;letter-spacing:1px}
+        .indicador-bajan.alerta{animation:alertaBajada 0.6s ease 3;border-color:var(--rojo)}
+        .indicador-bajan.alerta .indicador-numero{color:var(--rojo)}
+        @keyframes alertaBajada{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+        .btn-reporte{
+            background:var(--gris);border:0.3vh solid var(--amarillo-texto);border-radius:1.5vh;
+            color:var(--amarillo-texto);font-size:3vw;font-weight:700;cursor:pointer;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            padding:1.5vh 2vw;min-width:18vw;transition:all 0.2s;
+        }
+        .btn-reporte:active{background:var(--amarillo);color:var(--negro)}
+        .btn-reporte .reporte-icono{font-size:6vw;line-height:1}
+        .btn-reporte .reporte-texto{font-size:2.5vw;text-transform:uppercase;letter-spacing:1px}
+
+        .btn-pasajero{
+            padding:3vh;background:var(--amarillo);color:var(--negro);border:none;border-radius:2vh;
+            font-size:6.5vw;font-weight:800;cursor:pointer;
+            box-shadow:0 1vh 3vh rgba(245,158,11,0.35);display:flex;align-items:center;justify-content:center;gap:3vw;
+            flex-shrink:0;
+        }
+        .btn-pasajero:active{transform:scale(0.97)}
+
+        .card-localidad{
+            background:var(--gris);border:0.3vh solid var(--gris2);border-radius:2vh;
+            flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;
+        }
+        .localidad-header{padding:1vh 4vw;text-align:center;flex-shrink:0}
+        .localidad-etiqueta{font-size:2.5vw;color:var(--gris-texto);text-transform:uppercase;letter-spacing:2px}
+        .localidad-nombre{font-size:7vw;font-weight:900;color:var(--amarillo-texto)}
+        .localidad-precision{font-size:2.5vw;color:var(--verde)}
+        .mapa-contenedor{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding-bottom:1vh;position:relative}
+        #minimapa{width:80%;height:85%;border-radius:1.5vh;border:0.2vh solid #333}
+
+        .btn-qr-flotante{
+            position:absolute;bottom:3vh;right:5vw;width:12vw;height:12vw;
+            min-width:44px;min-height:44px;border-radius:50%;background:var(--negro);
+            border:0.3vh solid var(--amarillo);color:var(--amarillo);font-size:6vw;
+            cursor:pointer;z-index:1000;display:flex;align-items:center;justify-content:center;
+            box-shadow:0 0.5vh 2vh rgba(0,0,0,0.6);transition:all 0.2s;
+        }
+        .btn-qr-flotante:active{background:var(--amarillo);color:var(--negro);transform:scale(0.9)}
+
+        /* POP-UP REPORTE */
+        .popup-overlay{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.9);z-index:5000;display:none;
+            justify-content:center;align-items:center;padding:5vh 6vw;
+        }
+        .popup-overlay.active{display:flex}
+        .popup-reporte{
+            background:var(--gris);border:0.3vh solid var(--amarillo);border-radius:2vh;
+            padding:4vh 6vw;width:100%;max-width:400px;text-align:center;
+        }
+        .popup-reporte h2{font-size:6vw;color:var(--amarillo-texto);margin-bottom:3vh}
+        .popup-fila{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:2vh 0;border-bottom:0.1vh solid var(--gris2);font-size:4.5vw;
+        }
+        .popup-fila .popup-tipo{color:var(--gris-texto)}
+        .popup-fila .popup-detalle{font-weight:700;font-size:4.5vw}
+        .popup-total{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:2.5vh 0 0 0;font-size:6vw;font-weight:900;
+        }
+        .popup-total .popup-total-num{color:var(--verde);font-size:8vw}
+        .popup-ok{
+            margin-top:3vh;padding:2vh;width:100%;background:var(--verde);color:var(--blanco);
+            border:none;border-radius:1.5vh;font-size:5vw;font-weight:700;cursor:pointer;
+        }
+        .popup-ok:active{transform:scale(0.97)}
+
+        /* MODALES */
+        .modal-overlay{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.98);z-index:3000;display:none;flex-direction:column;padding:3vh 4vw;
+        }
+        .modal-overlay.active{display:flex}
+        .modal-title{font-size:7vw;font-weight:700;color:var(--amarillo-texto);text-align:center;flex-shrink:0;margin-bottom:2vh}
+        .modal-subtitle{font-size:3.5vw;color:var(--gris-texto);text-align:center;margin-bottom:2vh}
+        .modal-cerrar{
+            width:100%;padding:3vh;background:transparent;color:var(--rojo);
+            border:0.2vh solid var(--rojo);border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;flex-shrink:0;margin-top:2vh;
+        }
+        .destino-lista{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:1.5vh}
+        .destino-item{
+            background:var(--gris);padding:3vh 4vw;border-radius:1.5vh;
+            display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+        }
+        .destino-item:active{background:var(--negro)}
+        .destino-nombre{font-size:5vw;font-weight:600}
+        .destino-tarifa{font-size:5.5vw;font-weight:800;color:var(--amarillo-texto)}
+
+        .cobro-contenido{display:flex;flex-direction:column;height:100%;gap:2vh}
+        .cobro-ruta{font-size:5vw;color:var(--gris-texto);text-align:center}
+        .resumen-pasajeros{background:var(--negro);border-radius:1.5vh;padding:2vh 3vw;flex-shrink:0;max-height:20vh;overflow-y:auto}
+        .resumen-titulo{font-size:3.5vw;color:var(--gris-texto);text-transform:uppercase;letter-spacing:1px;margin-bottom:1vh}
+        .resumen-fila{display:flex;justify-content:space-between;align-items:center;padding:1vh 0;font-size:3.5vw;border-bottom:0.1vh solid var(--gris2)}
+        .resumen-total-fila{display:flex;justify-content:space-between;align-items:center;padding:1.5vh 0 0 0;font-size:5vw;font-weight:800}
+        .btn-agregar{width:100%;padding:2.5vh;background:var(--amarillo);color:var(--negro);border:none;border-radius:1.5vh;font-size:5vw;font-weight:700;cursor:pointer}
+        .btn-cobrar-final{width:100%;padding:3vh;background:var(--verde);color:var(--blanco);border:none;border-radius:2vh;font-size:6vw;font-weight:800;cursor:pointer;flex-shrink:0}
+
+        .mini-modal{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.95);z-index:4000;display:none;
+            flex-direction:column;justify-content:center;align-items:center;padding:5vh 6vw;gap:3vh;
+        }
+        .mini-modal.active{display:flex}
+        .mini-modal-title{font-size:6vw;font-weight:700;color:var(--blanco);text-align:center}
+        .opciones-tipo{display:flex;flex-direction:column;gap:2vh;width:100%}
+        .opcion-tipo{padding:3vh 5vw;border-radius:2vh;font-size:5vw;font-weight:700;text-align:center;cursor:pointer;border:none}
+        .opcion-tipo:active{transform:scale(0.96)}
+        .opcion-normal{background:var(--amarillo);color:var(--negro)}
+        .opcion-adulto{background:var(--naranja);color:var(--blanco)}
+        .opcion-estudiante{background:var(--azul);color:var(--blanco)}
+        .opcion-maestro{background:var(--morado);color:var(--blanco)}
+        .mini-cerrar{background:transparent;color:var(--rojo);border:0.2vh solid var(--rojo);padding:2vh 5vw;border-radius:2vh;font-size:4vw;font-weight:700;cursor:pointer;width:100%}
+
+        .qr-contenedor{text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;gap:3vh}
+        #qrcode{background:white;padding:2vh;border-radius:2vh}
+        #qrcode img{width:60vw;height:60vw}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-izq">
+        <div class="header-titulo">🎫 SISTEMA BOLETERO</div>
+        <div class="header-ruta">Central Querétaro → Jalpan de Serra</div>
+    </div>
+    <button class="btn-gps-mini" id="btnGpsMini" onclick="toggleGPS()">📡</button>
+</div>
+
+<div class="main-content">
+    <div class="indicadores">
+        <div class="indicador indicador-abordo">
+            <div class="indicador-numero" id="numABordo">0</div>
+            <div class="indicador-etiqueta">👥 A BORDO</div>
+        </div>
+        <div class="indicador indicador-bajan" id="indicadorBajan">
+            <div class="indicador-numero" id="numBajan">0</div>
+            <div class="indicador-etiqueta">🔻 POR BAJAR</div>
+        </div>
+        <button class="btn-reporte" onclick="mostrarReporte()">
+            <div class="reporte-icono">💰</div>
+            <div class="reporte-texto">REPORTE</div>
+        </button>
+    </div>
+
+    <button class="btn-pasajero" onclick="abrirModalDestino()">🚌 PASAJERO A BORDO</button>
+
+    <div class="card-localidad">
+        <div class="localidad-header">
+            <div class="localidad-etiqueta">📍 LOCALIDAD GPS</div>
+            <div class="localidad-nombre" id="nombreLocalidad">—</div>
+            <div class="localidad-precision">Precisión: <span id="precisionGPS">—</span></div>
+        </div>
+        <div class="mapa-contenedor">
+            <div id="minimapa"></div>
+            <button class="btn-qr-flotante" onclick="mostrarQR()" title="Código QR">⬢</button>
+        </div>
+    </div>
+</div>
+
+<!-- POP-UP REPORTE DE INGRESOS -->
+<div class="popup-overlay" id="popupReporte">
+    <div class="popup-reporte">
+        <h2>💰 REPORTE DE INGRESOS</h2>
+        <div id="popupContenido"></div>
+        <button class="popup-ok" onclick="cerrarReporte()">✅ OK</button>
+    </div>
+</div>
+
+<!-- MODAL DESTINO -->
+<div class="modal-overlay" id="modalDestino">
+    <div class="modal-title">SELECCIONAR DESTINO</div>
+    <div class="modal-subtitle">Origen: <span id="origenModal">—</span></div>
+    <div class="destino-lista" id="listaDestinos"></div>
+    <button class="modal-cerrar" onclick="cerrarModalDestino()">❌ CANCELAR</button>
+</div>
+
+<!-- MODAL COBRO -->
+<div class="modal-overlay" id="modalCobro">
+    <div class="cobro-contenido">
+        <div class="modal-title">COBRAR</div>
+        <div class="cobro-ruta" id="cobroRuta"></div>
+        <div class="resumen-pasajeros" id="resumenPasajeros">
+            <div class="resumen-titulo">👥 PASAJEROS AGREGADOS</div>
+            <div id="resumenFilas"><div class="resumen-fila" style="color:#555;">Sin pasajeros aún</div></div>
+            <div class="resumen-total-fila"><span>TOTAL</span><span id="resumenTotal">$0</span></div>
+        </div>
+        <button class="btn-agregar" onclick="abrirMiniModal()">➕ AGREGAR PASAJERO</button>
+        <button class="btn-cobrar-final" onclick="confirmarCobro()">✅ COBRAR</button>
+        <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
+    </div>
+</div>
+
+<!-- MINI-MODAL TIPO -->
+<div class="mini-modal" id="miniModal">
+    <div class="mini-modal-title">¿Qué tipo de pasajero?</div>
+    <div class="opciones-tipo">
+        <button class="opcion-tipo opcion-normal" onclick="agregarPasajero('normal')">👤 Normal — $<span id="precioMiniNormal">0</span></button>
+        <button class="opcion-tipo opcion-adulto" onclick="agregarPasajero('adulto')">🧓 Adulto Mayor — $<span id="precioMiniAdulto">0</span></button>
+        <button class="opcion-tipo opcion-estudiante" onclick="agregarPasajero('estudiante')">🎓 Estudiante — $<span id="precioMiniEstudiante">0</span></button>
+        <button class="opcion-tipo opcion-maestro" onclick="agregarPasajero('maestro')">📚 Maestro — $<span id="precioMiniMaestro">0</span></button>
+    </div>
+    <button class="mini-cerrar" onclick="cerrarMiniModal()">CANCELAR</button>
+</div>
+
+<!-- MODAL QR -->
+<div class="modal-overlay" id="modalQR">
+    <div class="qr-contenedor">
+        <div class="modal-title">CÓDIGO QR</div>
+        <div class="modal-subtitle">Escanee para ver el prototipo</div>
+        <div id="qrcode"></div>
+        <button class="modal-cerrar" onclick="document.getElementById('modalQR').classList.remove('active')">❌ CERRAR</button>
+    </div>
+</div>
+
+<script>
+const TARIFA_POR_KM=1.50,TARIFA_MINIMA=12.00,RADIO_KM=0.8;
+const MATRIZ_TARIFAS={"1-2":12,"1-3":17,"2-3":12,"9-10":17,"10-11":15};
+const DESCUENTOS={normal:0,adulto:0.50,estudiante:0.50,maestro:0.50};
+const localidades=[{id:1,nombre:"Central Querétaro",km:0,lat:20.5831,lon:-100.3896},{id:2,nombre:"Parque B. Quintana",km:8,lat:20.5950,lon:-100.3700},{id:3,nombre:"La Piedad",km:18,lat:20.6100,lon:-100.3200},{id:4,nombre:"Galeras",km:28,lat:20.6300,lon:-100.2600},{id:5,nombre:"Buena Vista",km:38,lat:20.6500,lon:-100.2000},{id:6,nombre:"Pie de Gallo",km:48,lat:20.6700,lon:-100.1400},{id:7,nombre:"Ajuchitlán",km:58,lat:20.6900,lon:-100.0800},{id:8,nombre:"Peña de Bernal",km:70,lat:20.7404,lon:-99.9411},{id:9,nombre:"Ezequiel Montes",km:80,lat:20.7167,lon:-99.8833},{id:10,nombre:"Cadereyta",km:95,lat:20.7000,lon:-99.8000},{id:11,nombre:"Bizarrón",km:110,lat:20.7800,lon:-99.7200},{id:12,nombre:"Peña Blanca",km:125,lat:20.9000,lon:-99.6500},{id:13,nombre:"Pinal de Amoles",km:145,lat:21.1354,lon:-99.6256},{id:14,nombre:"Jalpan de Serra",km:200,lat:21.2167,lon:-99.4667}];
+let estado={localidadActual:null,localidadAnterior:null,destinoSeleccionado:null,tarifaBaseUnitaria:0,gpsActivo:false,metodoCalculo:'',cantidades:{normal:0,adulto:0,estudiante:0,maestro:0},pasajerosABordo:[],alertaMostradaEn:null};
+function totalABordo(){let t=0;estado.pasajerosABordo.forEach(g=>{Object.values(g.cantidades).forEach(c=>t+=c)});return t}
+function pasajerosPorBajarEn(lid){let t=0;estado.pasajerosABordo.filter(g=>g.destinoId===lid).forEach(g=>{Object.values(g.cantidades).forEach(c=>t+=c)});return t}
+function actualizarIndicadores(){document.getElementById('numABordo').textContent=totalABordo();const pb=estado.localidadActual?pasajerosPorBajarEn(estado.localidadActual.id):0;document.getElementById('numBajan').textContent=pb;document.getElementById('indicadorBajan').classList.toggle('alerta',pb>0)}
+function calcularTarifa(oid,did,ko,kd){const clave=`${oid}-${did}`;if(MATRIZ_TARIFAS[clave]!==undefined){estado.metodoCalculo='matriz';return MATRIZ_TARIFAS[clave]}estado.metodoCalculo='kilometro';return Math.round(Math.max(TARIFA_MINIMA+(kd-ko)*TARIFA_POR_KM,TARIFA_MINIMA))}
+function precioPorTipo(tipo){return Math.round(estado.tarifaBaseUnitaria*(1-(DESCUENTOS[tipo]||0)))}
+function totalGeneral(){let t=0;Object.keys(estado.cantidades).forEach(tipo=>t+=estado.cantidades[tipo]*precioPorTipo(tipo));return t}
+function totalPasajerosGrupo(){return Object.values(estado.cantidades).reduce((a,b)=>a+b,0)}
+
+// MAPA Y GPS
+let mapa=null,marcadorBus=null,gpsWatch=null;
+function iniciarMapa(){if(mapa)return;mapa=L.map('minimapa',{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,touchZoom:false}).setView([20.85,-99.95],9);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:16}).addTo(mapa);L.polyline(localidades.map(l=>[l.lat,l.lon]),{color:'#f59e0b',weight:2,opacity:0.4,dashArray:'6,4'}).addTo(mapa);localidades.forEach(loc=>{L.marker([loc.lat,loc.lon],{icon:L.divIcon({className:'',html:'<div style="width:8px;height:8px;background:#f59e0b;border-radius:50%;border:1px solid #000"></div>',iconSize:[8,8],iconAnchor:[4,4]})}).addTo(mapa).bindTooltip(loc.nombre)})}
+function actualizarMapa(lat,lon){const iconBus=L.divIcon({className:'',html:'<div style="font-size:22px;filter:drop-shadow(0 0 4px #22c55e)">🚌</div>',iconSize:[28,28],iconAnchor:[14,14]});if(!marcadorBus)marcadorBus=L.marker([lat,lon],{icon:iconBus,zIndexOffset:1000}).addTo(mapa);else marcadorBus.setLatLng([lat,lon]);mapa.setView([lat,lon],12)}
+function distKm(lat1,lon1,lat2,lon2){const R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lon2-lon1)*Math.PI/180;return R*2*Math.atan2(Math.sqrt(Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2),Math.sqrt(1-Math.sin(dL/2)**2-Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2))}
+function onPosicion(pos){document.getElementById('precisionGPS').textContent=Math.round(pos.coords.accuracy)+'m';actualizarMapa(pos.coords.latitude,pos.coords.longitude);let best=null,min=Infinity;localidades.forEach(l=>{const d=distKm(pos.coords.latitude,pos.coords.longitude,l.lat,l.lon);if(d<min){min=d;best=l}});if(min<=RADIO_KM&&best){estado.localidadAnterior=estado.localidadActual;estado.localidadActual=best;document.getElementById('nombreLocalidad').textContent=best.nombre;document.getElementById('nombreLocalidad').style.color='var(--amarillo-texto)';verificarBajada(best)}else if(best){estado.localidadAnterior=estado.localidadActual;estado.localidadActual=best;document.getElementById('nombreLocalidad').textContent='→ '+best.nombre;document.getElementById('nombreLocalidad').style.color='var(--gris-texto)'}actualizarIndicadores()}
+function iniciarGPS(){if(!navigator.geolocation)return;iniciarMapa();if(gpsWatch)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=navigator.geolocation.watchPosition(onPosicion,()=>{},{enableHighAccuracy:true,maximumAge:1000,timeout:15000});estado.gpsActivo=true;document.getElementById('btnGpsMini').classList.add('activo')}
+function toggleGPS(){if(estado.gpsActivo){if(gpsWatch)navigator.geolocation.clearWatch(gpsWatch);estado.gpsActivo=false;document.getElementById('btnGpsMini').classList.remove('activo')}else iniciarGPS()}
+function verificarBajada(localidad){if(estado.alertaMostradaEn===localidad.id)return;const gruposBajan=estado.pasajerosABordo.filter(g=>g.destinoId===localidad.id);if(gruposBajan.length===0)return;let totalBajan=0;gruposBajan.forEach(g=>{Object.values(g.cantidades).forEach(c=>totalBajan+=c)});if(confirm(`🔻 BAJAN PASAJEROS\n\n📍 ${localidad.nombre}\n${totalBajan} pasajero(s) bajan aquí\nQuedan ${totalABordo()-totalBajan} a bordo\n\n¿Confirmar bajada?`)){estado.pasajerosABordo=estado.pasajerosABordo.filter(g=>g.destinoId!==localidad.id);estado.alertaMostradaEn=localidad.id;actualizarIndicadores()}}
+
+// REPORTE DE INGRESOS
+function mostrarReporte(){
+    const historial=JSON.parse(localStorage.getItem('viajes')||'[]');
+    let totales={normal:{cantidad:0,total:0},adulto:{cantidad:0,total:0},estudiante:{cantidad:0,total:0},maestro:{cantidad:0,total:0}};
+    historial.forEach(reg=>{
+        Object.keys(reg.cantidades).forEach(tipo=>{
+            const cant=reg.cantidades[tipo]||0;
+            if(cant>0){
+                const precio=Math.round(reg.tarifaBase*(1-(DESCUENTOS[tipo]||0)));
+                totales[tipo].cantidad+=cant;
+                totales[tipo].total+=cant*precio;
+            }
+        });
+    });
+    const etiquetas={normal:'👤 Normales',adulto:'🧓 Adultos Mayores',estudiante:'🎓 Estudiantes',maestro:'📚 Maestros'};
+    const granTotal=Object.values(totales).reduce((s,t)=>s+t.total,0);
+    let html='';
+    Object.keys(totales).forEach(tipo=>{
+        if(totales[tipo].cantidad>0){
+            html+=`<div class="popup-fila"><span class="popup-tipo">${etiquetas[tipo]}</span><span class="popup-detalle">${totales[tipo].cantidad} pas. — $${totales[tipo].total}</span></div>`;
+        }
+    });
+    if(!html)html='<div class="popup-fila" style="color:#555;justify-content:center;">Sin cobros aún</div>';
+    html+=`<div class="popup-total"><span>COBRO GENERAL</span><span class="popup-total-num">$${granTotal}</span></div>`;
+    document.getElementById('popupContenido').innerHTML=html;
+    document.getElementById('popupReporte').classList.add('active');
+}
+function cerrarReporte(){document.getElementById('popupReporte').classList.remove('active')}
+
+function actualizarUICobro(){const filas=document.getElementById('resumenFilas');const etiquetas={normal:'👤 Normal',adulto:'🧓 Adulto Mayor',estudiante:'🎓 Estudiante',maestro:'📚 Maestro'};let html='';Object.keys(estado.cantidades).forEach(tipo=>{if(estado.cantidades[tipo]>0)html+=`<div class="resumen-fila"><span>${etiquetas[tipo]}</span><span>×${estado.cantidades[tipo]}</span><span style="color:var(--verde);font-weight:700">$${estado.cantidades[tipo]*precioPorTipo(tipo)}</span></div>`});if(!html)html='<div class="resumen-fila" style="color:#555;">Sin pasajeros aún</div>';filas.innerHTML=html;document.getElementById('resumenTotal').textContent='$'+totalGeneral()}
+function abrirMiniModal(){document.getElementById('precioMiniNormal').textContent=precioPorTipo('normal');document.getElementById('precioMiniAdulto').textContent=precioPorTipo('adulto');document.getElementById('precioMiniEstudiante').textContent=precioPorTipo('estudiante');document.getElementById('precioMiniMaestro').textContent=precioPorTipo('maestro');document.getElementById('miniModal').classList.add('active')}
+function cerrarMiniModal(){document.getElementById('miniModal').classList.remove('active')}
+function agregarPasajero(tipo){if(totalPasajerosGrupo()>=10){alert('⚠ Máximo 10 por grupo.');return}estado.cantidades[tipo]++;actualizarUICobro();cerrarMiniModal()}
+function abrirModalDestino(){if(!estado.localidadActual){alert('⚠ Esperando GPS...');return}document.getElementById('origenModal').textContent=estado.localidadActual.nombre;const lista=document.getElementById('listaDestinos');lista.innerHTML='';localidades.filter(l=>l.km>estado.localidadActual.km).forEach(d=>{const tarifa=calcularTarifa(estado.localidadActual.id,d.id,estado.localidadActual.km,d.km);const item=document.createElement('div');item.className='destino-item';item.innerHTML=`<span class="destino-nombre">📍 ${d.nombre}</span><span class="destino-tarifa">$${tarifa}</span>`;item.onclick=()=>abrirModalCobro(d,tarifa);lista.appendChild(item)});document.getElementById('modalDestino').classList.add('active')}
+function cerrarModalDestino(){document.getElementById('modalDestino').classList.remove('active')}
+function abrirModalCobro(destino,tarifa){estado.destinoSeleccionado=destino;estado.tarifaBaseUnitaria=tarifa;estado.cantidades={normal:0,adulto:0,estudiante:0,maestro:0};document.getElementById('cobroRuta').textContent=`${estado.localidadActual.nombre} → ${destino.nombre}`;actualizarUICobro();document.getElementById('modalDestino').classList.remove('active');document.getElementById('modalCobro').classList.add('active')}
+function cerrarModalCobro(){document.getElementById('modalCobro').classList.remove('active')}
+function confirmarCobro(){if(totalPasajerosGrupo()===0){alert('⚠ Agrega al menos un pasajero.');return}estado.pasajerosABordo.push({destinoId:estado.destinoSeleccionado.id,destinoNombre:estado.destinoSeleccionado.nombre,cantidades:{...estado.cantidades}});const historial=JSON.parse(localStorage.getItem('viajes')||'[]');historial.push({fecha:new Date().toISOString(),origen:estado.localidadActual.nombre,destino:estado.destinoSeleccionado.nombre,tarifaBase:estado.tarifaBaseUnitaria,metodo:estado.metodoCalculo,cantidades:{...estado.cantidades},total:totalGeneral()});localStorage.setItem('viajes',JSON.stringify(historial));if(estado.localidadActual)estado.alertaMostradaEn=null;actualizarIndicadores();alert(`✅ COBRO EXITOSO\n\n${estado.localidadActual.nombre} → ${estado.destinoSeleccionado.nombre}\n${totalPasajerosGrupo()} pasajero(s)\nTotal: $${totalGeneral()}\n\n📊 A bordo: ${totalABordo()}`);cerrarModalCobro()}
+
+function mostrarQR(){document.getElementById('modalQR').classList.add('active');const qr=document.getElementById('qrcode');qr.innerHTML='';new QRCode(qr,{text:window.location.href,width:256,height:256,colorDark:'#0a0a0a',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+
+localStorage.setItem('ruta',JSON.stringify(localidades));iniciarMapa();iniciarGPS();actualizarIndicadores();
+</script>
+</body>
+</html>

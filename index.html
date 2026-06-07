@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero en Ruta</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --negro: #0a0a0a;
+            --amarillo: #f59e0b;
+            --blanco: #f8fafc;
+            --gris: #1e293b;
+            --verde: #22c55e;
+            --rojo: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--negro);
+            color: var(--blanco);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+        .header {
+            background: var(--gris);
+            padding: 1.5vh 4vw;
+            border-bottom: 0.4vh solid var(--amarillo);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .header-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .header-ruta {
+            font-size: 4.5vw;
+            font-weight: 700;
+            color: var(--amarillo);
+        }
+        .header-operador {
+            font-size: 3vw;
+            color: #94a3b8;
+        }
+        .btn-volver {
+            background: transparent;
+            border: 0.2vh solid var(--amarillo);
+            color: var(--amarillo);
+            padding: 1vh 3vw;
+            border-radius: 1vh;
+            font-size: 3.5vw;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-pasajero {
+            padding: 3vh;
+            background: var(--amarillo);
+            color: var(--negro);
+            border: none;
+            border-radius: 2vh;
+            font-size: 6.5vw;
+            font-weight: 800;
+            cursor: pointer;
+            margin: 2vh 4vw;
+        }
+        .mapa-contenedor {
+            position: relative;
+            margin: 0 4vw;
+            border-radius: 2vh;
+            overflow: hidden;
+            border: 0.3vh solid #334155;
+            flex: 1;
+        }
+        #minimapa {
+            width: 100%;
+            height: 100%;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(10,10,10,0.98);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            padding: 3vh 4vw;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-title {
+            font-size: 7vw;
+            font-weight: 700;
+            color: var(--amarillo);
+            text-align: center;
+            margin-bottom: 2vh;
+        }
+        .controles-dinamicos { display: flex; flex-direction: column; gap: 2vh; margin: 2vh 0; }
+        .fila-tipo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #334155;
+            padding: 1.5vh 3vw;
+            border-radius: 1.5vh;
+        }
+        .tipo-icono { font-size: 6vw; margin-right: 2vw; }
+        .tipo-nombre { flex: 1; font-size: 4.5vw; font-weight: 600; }
+        .tipo-contador { display: flex; align-items: center; gap: 3vw; }
+        .btn-menos, .btn-mas {
+            width: 8vw; height: 8vw;
+            border-radius: 50%;
+            border: none;
+            background: var(--amarillo);
+            color: var(--negro);
+            font-size: 6vw;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cantidad-valor { font-size: 6vw; font-weight: 900; min-width: 6vw; text-align: center; }
+        .precio-unitario { font-size: 5vw; font-weight: 700; color: var(--verde); margin-left: 3vw; }
+        .total-cobro { text-align: center; margin: 3vh 0; }
+        .total-label { display: block; font-size: 4vw; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+        .total-numero { font-size: 12vw; font-weight: 900; color: var(--verde); }
+        .btn-cobrar-final {
+            width: 100%;
+            padding: 3vh;
+            background: var(--verde);
+            color: var(--blanco);
+            border: none;
+            border-radius: 2vh;
+            font-size: 6vw;
+            font-weight: 800;
+            cursor: pointer;
+            margin-bottom: 2vh;
+        }
+        .modal-cerrar {
+            width: 100%;
+            padding: 3vh;
+            background: transparent;
+            color: var(--rojo);
+            border: 0.2vh solid var(--rojo);
+            border-radius: 1.5vh;
+            font-size: 4.5vw;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-info">
+            <div class="header-ruta" id="headerRuta">🎫 Boletero</div>
+            <div class="header-operador" id="headerOperador">Sin ruta asignada</div>
+        </div>
+        <a class="btn-volver" href="itinerario.html">📋</a>
+    </div>
+
+    <button class="btn-pasajero" onclick="abrirModalCobro()">🚌 PASAJERO A BORDO</button>
+
+    <div class="mapa-contenedor">
+        <div id="minimapa"></div>
+    </div>
+
+    <div class="modal-overlay" id="modalCobro">
+        <div class="modal-title">💵 COBRAR PASAJE</div>
+        <div class="controles-dinamicos">
+            <div class="fila-tipo">
+                <span class="tipo-icono">👤</span><span class="tipo-nombre">Normal</span>
+                <div class="tipo-contador">
+                    <button class="btn-menos" onclick="ajustarCantidad('normal', -1)">−</button>
+                    <span class="cantidad-valor" id="cantNormal">0</span>
+                    <button class="btn-mas" onclick="ajustarCantidad('normal', 1)">+</button>
+                </div>
+                <span class="precio-unitario">$<span id="precioNormal">12</span></span>
+            </div>
+            <div class="fila-tipo">
+                <span class="tipo-icono">🧓</span><span class="tipo-nombre">Adulto Mayor</span>
+                <div class="tipo-contador">
+                    <button class="btn-menos" onclick="ajustarCantidad('adulto', -1)">−</button>
+                    <span class="cantidad-valor" id="cantAdulto">0</span>
+                    <button class="btn-mas" onclick="ajustarCantidad('adulto', 1)">+</button>
+                </div>
+                <span class="precio-unitario">$<span id="precioAdulto">6</span></span>
+            </div>
+            <div class="fila-tipo">
+                <span class="tipo-icono">🎓</span><span class="tipo-nombre">Estudiante</span>
+                <div class="tipo-contador">
+                    <button class="btn-menos" onclick="ajustarCantidad('estudiante', -1)">−</button>
+                    <span class="cantidad-valor" id="cantEstudiante">0</span>
+                    <button class="btn-mas" onclick="ajustarCantidad('estudiante', 1)">+</button>
+                </div>
+                <span class="precio-unitario">$<span id="precioEstudiante">6</span></span>
+            </div>
+            <div class="fila-tipo">
+                <span class="tipo-icono">📚</span><span class="tipo-nombre">Maestro</span>
+                <div class="tipo-contador">
+                    <button class="btn-menos" onclick="ajustarCantidad('maestro', -1)">−</button>
+                    <span class="cantidad-valor" id="cantMaestro">0</span>
+                    <button class="btn-mas" onclick="ajustarCantidad('maestro', 1)">+</button>
+                </div>
+                <span class="precio-unitario">$<span id="precioMaestro">6</span></span>
+            </div>
+        </div>
+        <div class="total-cobro">
+            <span class="total-label">TOTAL A COBRAR</span>
+            <span class="total-numero" id="totalCobro">$0</span>
+        </div>
+        <button class="btn-cobrar-final" onclick="confirmarCobro()">✅ COBRAR</button>
+        <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
+    </div>
+
+    <script>
+        // Cargar ruta activa desde el itinerario
+        const rutaActiva = JSON.parse(localStorage.getItem('rutaActiva'));
+        if (rutaActiva) {
+            document.getElementById('headerRuta').textContent = `🎫 ${rutaActiva.origen} → ${rutaActiva.destino}`;
+            document.getElementById('headerOperador').textContent = `👤 ${rutaActiva.operador} · 🚛 ${rutaActiva.camion}`;
+        }
+
+        // Mapa Leaflet
+        const mapa = L.map('minimapa', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([20.85, -99.95], 9);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 16
+        }).addTo(mapa);
+        L.marker([20.85, -99.95]).addTo(mapa).bindPopup('📍 Ubicación actual');
+
+        // Lógica de cobro
+        const estado = {
+            cantidades: { normal: 0, adulto: 0, estudiante: 0, maestro: 0 },
+            precios: { normal: 12, adulto: 6, estudiante: 6, maestro: 6 }
+        };
+
+        function totalGeneral() {
+            return Object.keys(estado.cantidades).reduce((sum, tipo) => sum + estado.cantidades[tipo] * estado.precios[tipo], 0);
+        }
+        function totalPasajerosGrupo() {
+            return Object.values(estado.cantidades).reduce((a, b) => a + b, 0);
+        }
+        function ajustarCantidad(tipo, delta) {
+            if (estado.cantidades[tipo] + delta < 0) return;
+            if (totalPasajerosGrupo() + delta > 10) return;
+            estado.cantidades[tipo] += delta;
+            actualizarControles();
+        }
+        function actualizarControles() {
+            document.getElementById('cantNormal').textContent = estado.cantidades.normal;
+            document.getElementById('cantAdulto').textContent = estado.cantidades.adulto;
+            document.getElementById('cantEstudiante').textContent = estado.cantidades.estudiante;
+            document.getElementById('cantMaestro').textContent = estado.cantidades.maestro;
+            document.getElementById('totalCobro').textContent = '$' + totalGeneral();
+        }
+        function abrirModalCobro() {
+            document.getElementById('modalCobro').classList.add('active');
+            actualizarControles();
+        }
+        function cerrarModalCobro() {
+            document.getElementById('modalCobro').classList.remove('active');
+        }
+        function confirmarCobro() {
+            const total = totalGeneral();
+            const cambios = [100, 200, 500];
+            let mensaje = `✅ COBRO EXITOSO\n\n`;
+            mensaje += `👤 Normal: ${estado.cantidades.normal} x $${estado.precios.normal}\n`;
+            mensaje += `🧓 Adulto Mayor: ${estado.cantidades.adulto} x $${estado.precios.adulto}\n`;
+            mensaje += `🎓 Estudiante: ${estado.cantidades.estudiante} x $${estado.precios.estudiante}\n`;
+            mensaje += `📚 Maestro: ${estado.cantidades.maestro} x $${estado.precios.maestro}\n\n`;
+            mensaje += `💰 TOTAL: $${total}\n\n💵 CAMBIO SUGERIDO:\n`;
+            cambios.forEach(c => { if (c >= total) mensaje += `   Paga con $${c}: devuelve $${c - total}\n`; });
+            alert(mensaje);
+            cerrarModalCobro();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Carreteras de Querétaro</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;
+        }
+        .header{
+            background:var(--gris);padding:1.5vh 4vw;height:7vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.4vh solid var(--amarillo);flex-shrink:0;
+        }
+        .header-titulo{font-size:4.5vw;font-weight:700;color:var(--amarillo)}
+        .btn-volver{
+            background:transparent;color:var(--amarillo);border:0.2vh solid var(--amarillo);
+            padding:1vh 3vw;border-radius:1vh;font-size:3.5vw;cursor:pointer;text-decoration:none;
+        }
+        .mapa-container{flex:1;position:relative;min-height:0}
+        #mapa{width:100%;height:100%}
+        .leyenda{
+            position:absolute;top:2vh;right:2vw;
+            background:rgba(10,10,10,0.85);padding:1.5vh 3vw;
+            border-radius:1.5vh;border:0.2vh solid var(--amarillo);
+            z-index:1000;font-size:3vw;
+        }
+        .leyenda-item{display:flex;align-items:center;gap:1.5vw;margin-bottom:0.8vh}
+        .leyenda-color{width:6vw;height:1vh;border-radius:1vh}
+        .panel-inferior{
+            position:absolute;bottom:0;left:0;right:0;
+            background:rgba(10,10,10,0.95);padding:2vh 4vw;
+            border-top:0.3vh solid var(--amarillo);z-index:1000;
+            max-height:30vh;overflow-y:auto;
+        }
+        .ruta-actual{display:flex;flex-wrap:wrap;gap:1.5vw;align-items:center;margin-bottom:1vh}
+        .parada-tag{
+            background:var(--gris2);padding:1vh 2vw;border-radius:1vh;font-size:3vw;
+            display:flex;align-items:center;gap:1vw;
+        }
+        .parada-tag.origen{border:0.2vh solid var(--verde)}
+        .parada-tag.destino{border:0.2vh solid var(--rojo)}
+        .flecha{color:var(--amarillo);font-size:4vw}
+        .input-nombre{
+            width:100%;padding:1.5vh 3vw;background:var(--negro);color:var(--blanco);
+            border:0.2vh solid var(--amarillo);border-radius:1vh;font-size:4vw;margin-bottom:1vh;text-align:center;
+        }
+        .btn-accion{
+            width:100%;padding:2vh;border:none;border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;margin-bottom:1vh;
+        }
+        .btn-guardar{background:var(--verde);color:var(--blanco)}
+        .btn-limpiar{background:transparent;color:var(--rojo);border:0.2vh solid var(--rojo)}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-titulo">🗺️ CARRETERAS DE QUERÉTARO</div>
+    <a class="btn-volver" href="index.html">✕</a>
+</div>
+
+<div class="mapa-container">
+    <div id="mapa"></div>
+    
+    <div class="leyenda">
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#e85d04;"></div> MEX-120</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#3b82f6;"></div> MEX-069</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#22c55e;"></div> QRO-004</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#a855f7;"></div> QRO-005</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#fbbf24;"></div> QRO-021</div>
+        <div class="leyenda-item"><div class="leyenda-color" style="background:#ef4444;"></div> Ramales</div>
+    </div>
+    
+    <div class="panel-inferior" id="panelInferior">
+        <div style="font-size:3.5vw;font-weight:700;color:var(--amarillo-texto);margin-bottom:1vh;">📍 Toca localidades para armar ruta</div>
+        <div class="ruta-actual" id="rutaActual"><span style="color:#555;font-size:3.5vw;">Sin paradas</span></div>
+        <input type="text" class="input-nombre" id="nombreRuta" placeholder="Nombre de la ruta">
+        <button class="btn-accion btn-guardar" onclick="guardarRuta()">💾 GUARDAR RUTA</button>
+        <button class="btn-accion btn-limpiar" onclick="limpiarRuta()">🗑️ Limpiar</button>
+    </div>
+</div>
+
+<script src="matriz_queretaro.js?v=5"></script>
+
+<script>
+// ============================================================
+// CARRETERAS REALES DE QUERÉTARO (trazos GPS reales)
+// ============================================================
+var carreteras = {
+    "MEX-120": {
+        color: '#e85d04', peso: 5,
+        nombre: "MEX-120 Querétaro → Jalpan → SLP",
+        trazo: [
+            [20.5831,-100.3896],[20.5950,-100.3700],[20.6100,-100.3200],[20.6300,-100.2600],
+            [20.6500,-100.2000],[20.6700,-100.1400],[20.6900,-100.0800],[20.7000,-100.0500],
+            [20.7167,-99.8833],[20.7000,-99.8000],[20.7200,-99.7500],[20.7400,-99.7000],
+            [20.7600,-99.6500],[20.7800,-99.6000],[20.8000,-99.5500],[20.7800,-99.5167],
+            [20.8200,-99.5000],[20.8500,-99.4667],[20.8800,-99.4500],[20.9000,-99.4000],
+            [20.9200,-99.4200],[20.9333,-99.4333],[20.9600,-99.4300],[20.9833,-99.4333],
+            [21.0000,-99.4500],[21.0167,-99.4667],[21.0300,-99.4000],[21.0167,-99.3667],
+            [21.0333,-99.3500],[21.0500,-99.3333],[21.0667,-99.3167],[21.1000,-99.3000],
+            [21.1167,-99.2833],[21.1500,-99.2667],[21.1833,-99.2333],[21.2000,-99.2167],
+            [21.2167,-99.4667],[21.2200,-99.4400],[21.2500,-99.4000],[21.2600,-99.4100],
+            [21.2833,-99.3833],[21.3000,-99.3600],[21.1833,-99.3167],[21.2000,-99.3000],
+            [21.2167,-99.2833],[21.2333,-99.2667],[21.2500,-99.2500],[21.2833,-99.2167],
+            [21.3000,-99.2000],[21.2167,-99.3833],[21.2333,-99.3667],[21.3000,-99.5000]
+        ]
+    },
+    "MEX-069": {
+        color: '#3b82f6', peso: 4,
+        nombre: "MEX-069 Jalpan → Arroyo Seco",
+        trazo: [
+            [21.2167,-99.4667],[21.2000,-99.5000],[21.1833,-99.5500],[21.1667,-99.6167],
+            [21.1833,-99.5833],[21.2500,-99.6000],[21.3000,-99.6200],[21.3333,-99.6500],
+            [21.3500,-99.6667]
+        ]
+    },
+    "QRO-004": {
+        color: '#22c55e', peso: 3,
+        nombre: "QRO-004 Higuerillas → San Joaquín",
+        trazo: [
+            [20.8500,-99.4667],[20.8667,-99.4333],[20.9000,-99.4500],[20.9500,-99.4800],
+            [21.0000,-99.5000],[21.0167,-99.4667],[21.0500,-99.5500],[21.0667,-99.5667]
+        ]
+    },
+    "QRO-005": {
+        color: '#a855f7', peso: 3,
+        nombre: "QRO-005 Colón → Tolimán",
+        trazo: [
+            [20.6667,-99.7333],[20.7167,-99.7000],[20.7500,-99.6500],[20.7833,-99.6000],
+            [20.8500,-99.6200],[20.9000,-99.6667],[20.9333,-99.6333],[20.9667,-99.6000],
+            [20.9833,-99.5833],[21.0000,-99.5667]
+        ]
+    },
+    "QRO-021": {
+        color: '#fbbf24', peso: 3,
+        nombre: "QRO-021 La Culata → San Joaquín",
+        trazo: [
+            [21.0167,-99.4667],[21.0333,-99.5000],[21.0500,-99.5500]
+        ]
+    },
+    "RAMAL-SJR": {
+        color: '#ef4444', peso: 2,
+        nombre: "Ramal San Juan del Río → Tequisquiapan",
+        trazo: [
+            [20.3833,-100.0000],[20.4000,-99.9500],[20.4500,-99.9000],[20.4833,-99.9000],
+            [20.5167,-99.8833]
+        ]
+    },
+    "RAMAL-BERNAL": {
+        color: '#ef4444', peso: 2,
+        nombre: "Ramal Ezequiel Montes → Bernal",
+        trazo: [
+            [20.6500,-99.9000],[20.6833,-99.8833],[20.7167,-99.8667],[20.7500,-99.9333]
+        ]
+    },
+    "RAMAL-AMEALCO": {
+        color: '#ef4444', peso: 2,
+        nombre: "Ramal San Juan del Río → Amealco",
+        trazo: [
+            [20.3833,-100.0000],[20.3500,-100.0500],[20.3000,-100.1000],[20.2500,-100.1200],
+            [20.1833,-100.1500]
+        ]
+    }
+};
+
+var mapa;
+var paradasSeleccionadas = [];
+var marcadoresParadas = [];
+
+// ============================================================
+// INICIALIZAR MAPA
+// ============================================================
+function inicializarMapa() {
+    // Mapa ESTÁNDAR (tiles claros, no oscuros)
+    mapa = L.map('mapa', {
+        zoomControl: true,
+        attributionControl: false,
+        dragging: true,
+        scrollWheelZoom: true,
+        touchZoom: true
+    }).setView([20.85, -99.95], 9);
+
+    // Tiles ESTÁNDAR de OpenStreetMap (mapa claro, día)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 16
+    }).addTo(mapa);
+
+    // Dibujar todas las carreteras
+    Object.keys(carreteras).forEach(function(clave) {
+        var carr = carreteras[clave];
+        L.polyline(carr.trazo, {
+            color: carr.color,
+            weight: carr.peso,
+            opacity: 0.8
+        }).addTo(mapa).bindTooltip(carr.nombre, { permanent: false, direction: 'top' });
+    });
+
+    // Poner localidades de la matriz como marcadores cliqueables
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+
+    Object.keys(coords).forEach(function(id) {
+        var idn = parseInt(id);
+        if (obj[idn] && coords[idn]) {
+            var marker = L.circleMarker([coords[idn].lat, coords[idn].lng], {
+                radius: 6,
+                color: '#f59e0b',
+                fillColor: '#1e293b',
+                fillOpacity: 1,
+                weight: 2
+            }).addTo(mapa);
+
+            marker.bindTooltip(obj[idn], { permanent: false, direction: 'top' });
+
+            marker.on('click', function() {
+                agregarParada({ id: idn, nombre: obj[idn], lat: coords[idn].lat, lng: coords[idn].lng });
+            });
+        }
+    });
+
+    // GPS
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
+                radius: 10, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1, weight: 3
+            }).addTo(mapa).bindPopup('📍 Mi ubicación');
+        });
+    }
+}
+
+// ============================================================
+// AGREGAR PARADA
+// ============================================================
+function agregarParada(loc) {
+    if (paradasSeleccionadas.length > 0 && paradasSeleccionadas[paradasSeleccionadas.length - 1].id === loc.id) return;
+    paradasSeleccionadas.push(loc);
+    actualizarPanel();
+}
+
+function limpiarRuta() {
+    paradasSeleccionadas = [];
+    marcadoresParadas.forEach(function(m) { mapa.removeLayer(m); });
+    marcadoresParadas = [];
+    actualizarPanel();
+}
+
+function actualizarPanel() {
+    var container = document.getElementById('rutaActual');
+    if (paradasSeleccionadas.length === 0) {
+        container.innerHTML = '<span style="color:#555;font-size:3.5vw;">Sin paradas</span>';
+        return;
+    }
+    container.innerHTML = '';
+    paradasSeleccionadas.forEach(function(loc, i) {
+        var esOrigen = (i === 0), esDestino = (i === paradasSeleccionadas.length - 1);
+        var tag = document.createElement('div');
+        tag.className = 'parada-tag ' + (esOrigen ? 'origen' : (esDestino ? 'destino' : ''));
+        tag.innerHTML = (esOrigen ? '🟢 ' : (esDestino ? '🔴 ' : '📍 ')) + loc.nombre;
+        container.appendChild(tag);
+        if (i < paradasSeleccionadas.length - 1) {
+            var flecha = document.createElement('span'); flecha.className = 'flecha'; flecha.textContent = '→';
+            container.appendChild(flecha);
+        }
+    });
+}
+
+// ============================================================
+// GUARDAR RUTA
+// ============================================================
+function guardarRuta() {
+    var nombre = document.getElementById('nombreRuta').value.trim();
+    if (!nombre) { alert('⚠ Asigna un nombre a la ruta'); return; }
+    if (paradasSeleccionadas.length < 2) { alert('⚠ Selecciona al menos origen y destino'); return; }
+
+    var ruta = {
+        nombre: nombre,
+        origen: paradasSeleccionadas[0].nombre,
+        origenId: paradasSeleccionadas[0].id,
+        destino: paradasSeleccionadas[paradasSeleccionadas.length - 1].nombre,
+        destinoId: paradasSeleccionadas[paradasSeleccionadas.length - 1].id,
+        paradas: paradasSeleccionadas.map(function(l) { return l.id; }),
+        fecha: new Date().toLocaleDateString('es-MX')
+    };
+
+    var rutasGuardadas = JSON.parse(localStorage.getItem('rutasPredefinidas') || '[]');
+    rutasGuardadas.push(ruta);
+    localStorage.setItem('rutasPredefinidas', JSON.stringify(rutasGuardadas));
+
+    alert('✅ Ruta guardada: ' + nombre + '\n\n' + ruta.origen + ' → ' + ruta.destino + '\n' + paradasSeleccionadas.length + ' paradas');
+    window.location.href = 'index.html';
+}
+
+// ============================================================
+// INICIO
+// ============================================================
+inicializarMapa();
+</script>
+</body>
+</html>

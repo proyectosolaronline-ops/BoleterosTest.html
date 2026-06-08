@@ -211,8 +211,107 @@ function seleccionarLocalidad(loc) {
 function detectarParadasEnRuta() {
     var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
     var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
-    var kmO = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+origenSel.id]) ? MATRIZ_QUERETARO['1-'+origenSel.id].km : 0;
-    var kmD = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+destinoSel.id]) ? MATRIZ_QUERETARO['1-'+destinoSel.id].km : 999;
+    paradasEnRuta = [];
+    
+    // Obtener coordenadas de la ruta trazada
+    var coordsRuta = [];
+    
+    // Intentar obtener las coordenadas reales de la ruta
+    if (controlRuta) {
+        try {
+            // Acceder a las coordenadas internas de la ruta
+            var routes = controlRuta._routes || controlRuta._router._routes;
+            if (routes && routes.length > 0 && routes[0].coordinates) {
+                // Formato OSRM: array de {lat, lng} o array de [lng, lat]
+                routes[0].coordinates.forEach(function(c) {
+                    if (c.lat !== undefined) {
+                        coordsRuta.push({ lat: c.lat, lng: c.lng });
+                    } else if (Array.isArray(c) && c.length >= 2) {
+                        coordsRuta.push({ lat: c[1], lng: c[0] });
+                    }
+                });
+            }
+        } catch(e) {
+            console.log('No se pudo obtener ruta de OSRM');
+        }
+    }
+    
+    // Si no hay coordenadas de OSRM, intentar obtener los waypoints del plan
+    if (coordsRuta.length === 0 && controlRuta) {
+        try {
+            var plan = controlRuta.getPlan();
+            if (plan && plan._waypoints) {
+                plan._waypoints.forEach(function(wp) {
+                    if (wp.latLng) {
+                        coordsRuta.push({ lat: wp.latLng.lat, lng: wp.latLng.lng });
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+    
+    // Si aún no hay coordenadas, usar km de la matriz
+    if (coordsRuta.length === 0) {
+        buscarParadasPorKM();
+        return;
+    }
+    
+    // Para cada localidad en la matriz, verificar si está cerca de la ruta
+    Object.keys(coords).forEach(function(id) {
+        var idn = parseInt(id);
+        if (idn === origenSel.id || idn === destinoSel.id) return;
+        if (obj[idn] && coords[idn]) {
+            var locLat = coords[idn].lat;
+            var locLng = coords[idn].lng;
+            
+            // Calcular distancia mínima desde esta localidad a cualquier punto de la ruta
+            var minDist = Infinity;
+            for (var i = 0; i < coordsRuta.length; i++) {
+                var d = haversine(locLat, locLng, coordsRuta[i].lat, coordsRuta[i].lng);
+                if (d < minDist) minDist = d;
+            }
+            
+            // Si está a menos de 2 km de la ruta, incluirla
+            if (minDist < 2) {
+                var km = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+idn]) ? MATRIZ_QUERETARO['1-'+idn].km : 0;
+                paradasEnRuta.push({
+                    id: idn,
+                    nombre: obj[idn],
+                    lat: locLat,
+                    lng: locLng,
+                    km: km,
+                    distancia: Math.round(minDist * 1000) + 'm'
+                });
+            }
+        }
+    });
+    
+    // Ordenar por km
+    paradasEnRuta.sort(function(a, b) { return a.km - b.km; });
+    
+    // Eliminar duplicados por nombre
+    var nombresUnicos = [];
+    paradasEnRuta = paradasEnRuta.filter(function(p) {
+        if (nombresUnicos.indexOf(p.nombre) >= 0) return false;
+        nombresUnicos.push(p.nombre);
+        return true;
+    });
+    
+    actualizarPanel();
+    
+    if (paradasEnRuta.length > 0) {
+        document.getElementById('instruccionSub').textContent = '✅ ' + paradasEnRuta.length + ' paradas sobre la carretera';
+    } else {
+        document.getElementById('instruccionSub').textContent = '⚠ Sin paradas detectadas. Guardando ruta directa.';
+    }
+    document.getElementById('btnGuardar').disabled = false;
+}
+
+function buscarParadasPorKM() {
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    var kmO = (!origenSel.esPersonalizado && typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+origenSel.id]) ? MATRIZ_QUERETARO['1-'+origenSel.id].km : 0;
+    var kmD = (!destinoSel.esPersonalizado && typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+destinoSel.id]) ? MATRIZ_QUERETARO['1-'+destinoSel.id].km : 999;
     var kmMin = Math.min(kmO, kmD), kmMax = Math.max(kmO, kmD);
     
     paradasEnRuta = [];
@@ -222,15 +321,15 @@ function detectarParadasEnRuta() {
         if (obj[idn] && coords[idn]) {
             var km = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+idn]) ? MATRIZ_QUERETARO['1-'+idn].km : -1;
             if (km >= kmMin && km <= kmMax) {
-                paradasEnRuta.push({ id: idn, nombre: obj[idn], lat: coords[idn].lat, lng: coords[idn].lng, km: km, esPersonalizado: false });
+                paradasEnRuta.push({ id: idn, nombre: obj[idn], lat: coords[idn].lat, lng: coords[idn].lng, km: km });
             }
         }
     });
     paradasEnRuta.sort(function(a, b) { return a.km - b.km; });
     actualizarPanel();
-    document.getElementById('instruccionSub').textContent = paradasEnRuta.length + ' paradas detectadas';
+    document.getElementById('instruccionSub').textContent = paradasEnRuta.length + ' paradas detectadas (por km)';
     document.getElementById('btnGuardar').disabled = false;
-}
+    }
 
 function actualizarPanel() {
     var c = document.getElementById('listaParadas'); c.innerHTML = '';

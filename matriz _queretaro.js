@@ -5,7 +5,7 @@
 // Fuentes: [A] SCT Datos Viales, [B] Mapa SCT 2023, [C] Verificación GPS
 // ============================================================
 
-const localidades = {
+const localidadesObj = {
     1: "Central Camionera Querétaro",
     2: "El Pueblito / Corregidora",
     3: "El Marqués (cabecera)",

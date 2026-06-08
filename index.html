@@ -473,11 +473,13 @@ function cerrarModalNuevaCorrida() {
 function iniciarNuevaCorrida() {
     const origenId = parseInt(document.getElementById('selectOrigen').value);
     const destinoId = parseInt(document.getElementById('selectDestino').value);
-    const origen = localidades.find(l=>l.id===origenId);
-    const destino = localidades.find(l=>l.id===destinoId);
+    const origen = localidades.find(l=>l.id==origenId);
+    const destino = localidades.find(l=>l.id==destinoId);
     
     if(origenId === destinoId){alert('⚠ Origen y destino no pueden ser iguales');return}
-    if(destino.km <= origen.km){alert('⚠ El destino debe estar después del origen');return}
+    
+    // Ya NO validamos que el destino esté después del origen
+    // Se permite cualquier dirección
     
     // Validación GPS
     if(!miUbicacion || !miUbicacion.localidad) {
@@ -491,6 +493,14 @@ function iniciarNuevaCorrida() {
         alert(`⚠ NO PUEDES INICIAR ESTA CORRIDA\n\nTe encuentras en: ${miUbicacion.localidad.nombre}\nLa corrida debe iniciar en: ${origen.nombre}\n\nDebes estar en el origen para poder iniciar.`);
         return;
     }
+    
+    sesionActiva.origen = origen.nombre;
+    sesionActiva.destino = destino.nombre;
+    sesionActiva.hora_inicio = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem('sesionActiva', JSON.stringify(sesionActiva));
+    
+    window.location.href = 'boletero.html';
+}
     
     sesionActiva.origen = origen.nombre;
     sesionActiva.destino = destino.nombre;

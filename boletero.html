@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero Inteligente</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--morado:#a855f7;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+        }
+
+        .header{
+            background:var(--gris);padding:1.5vh 4vw;height:8vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.4vh solid var(--amarillo);flex-shrink:0;
+        }
+        .header-info{display:flex;flex-direction:column;flex:1;min-width:0}
+        .header-ruta{font-size:4.5vw;font-weight:700;color:var(--amarillo)}
+        .header-operador{font-size:3vw;color:var(--gris-texto)}
+        .header-fecha{font-size:2.5vw;color:var(--gris-texto)}
+        .btn-volver{
+            background:transparent;border:0.2vh solid var(--amarillo);color:var(--amarillo);
+            padding:1vh 3vw;border-radius:1vh;font-size:3.5vw;cursor:pointer;text-decoration:none;
+        }
+
+        .main-content{flex:1;overflow-y:auto;padding:2vh 4vw;display:flex;flex-direction:column;gap:1.5vh}
+
+        .localidad-card{
+            background:var(--gris);border-radius:2vh;padding:2vh 4vw;text-align:center;
+            border:0.3vh solid var(--gris2);
+        }
+        .localidad-etiqueta{font-size:3vw;color:var(--gris-texto);text-transform:uppercase;letter-spacing:2px}
+        .localidad-nombre{font-size:8vw;font-weight:900;color:var(--amarillo-texto)}
+        .localidad-precision{font-size:2.5vw;color:var(--verde)}
+
+        .mini-mapa-contenedor{
+            background:var(--gris);border-radius:2vh;padding:1vh;
+            border:0.3vh solid var(--gris2);height:15vh;
+        }
+        #minimapa{width:100%;height:100%;border-radius:1vh}
+
+        .btn-pasajero{
+            padding:3.5vh;background:var(--amarillo);color:var(--negro);border:none;border-radius:2vh;
+            font-size:6.5vw;font-weight:800;cursor:pointer;
+            box-shadow:0 1vh 3vh rgba(245,158,11,0.35);text-align:center;
+        }
+        .btn-pasajero .sube-en{font-size:3.5vw;font-weight:400;color:var(--negro);opacity:0.7}
+
+        .indicadores{display:flex;gap:2vw}
+        .indicador{
+            flex:1;background:var(--gris);border-radius:1.5vh;padding:1.5vh 2vw;
+            text-align:center;border:0.3vh solid var(--gris2);
+        }
+        .indicador .num{font-size:6vw;font-weight:900}
+        .indicador .etq{font-size:2.5vw;color:var(--gris-texto);text-transform:uppercase}
+        .indicador.verde .num{color:var(--verde)}
+        .indicador.naranja .num{color:var(--naranja)}
+        .indicador.amarillo .num{color:var(--amarillo-texto)}
+
+        .btn-corte{
+            padding:3vh;background:var(--rojo);color:var(--blanco);border:none;border-radius:2vh;
+            font-size:6vw;font-weight:800;cursor:pointer;text-align:center;
+        }
+
+        .modal-overlay{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.98);z-index:3000;display:none;flex-direction:column;padding:3vh 4vw;
+        }
+        .modal-overlay.active{display:flex}
+        .modal-title{font-size:7vw;font-weight:700;color:var(--amarillo-texto);text-align:center;margin-bottom:2vh}
+        .modal-subtitle{font-size:3.5vw;color:var(--gris-texto);text-align:center;margin-bottom:2vh}
+        .modal-cerrar{
+            width:100%;padding:2.5vh;background:transparent;color:var(--rojo);
+            border:0.2vh solid var(--rojo);border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;margin-top:1.5vh;
+        }
+
+        .destino-lista{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:1.5vh}
+        .destino-item{
+            background:var(--gris);padding:2.5vh 4vw;border-radius:1.5vh;
+            display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+        }
+        .destino-nombre{font-size:5vw;font-weight:600}
+        .destino-tarifa{font-size:6vw;font-weight:800;color:var(--amarillo-texto)}
+
+        .cobro-contenido{display:flex;flex-direction:column;height:100%;gap:1.5vh}
+        .cobro-header{text-align:center;font-size:5vw;color:var(--gris-texto)}
+
+        .tipos-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5vw}
+        .tipo-card{
+            background:var(--gris);border-radius:2vh;padding:1.5vh 2vw;
+            display:flex;flex-direction:column;gap:1vh;border:0.25vh solid var(--gris2);
+        }
+        .tipo-card-top{display:flex;align-items:center;gap:2vw}
+        .tipo-icono{font-size:6vw}
+        .tipo-nombre{font-size:3.5vw;font-weight:700}
+        .tipo-precio{font-size:3vw;font-weight:600}
+        .tipo-controles{display:flex;align-items:center;justify-content:space-between;gap:1vw}
+        .btn-menos,.btn-mas{
+            width:9vw;height:9vw;border-radius:50%;border:none;font-size:5.5vw;font-weight:900;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+        }
+        .btn-menos{background:var(--gris2);color:var(--blanco)}
+        .btn-menos:disabled{opacity:0.3}
+        .btn-mas{background:var(--amarillo);color:var(--negro)}
+        .tipo-cantidad{font-size:7vw;font-weight:900;min-width:8vw;text-align:center}
+        .tipo-subtotal{font-size:3vw;font-weight:700;color:var(--verde);text-align:right}
+
+        .cobro-total-bar{
+            background:var(--gris);border-radius:1.5vh;padding:1.5vh 4vw;
+            display:flex;justify-content:space-between;align-items:center;
+        }
+        .cobro-total-label{font-size:4vw;color:var(--gris-texto);text-transform:uppercase}
+        .cobro-total-monto{font-size:10vw;font-weight:900;color:var(--verde)}
+
+        .cobro-vuelto{
+            background:var(--negro);border-radius:1.5vh;padding:1.5vh 4vw;
+            display:flex;justify-content:space-between;align-items:center;gap:2vw;
+        }
+        .vuelto-billetes{display:flex;gap:2vw}
+        .billete-btn{
+            padding:1vh 3vw;border-radius:1vh;border:none;font-size:3.5vw;font-weight:700;cursor:pointer;
+            background:var(--gris2);color:var(--blanco);
+        }
+        .vuelto-resultado{font-size:5vw;font-weight:800;color:var(--azul)}
+
+        .btn-cobrar-final{
+            width:100%;padding:3vh;background:var(--verde);color:var(--blanco);
+            border:none;border-radius:2vh;font-size:6.5vw;font-weight:800;cursor:pointer;
+        }
+        .btn-cobrar-final:disabled{background:var(--gris2);color:#555}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-info">
+        <div class="header-ruta" id="headerRuta">🎫 Boletero</div>
+        <div class="header-operador" id="headerOperador">Sin sesión</div>
+        <div class="header-fecha" id="headerFecha"></div>
+    </div>
+    <a class="btn-volver" href="index.html">📋</a>
+</div>
+
+<div class="main-content">
+    <div class="localidad-card">
+        <div class="localidad-etiqueta">📍 LOCALIDAD GPS</div>
+        <div class="localidad-nombre" id="nombreLocalidad">—</div>
+        <div class="localidad-precision">Precisión: <span id="precisionGPS">—</span></div>
+    </div>
+
+    <div class="mini-mapa-contenedor">
+        <div id="minimapa"></div>
+    </div>
+
+    <button class="btn-pasajero" onclick="abrirModalDestino()">
+        🚌 PASAJERO A BORDO
+        <div class="sube-en">Sube en: <span id="subeEn">—</span></div>
+    </button>
+
+    <div class="indicadores">
+        <div class="indicador verde">
+            <div class="num" id="numABordo">0</div>
+            <div class="etq">👥 A bordo</div>
+        </div>
+        <div class="indicador naranja">
+            <div class="num" id="numBajan">0</div>
+            <div class="etq">🔻 Por bajar</div>
+        </div>
+        <div class="indicador amarillo">
+            <div class="num" id="totalCorrida">$0</div>
+            <div class="etq">💰 Total</div>
+        </div>
+    </div>
+
+    <button class="btn-corte" onclick="confirmarCorte()">🏁 CORTE · FINALIZAR CORRIDA</button>
+</div>
+
+<!-- MODAL DESTINO -->
+<div class="modal-overlay" id="modalDestino">
+    <div class="modal-title">¿A dónde va?</div>
+    <div class="modal-subtitle">Sube en: <span id="origenModal">—</span></div>
+    <div class="destino-lista" id="listaDestinos"></div>
+    <button class="modal-cerrar" onclick="cerrarModalDestino()">❌ CANCELAR</button>
+</div>
+
+<!-- MODAL COBRO -->
+<div class="modal-overlay" id="modalCobro">
+    <div class="cobro-contenido">
+        <div class="modal-title">COBRAR</div>
+        <div class="cobro-header" id="cobroRuta">—</div>
+
+        <div class="tipos-grid">
+            <div class="tipo-card">
+                <div class="tipo-card-top"><div class="tipo-icono">👤</div><div><div class="tipo-nombre">Normal</div><div class="tipo-precio" id="precio-normal">$0</div></div></div>
+                <div class="tipo-controles">
+                    <button class="btn-menos" onclick="cambiarCantidad('normal',-1)" disabled>−</button>
+                    <div class="tipo-cantidad" id="cant-normal">0</div>
+                    <button class="btn-mas" onclick="cambiarCantidad('normal',1)">+</button>
+                </div>
+                <div class="tipo-subtotal" id="sub-normal"></div>
+            </div>
+            <div class="tipo-card">
+                <div class="tipo-card-top"><div class="tipo-icono">🧓</div><div><div class="tipo-nombre">Adulto M.</div><div class="tipo-precio" id="precio-adulto">$0</div></div></div>
+                <div class="tipo-controles">
+                    <button class="btn-menos" onclick="cambiarCantidad('adulto',-1)" disabled>−</button>
+                    <div class="tipo-cantidad" id="cant-adulto">0</div>
+                    <button class="btn-mas" onclick="cambiarCantidad('adulto',1)">+</button>
+                </div>
+                <div class="tipo-subtotal" id="sub-adulto"></div>
+            </div>
+            <div class="tipo-card">
+                <div class="tipo-card-top"><div class="tipo-icono">🎓</div><div><div class="tipo-nombre">Estudiante</div><div class="tipo-precio" id="precio-estudiante">$0</div></div></div>
+                <div class="tipo-controles">
+                    <button class="btn-menos" onclick="cambiarCantidad('estudiante',-1)" disabled>−</button>
+                    <div class="tipo-cantidad" id="cant-estudiante">0</div>
+                    <button class="btn-mas" onclick="cambiarCantidad('estudiante',1)">+</button>
+                </div>
+                <div class="tipo-subtotal" id="sub-estudiante"></div>
+            </div>
+            <div class="tipo-card">
+                <div class="tipo-card-top"><div class="tipo-icono">📚</div><div><div class="tipo-nombre">Maestro</div><div class="tipo-precio" id="precio-maestro">$0</div></div></div>
+                <div class="tipo-controles">
+                    <button class="btn-menos" onclick="cambiarCantidad('maestro',-1)" disabled>−</button>
+                    <div class="tipo-cantidad" id="cant-maestro">0</div>
+                    <button class="btn-mas" onclick="cambiarCantidad('maestro',1)">+</button>
+                </div>
+                <div class="tipo-subtotal" id="sub-maestro"></div>
+            </div>
+        </div>
+
+        <div class="cobro-total-bar">
+            <div class="cobro-total-label">TOTAL</div>
+            <div class="cobro-total-monto" id="cobroTotalMonto">$0</div>
+        </div>
+
+        <div class="cobro-vuelto">
+            <span style="font-size:3vw;color:var(--gris-texto)">Vuelto:</span>
+            <div class="vuelto-billetes">
+                <button class="billete-btn" onclick="calcularVuelto(20)">$20</button>
+                <button class="billete-btn" onclick="calcularVuelto(50)">$50</button>
+                <button class="billete-btn" onclick="calcularVuelto(100)">$100</button>
+                <button class="billete-btn" onclick="calcularVuelto(200)">$200</button>
+                <button class="billete-btn" onclick="calcularVuelto(500)">$500</button>
+            </div>
+            <div class="vuelto-resultado" id="vueltoResultado"></div>
+        </div>
+
+        <button class="btn-cobrar-final" id="btnCobrarFinal" onclick="confirmarCobro()" disabled>✅ COBRAR</button>
+        <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// LOCALIDADES (22) - KM EXACTOS DESDE CENTRAL QUERÉTARO
+// ============================================================
+const localidades = [
+    {id:1,nombre:"Central Querétaro",km:0,lat:20.5831,lon:-100.3896},
+    {id:2,nombre:"Parque B. Quintana",km:8,lat:20.5950,lon:-100.3700},
+    {id:3,nombre:"La Piedad",km:18,lat:20.6100,lon:-100.3200},
+    {id:4,nombre:"El Colorado",km:23,lat:20.6200,lon:-100.2900},
+    {id:5,nombre:"Galeras",km:28,lat:20.6300,lon:-100.2600},
+    {id:6,nombre:"Buena Vista",km:38,lat:20.6500,lon:-100.2000},
+    {id:7,nombre:"Urecho",km:43,lat:20.6600,lon:-100.1700},
+    {id:8,nombre:"Pie de Gallo",km:48,lat:20.6700,lon:-100.1400},
+    {id:9,nombre:"Ajuchitl\u00e1n",km:58,lat:20.6900,lon:-100.0800},
+    {id:10,nombre:"Pe\u00f1a de Bernal",km:70,lat:20.7404,lon:-99.9411},
+    {id:11,nombre:"Ezequiel Montes",km:80,lat:20.7167,lon:-99.8833},
+    {id:12,nombre:"Cadereyta",km:95,lat:20.7000,lon:-99.8000},
+    {id:13,nombre:"Bizarr\u00f3n",km:110,lat:20.7800,lon:-99.7200},
+    {id:14,nombre:"Pe\u00f1a Blanca",km:125,lat:20.9000,lon:-99.6500},
+    {id:15,nombre:"Pinal de Amoles",km:145,lat:21.1354,lon:-99.6256},
+    {id:16,nombre:"Jalpan de Serra",km:200,lat:21.2167,lon:-99.4667},
+    {id:17,nombre:"Col\u00f3n",km:60,lat:20.7833,lon:-100.0500},
+    {id:18,nombre:"Tolim\u00e1n",km:90,lat:20.9000,lon:-99.9333},
+    {id:19,nombre:"Bernal",km:60,lat:20.7404,lon:-99.9411},
+    {id:20,nombre:"Pe\u00f1amiller",km:130,lat:21.0500,lon:-99.8167},
+    {id:21,nombre:"San Juan del R\u00edo",km:55,lat:20.3833,lon:-100.0000},
+    {id:22,nombre:"Tequisquiapan",km:65,lat:20.5167,lon:-99.8833}
+];
+
+const TARIFA_POR_KM = 1.50;
+const TARIFA_MINIMA = 12.00;
+const MATRIZ_TARIFAS = {"1-2":12,"1-3":17,"2-3":12,"11-12":17,"12-13":15};
+const DESCUENTOS = {normal:0,adulto:0.50,estudiante:0.50,maestro:0.50};
+
+// ============================================================
+// ESTADO
+// ============================================================
+let estado = {
+    localidadActual:null,
+    destinoSeleccionado:null,
+    tarifaBaseUnitaria:0,
+    cantidades:{normal:0,adulto:0,estudiante:0,maestro:0},
+    pasajerosABordo:[],
+    totalRecaudado:0,
+    billeteSeleccionado:null,
+    kmOrigen:0,
+    kmDestino:200
+};
+
+// Cargar sesión
+const sesion = JSON.parse(localStorage.getItem('sesionActiva'));
+if (sesion) {
+    document.getElementById('headerOperador').textContent = `👤 ${sesion.nombre} · 🚛 ${sesion.camion}`;
+    document.getElementById('headerRuta').textContent = `🎫 ${sesion.origen || 'Sin ruta'} → ${sesion.destino || 'Sin ruta'}`;
+    const locOrigen = localidades.find(l=>l.nombre===sesion.origen);
+    const locDestino = localidades.find(l=>l.nombre===sesion.destino);
+    if(locOrigen) estado.kmOrigen = locOrigen.km;
+    if(locDestino) estado.kmDestino = locDestino.km;
+}
+
+function actualizarFecha() {
+    const ahora = new Date();
+    document.getElementById('headerFecha').textContent = `📅 ${ahora.toLocaleDateString('es-MX')} · 🕐 ${ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}`;
+}
+actualizarFecha();
+setInterval(actualizarFecha, 30000);
+
+// ============================================================
+// MINI MAPA
+// ============================================================
+let minimapa;
+function iniciarMiniMapa() {
+    minimapa = L.map('minimapa', {
+        zoomControl:false,attributionControl:false,dragging:false,
+        scrollWheelZoom:false,touchZoom:false
+    }).setView([20.75,-99.95], 9);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:12}).addTo(minimapa);
+    localidades.forEach(loc => {
+        L.circleMarker([loc.lat,loc.lon],{radius:5,color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:0.8}).addTo(minimapa).bindTooltip(loc.nombre);
+    });
+}
+
+// ============================================================
+// GPS
+// ============================================================
+let gpsWatch;
+function distKm(lat1,lon1,lat2,lon2){
+    const R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lon2-lon1)*Math.PI/180;
+    return R*2*Math.atan2(Math.sqrt(Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2),Math.sqrt(1-Math.sin(dL/2)**2-Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2));
+}
+
+function onPosicion(pos) {
+    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    document.getElementById('precisionGPS').textContent = Math.round(pos.coords.accuracy)+'m';
+    
+    let best=null,min=Infinity;
+    localidades.forEach(l => {
+        const d = distKm(lat,lon,l.lat,l.lon);
+        if(d<min){min=d;best=l;}
+    });
+    
+    if(min <= 1 && best) {
+        estado.localidadActual = best;
+        document.getElementById('nombreLocalidad').textContent = best.nombre;
+        document.getElementById('subeEn').textContent = best.nombre;
+        verificarBajada(best);
+    } else if(best && min <= 5) {
+        estado.localidadActual = best;
+        document.getElementById('nombreLocalidad').textContent = `Cerca de ${best.nombre}`;
+        document.getElementById('subeEn').textContent = `Km ${Math.round(best.km + min)} · Por definir`;
+    } else {
+        document.getElementById('nombreLocalidad').textContent = 'Sin localidad cercana';
+        document.getElementById('subeEn').textContent = 'Por definir';
+    }
+}
+
+function iniciarGPS() {
+    if(!navigator.geolocation) return;
+    if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
+    gpsWatch = navigator.geolocation.watchPosition(onPosicion,()=>{},{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
+}
+
+// ============================================================
+// VERIFICAR BAJADA
+// ============================================================
+function verificarBajada(localidad) {
+    const grupos = estado.pasajerosABordo.filter(g=>g.destinoId===localidad.id);
+    if(grupos.length===0) return;
+    let total=0;
+    grupos.forEach(g=>{Object.values(g.cantidades).forEach(c=>total+=c)});
+    const aBordo = estado.pasajerosABordo.reduce((s,g)=>s+Object.values(g.cantidades).reduce((a,b)=>a+b,0),0);
+    if(confirm(`🔻 BAJAN PASAJEROS\n\n📍 ${localidad.nombre}\n${total} pasajero(s) bajan aquí\nQuedan ${aBordo-total} a bordo\n\n¿Confirmar bajada?`)){
+        estado.pasajerosABordo = estado.pasajerosABordo.filter(g=>g.destinoId!==localidad.id);
+        actualizarIndicadores();
+    }
+}
+
+function actualizarIndicadores() {
+    const aBordo = estado.pasajerosABordo.reduce((s,g)=>s+Object.values(g.cantidades).reduce((a,b)=>a+b,0),0);
+    document.getElementById('numABordo').textContent = aBordo;
+    document.getElementById('numBajan').textContent = estado.localidadActual ? 
+        estado.pasajerosABordo.filter(g=>g.destinoId===estado.localidadActual.id)
+            .reduce((s,g)=>s+Object.values(g.cantidades).reduce((a,b)=>a+b,0),0) : 0;
+}
+
+// ============================================================
+// CÁLCULO DE TARIFA
+// ============================================================
+function calcularTarifa(origenId, destinoId) {
+    const clave = `${origenId}-${destinoId}`;
+    if(MATRIZ_TARIFAS[clave] !== undefined) return MATRIZ_TARIFAS[clave];
+    const origen = localidades.find(l=>l.id===origenId);
+    const destino = localidades.find(l=>l.id===destinoId);
+    if(!origen || !destino) return TARIFA_MINIMA;
+    const km = Math.abs(destino.km - origen.km);
+    return Math.round(Math.max(TARIFA_MINIMA + (km * TARIFA_POR_KM), TARIFA_MINIMA));
+}
+
+function precioPorTipo(tipo) {
+    return Math.round(estado.tarifaBaseUnitaria * (1-(DESCUENTOS[tipo]||0)));
+}
+
+function totalGeneral() {
+    let t=0;
+    Object.keys(estado.cantidades).forEach(tipo => t += estado.cantidades[tipo] * precioPorTipo(tipo));
+    return t;
+}
+
+function totalPasajerosGrupo() {
+    return Object.values(estado.cantidades).reduce((a,b)=>a+b,0);
+}
+
+function cambiarCantidad(tipo,delta) {
+    if(estado.cantidades[tipo]+delta<0)return;
+    if(totalPasajerosGrupo()+delta>10)return;
+    estado.cantidades[tipo]+=delta;
+    document.getElementById(`cant-${tipo}`).textContent = estado.cantidades[tipo];
+    document.getElementById(`sub-${tipo}`).textContent = estado.cantidades[tipo]>0 ? `$${estado.cantidades[tipo]*precioPorTipo(tipo)}` : '';
+    const total = totalGeneral();
+    document.getElementById('cobroTotalMonto').textContent = '$'+total;
+    document.getElementById('btnCobrarFinal').disabled = total===0;
+    // Actualizar estado de botones menos
+    const idx = {normal:0,adulto:1,estudiante:2,maestro:3}[tipo];
+    document.querySelectorAll('.btn-menos')[idx].disabled = estado.cantidades[tipo]===0;
+}
+
+function calcularVuelto(billete) {
+    const total = totalGeneral();
+    if(total===0)return;
+    if(estado.billeteSeleccionado===billete){estado.billeteSeleccionado=null;document.getElementById('vueltoResultado').textContent='';return}
+    estado.billeteSeleccionado=billete;
+    const vuelto=billete-total;
+    document.getElementById('vueltoResultado').textContent = vuelto<0 ? '⚠ Insuf.' : '$'+vuelto;
+}
+
+// ============================================================
+// MODAL DESTINO (SOLO HASTA EL DESTINO DE LA CORRIDA)
+// ============================================================
+function abrirModalDestino() {
+    if(!estado.localidadActual){alert('⚠ Esperando GPS...');return}
+    document.getElementById('origenModal').textContent = document.getElementById('subeEn').textContent;
+    const lista = document.getElementById('listaDestinos');
+    lista.innerHTML = '';
+    const actual = estado.localidadActual;
+    localidades.forEach(d => {
+        if(d.km > actual.km && d.km <= estado.kmDestino) {
+            const tarifa = calcularTarifa(actual.id, d.id);
+            const item = document.createElement('div');
+            item.className = 'destino-item';
+            item.innerHTML = `<span class="destino-nombre">📍 ${d.nombre} <small style="color:#888">(${d.km} km)</small></span><span class="destino-tarifa">$${tarifa}</span>`;
+            item.onclick = ()=>abrirModalCobro(d,tarifa);
+            lista.appendChild(item);
+        }
+    });
+    if(lista.innerHTML === '') {
+        lista.innerHTML = '<div style="text-align:center;color:#888;padding:2vh;">Ya no hay más paradas hasta el destino</div>';
+    }
+    document.getElementById('modalDestino').classList.add('active');
+}
+
+function cerrarModalDestino(){document.getElementById('modalDestino').classList.remove('active')}
+
+function abrirModalCobro(destino,tarifa) {
+    estado.destinoSeleccionado=destino;
+    estado.tarifaBaseUnitaria=tarifa;
+    estado.cantidades={normal:0,adulto:0,estudiante:0,maestro:0};
+    estado.billeteSeleccionado=null;
+    document.getElementById('cobroRuta').textContent = `${document.getElementById('subeEn').textContent} → ${destino.nombre}`;
+    ['normal','adulto','estudiante','maestro'].forEach(tipo=>{
+        document.getElementById(`precio-${tipo}`).textContent='$'+precioPorTipo(tipo);
+        document.getElementById(`cant-${tipo}`).textContent='0';
+        document.getElementById(`sub-${tipo}`).textContent='';
+    });
+    document.getElementById('cobroTotalMonto').textContent='$0';
+    document.getElementById('btnCobrarFinal').disabled=true;
+    document.getElementById('vueltoResultado').textContent='';
+    document.getElementById('modalDestino').classList.remove('active');
+    document.getElementById('modalCobro').classList.add('active');
+}
+
+function cerrarModalCobro(){document.getElementById('modalCobro').classList.remove('active')}
+
+function confirmarCobro() {
+    if(totalPasajerosGrupo()===0)return;
+    const grupo = {
+        destinoId:estado.destinoSeleccionado.id,
+        destinoNombre:estado.destinoSeleccionado.nombre,
+        cantidades:{...estado.cantidades},
+        total:totalGeneral()
+    };
+    estado.pasajerosABordo.push(grupo);
+    estado.totalRecaudado += grupo.total;
+    document.getElementById('totalCorrida').textContent = '$'+estado.totalRecaudado;
+    actualizarIndicadores();
+    alert(`✅ COBRO EXITOSO\n\n${document.getElementById('subeEn').textContent} → ${estado.destinoSeleccionado.nombre}\nTotal: $${grupo.total}`);
+    cerrarModalCobro();
+}
+
+// ============================================================
+// CORTE
+// ============================================================
+function confirmarCorte() {
+    const aBordo = estado.pasajerosABordo.reduce((s,g)=>s+Object.values(g.cantidades).reduce((a,b)=>a+b,0),0);
+    const origen = sesion ? sesion.origen : 'Sin ruta';
+    const destino = sesion ? sesion.destino : 'Sin ruta';
+    if(confirm(`🏁 FINALIZAR CORRIDA\n\n📍 ${origen} → ${destino}\n👥 Pasajeros totales: ${aBordo}\n💰 Total recaudado: $${estado.totalRecaudado}\n\n¿Estás seguro?`)) {
+        const corrida = {
+            corrida_id: 'CORR-' + Date.now(),
+            usuario_id: sesion ? sesion.usuario_id : 'USR000',
+            fecha: new Date().toLocaleDateString('es-MX'),
+            hora_inicio: sesion ? sesion.hora_inicio || '' : '',
+            hora_corte: new Date().toLocaleTimeString('es-MX'),
+            origen: origen,
+            destino: destino,
+            camion: sesion ? sesion.camion : '',
+            total: estado.totalRecaudado,
+            pasajeros: estado.pasajerosABordo
+        };
+        const historial = JSON.parse(localStorage.getItem('corridas')||'[]');
+        historial.push(corrida);
+        localStorage.setItem('corridas',JSON.stringify(historial));
+        alert('✅ CORRIDA FINALIZADA\n\nTotal: $'+estado.totalRecaudado+'\nGuardado en historial.');
+        window.location.href = 'index.html';
+    }
+}
+
+// ============================================================
+// INICIO
+// ============================================================
+iniciarMiniMapa();
+iniciarGPS();
+</script>
+</body>
+</html>

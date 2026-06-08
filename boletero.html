@@ -572,6 +572,7 @@ function calcularVuelto(billete) {
 // ============================================================
 // MODAL DESTINO — solo paradas siguientes hasta destino corrida
 // ============================================================
+
 function abrirModalDestino() {
     if (!estado.localidadActual) {
         alert('⚠ Esperando GPS…\n\nAsegúrate de tener la ubicación activada.');
@@ -583,61 +584,66 @@ function abrirModalDestino() {
     lista.innerHTML = '';
 
     var actual = estado.localidadActual;
-
-    // Obtener paradas válidas: las que vienen DESPUÉS de la posición actual
-    // en la ruta de la corrida, hasta el destino final
     var destinos = [];
 
+    // Si hay paradas de corrida definidas, mostrar solo las que faltan
     if (paradasCorrida.length > 0) {
-        // Encontrar índice de la localidad actual dentro de las paradas
-        var idxActual = paradasCorrida.findIndex(function(p){ return p.id === actual.id; });
-        if (idxActual === -1) {
-            // No está exactamente, buscar la más parecida por km
-            var kmActual = actual.km;
-            var kmDestinoCorrida = paradasCorrida[paradasCorrida.length - 1].km;
-            destinos = paradasCorrida.filter(function(p){
-                return kmActual <= kmDestinoCorrida
-                    ? p.km > kmActual
-                    : p.km < kmActual;
-            });
-        } else {
-            // Tomar las paradas siguientes
+        var idxActual = paradasCorrida.findIndex(function(p) {
+            return p.id === actual.id;
+        });
+        
+        if (idxActual >= 0) {
+            // Mostrar desde la siguiente parada hasta el destino
             destinos = paradasCorrida.slice(idxActual + 1);
+        } else {
+            // La localidad actual no está en la lista de paradas
+            // Buscar por km
+            var kmOrigen = paradasCorrida[0].km;
+            var kmDestino = paradasCorrida[paradasCorrida.length - 1].km;
+            var vaSubiendo = kmDestino >= kmOrigen;
+            
+            destinos = paradasCorrida.filter(function(p) {
+                if (vaSubiendo) {
+                    return p.km > actual.km;
+                } else {
+                    return p.km < actual.km;
+                }
+            });
         }
     }
 
-    // Si no hay paradas de corrida definidas, mostrar todas excepto la actual
+    // Si no se encontraron destinos, mostrar todos menos el actual
     if (destinos.length === 0) {
-        destinos = localidades.filter(function(l){
+        destinos = localidades.filter(function(l) {
             return l.id !== actual.id && l.km > 0;
         });
-        // Ordenar por km para mostrar las más cercanas primero
-        destinos.sort(function(a, b){ return Math.abs(a.km - actual.km) - Math.abs(b.km - actual.km); });
+        destinos.sort(function(a, b) {
+            return Math.abs(a.km - actual.km) - Math.abs(b.km - actual.km);
+        });
     }
 
     if (destinos.length === 0) {
-        lista.innerHTML = '<div style="text-align:center;color:#888;padding:3vh;font-size:4vw;">No hay más paradas hacia el destino</div>';
+        lista.innerHTML = '<div style="text-align:center;color:#888;padding:3vh;font-size:4vw;">🏁 Has llegado al destino final</div>';
     } else {
         destinos.forEach(function(d) {
             var tarifa = calcularTarifa(actual.id, d.id);
             var item = document.createElement('div');
             item.className = 'destino-item';
-            // Indicar si es el destino final
-            var esDestino = d.id === idDestinoCorrida;
+            var esDestino = (d.id === idDestinoCorrida);
             item.innerHTML =
                 '<span class="destino-nombre">' +
                     (esDestino ? '🏁 ' : '📍 ') + d.nombre +
                     (d.km > 0 ? ' <small style="color:#666">(km ' + d.km + ')</small>' : '') +
                 '</span>' +
                 '<span class="destino-tarifa">$' + tarifa + '</span>';
-            item.onclick = function(){ abrirModalCobro(d, tarifa); };
+            item.onclick = function() { abrirModalCobro(d, tarifa); };
             lista.appendChild(item);
         });
     }
 
     document.getElementById('modalDestino').classList.add('active');
 }
-
+    
 function cerrarModalDestino() {
     document.getElementById('modalDestino').classList.remove('active');
 }

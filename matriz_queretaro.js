@@ -111,7 +111,7 @@ const coordenadasLocalidades = {
     24: { lat: 20.9667, lng: -99.6000 },  // San Pablo Tolimán
     25: { lat: 20.9833, lng: -99.5833 },  // Panales
     26: { lat: 21.0000, lng: -99.5667 },  // Nogales (Tolimán)
-    27: { lat: 20.7000, lng: -99.6000 },  // Cadereyta de Montes
+    27: { lat: 20.7004, lng: -99.8129 },  // Cadereyta de Montes
     28: { lat: 20.6667, lng: -99.5833 },  // El Palmar (Cadereyta)
     29: { lat: 20.6500, lng: -99.5500 },  // Boyé (Cadereyta)
     30: { lat: 20.6333, lng: -99.5333 },  // La Esperanza (Cadereyta)

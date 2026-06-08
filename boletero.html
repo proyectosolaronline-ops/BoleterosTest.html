@@ -260,7 +260,7 @@
         <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
     </div>
 </div>
-
+<script src="matriz_queretaro.js"></script>
 <script>
 // ============================================================
 // LOCALIDADES (22) - KM EXACTOS DESDE CENTRAL QUERÉTARO
@@ -410,13 +410,23 @@ function actualizarIndicadores() {
 // CÁLCULO DE TARIFA
 // ============================================================
 function calcularTarifa(origenId, destinoId) {
-    const clave = `${origenId}-${destinoId}`;
-    if(MATRIZ_TARIFAS[clave] !== undefined) return MATRIZ_TARIFAS[clave];
-    const origen = localidades.find(l=>l.id===origenId);
-    const destino = localidades.find(l=>l.id===destinoId);
-    if(!origen || !destino) return TARIFA_MINIMA;
-    const km = Math.abs(destino.km - origen.km);
-    return Math.round(Math.max(TARIFA_MINIMA + (km * TARIFA_POR_KM), TARIFA_MINIMA));
+    // Normalizar clave: siempre menor_id-mayor_id
+    const idMenor = Math.min(origenId, destinoId);
+    const idMayor = Math.max(origenId, destinoId);
+    const clave = `${idMenor}-${idMayor}`;
+    
+    // Buscar en la matriz
+    const datos = MATRIZ_QUERETARO[clave];
+    
+    // Si no existe la combinación
+    if (!datos) return 0;
+    
+    // Si ya tiene tarifa definida (>0), usarla
+    if (datos.tarifa > 0) return datos.tarifa;
+    
+    // Si no, calcular por kilómetros
+    const km = datos.km;
+    return Math.round(Math.max(12 + (km * 1.50), 12));
 }
 
 function precioPorTipo(tipo) {

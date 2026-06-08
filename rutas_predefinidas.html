@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crear Ruta</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--blanco:#f8fafc;
+            --gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;--azul:#3b82f6;
+            --naranja:#e85d04;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;
+        }
+        .header{
+            background:var(--gris);padding:1.5vh 4vw;height:7vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.4vh solid var(--amarillo);flex-shrink:0;
+        }
+        .header-titulo{font-size:4.5vw;font-weight:700;color:var(--amarillo)}
+        .btn-volver{
+            background:transparent;color:var(--amarillo);border:0.2vh solid var(--amarillo);
+            padding:1vh 3vw;border-radius:1vh;font-size:3.5vw;cursor:pointer;text-decoration:none;
+        }
+        .mapa-container{flex:1;position:relative;min-height:0}
+        #mapa{width:100%;height:100%}
+        .instruccion-bar{
+            position:absolute;top:2vh;left:2vw;right:2vw;
+            background:rgba(10,10,10,0.9);padding:1.5vh 4vw;
+            border-radius:1.5vh;border:0.2vh solid var(--amarillo);z-index:1000;text-align:center;
+        }
+        .instruccion-titulo{font-size:4.5vw;font-weight:700;color:var(--amarillo-texto)}
+        .instruccion-sub{font-size:3vw;color:var(--gris-texto);margin-top:0.3vh}
+        .panel-inferior{
+            position:absolute;bottom:0;left:0;right:0;
+            background:rgba(10,10,10,0.95);padding:2vh 4vw;
+            border-top:0.3vh solid var(--amarillo);z-index:1000;max-height:40vh;overflow-y:auto;
+        }
+        .panel-titulo{font-size:3.5vw;font-weight:700;color:var(--amarillo-texto);margin-bottom:1vh}
+        .lista-paradas{display:flex;flex-wrap:wrap;gap:1.5vw;align-items:center;margin-bottom:1.5vh}
+        .parada-tag{
+            background:var(--gris2);padding:1vh 2vw;border-radius:1vh;font-size:3vw;
+            display:flex;align-items:center;gap:1vw;
+        }
+        .parada-tag.origen{border:0.2vh solid var(--verde)}
+        .parada-tag.destino{border:0.2vh solid var(--rojo)}
+        .parada-tag.intermedia{border:0.2vh solid var(--azul)}
+        .parada-tag .quitar{color:var(--rojo);font-weight:700;font-size:4vw;margin-left:1vw;cursor:pointer}
+        .flecha{color:var(--amarillo);font-size:4vw}
+        .input-nombre{
+            width:100%;padding:1.5vh 3vw;background:var(--negro);color:var(--blanco);
+            border:0.2vh solid var(--amarillo);border-radius:1vh;font-size:4vw;margin-bottom:1vh;text-align:center;
+        }
+        .btn-accion{
+            width:100%;padding:2vh;border:none;border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;margin-bottom:1vh;
+        }
+        .btn-guardar{background:var(--verde);color:var(--blanco)}
+        .btn-reiniciar{background:transparent;color:var(--rojo);border:0.2vh solid var(--rojo)}
+        .btn-agregar{background:var(--azul);color:var(--blanco)}
+        .btn-extender{background:var(--naranja);color:var(--blanco)}
+        .btn-guardar:disabled,.btn-agregar:disabled,.btn-extender:disabled{background:var(--gris2);color:#555}
+        .leaflet-routing-container{display:none}
+        .modal-overlay{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.98);z-index:3000;display:none;flex-direction:column;padding:3vh 4vw;
+        }
+        .modal-overlay.active{display:flex}
+        .modal-title{font-size:7vw;font-weight:700;color:var(--amarillo-texto);text-align:center;margin-bottom:2vh}
+        .modal-subtitle{font-size:3.5vw;color:var(--gris-texto);text-align:center;margin-bottom:2vh}
+        .modal-cerrar{
+            width:100%;padding:2.5vh;background:transparent;color:var(--rojo);
+            border:0.2vh solid var(--rojo);border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;margin-top:1.5vh;
+        }
+        .modal-btn{
+            width:100%;padding:3vh;background:var(--verde);color:var(--blanco);
+            border:none;border-radius:2vh;font-size:5.5vw;font-weight:700;cursor:pointer;margin-top:1.5vh;
+        }
+        .cercanas-lista{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:1.5vh}
+        .cercanas-item{
+            background:var(--gris);padding:2.5vh 4vw;border-radius:1.5vh;
+            display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+            border:0.2vh solid transparent;
+        }
+        .cercanas-item.seleccionada{border-color:var(--verde);background:var(--negro)}
+        .cercanas-item .check{color:var(--verde);font-size:5vw;margin-left:2vw}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="header-titulo">🗺️ CREAR RUTA</div>
+    <a class="btn-volver" href="index.html">✕</a>
+</div>
+<div class="mapa-container">
+    <div id="mapa"></div>
+    <div class="instruccion-bar">
+        <div class="instruccion-titulo" id="instruccionTitulo">👆 Toca el ORIGEN</div>
+        <div class="instruccion-sub" id="instruccionSub">Toca una localidad o doble toque para poner pin</div>
+    </div>
+    <div class="panel-inferior">
+        <div class="panel-titulo">📍 Paradas de la ruta</div>
+        <div class="lista-paradas" id="listaParadas"><span style="color:#555;font-size:3.5vw;">Selecciona origen y destino</span></div>
+        <button class="btn-accion btn-agregar" id="btnAgregarParada" onclick="activarModoAgregar()" disabled>📍 AGREGAR PARADA INTERMEDIA</button>
+        <button class="btn-accion btn-extender" id="btnExtender" onclick="abrirExtenderRuta()" disabled>🔗 EXTENDER RUTA</button>
+        <input type="text" class="input-nombre" id="nombreRuta" placeholder="Nombre de la ruta">
+        <button class="btn-accion btn-guardar" id="btnGuardar" onclick="guardarRuta()" disabled>💾 GUARDAR RUTA</button>
+        <button class="btn-accion btn-reiniciar" onclick="reiniciar()">🔄 Reiniciar</button>
+    </div>
+</div>
+
+<!-- MODAL LOCALIDADES CERCANAS -->
+<div class="modal-overlay" id="modalCercanas">
+    <div class="modal-title">📍 LOCALIDADES CERCANAS</div>
+    <div class="modal-subtitle">Selecciona una para asignarle nombre a esta parada</div>
+    <div class="cercanas-lista" id="listaCercanas"></div>
+    <button class="modal-btn" onclick="confirmarSeleccion()">✅ USAR ESTA LOCALIDAD</button>
+    <button class="modal-cerrar" onclick="document.getElementById('modalCercanas').classList.remove('active')">❌ CERRAR</button>
+</div>
+
+<script src="matriz_queretaro.js?v=8"></script>
+<script>
+var mapa, controlRuta, pasoActual='origen', origenSel=null, destinoSel=null;
+var markerO=null, markerD=null, paradasEnRuta=[], modoAgregar=false, nextCustomId=900;
+var markersIntermedios = [], puntoTocado = null;
+
+function inicializarMapa() {
+    mapa = L.map('mapa', { zoomControl: true, attributionControl: false }).setView([20.85, -99.95], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 16 }).addTo(mapa);
+    
+    var carreteras = {
+        "MEX-120": { color: '#e85d04', trazo: [[20.5831,-100.3896],[20.5950,-100.3700],[20.6100,-100.3200],[20.6300,-100.2600],[20.6500,-100.2000],[20.6700,-100.1400],[20.6900,-100.0800],[20.7167,-99.8833],[20.7000,-99.8000],[20.7800,-99.5167],[20.8500,-99.4667],[20.9000,-99.4000],[20.9333,-99.4333],[20.9833,-99.4333],[21.0167,-99.3667],[21.1000,-99.3000],[21.1833,-99.2333],[21.2167,-99.4667],[21.2833,-99.3833],[21.1833,-99.3167],[21.2500,-99.2500],[21.3000,-99.2000]] },
+        "MEX-069": { color: '#3b82f6', trazo: [[21.2167,-99.4667],[21.1833,-99.5500],[21.1667,-99.6167],[21.3333,-99.6500]] },
+        "QRO-004": { color: '#22c55e', trazo: [[20.8500,-99.4667],[20.8667,-99.4333],[20.9000,-99.4500],[21.0167,-99.4667],[21.0500,-99.5500]] },
+        "QRO-005": { color: '#a855f7', trazo: [[20.6667,-99.7333],[20.7167,-99.7000],[20.7500,-99.6500],[20.9000,-99.6667],[21.0000,-99.5667]] }
+    };
+    Object.keys(carreteras).forEach(function(k) {
+        L.polyline(carreteras[k].trazo, { color: carreteras[k].color, weight: 4, opacity: 0.7 }).addTo(mapa).bindTooltip(k);
+    });
+
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    Object.keys(coords).forEach(function(id) {
+        var idn = parseInt(id);
+        if (obj[idn] && coords[idn]) {
+            var m = L.circleMarker([coords[idn].lat, coords[idn].lng], { radius: 7, color: '#f59e0b', fillColor: '#1e293b', fillOpacity: 1, weight: 2 }).addTo(mapa);
+            m.bindTooltip(obj[idn]);
+            m.on('click', function(e) { L.DomEvent.stopPropagation(e); procesarToque({ id: idn, nombre: obj[idn], lat: coords[idn].lat, lng: coords[idn].lng, esPersonalizado: false }); });
+        }
+    });
+
+    mapa.on('dblclick', function(e) { L.DomEvent.stopPropagation(e); procesarToque({ id: nextCustomId, nombre: null, lat: e.latlng.lat, lng: e.latlng.lng, esPersonalizado: true }); nextCustomId++; });
+    
+    // Click normal para modo agregar (cuando está activo)
+    mapa.on('click', function(e) {
+        if (modoAgregar && pasoActual === 'completo') {
+            puntoTocado = { lat: e.latlng.lat, lng: e.latlng.lng };
+            mostrarCercanas(e.latlng.lat, e.latlng.lng);
+        }
+    });
+}
+
+function procesarToque(loc) {
+    if (pasoActual === 'origen') {
+        origenSel = loc;
+        if (!origenSel.nombre) { var n = buscarNombreCercano(loc.lat, loc.lng); origenSel.nombre = prompt('📍 Nombre del ORIGEN:', n || 'Origen'); if (!origenSel.nombre) return; }
+        pasoActual = 'destino';
+        if (markerO) mapa.removeLayer(markerO);
+        markerO = L.circleMarker([loc.lat, loc.lng], { radius: 14, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.8, weight: 3 }).addTo(mapa).bindPopup('🟢 ORIGEN: ' + origenSel.nombre).openPopup();
+        document.getElementById('instruccionTitulo').textContent = '👆 Toca el DESTINO';
+        actualizarPanel();
+    } else if (pasoActual === 'destino') {
+        if (loc.id === origenSel.id && loc.esPersonalizado === origenSel.esPersonalizado) { alert('⚠ Diferente al origen'); return; }
+        destinoSel = loc;
+        if (!destinoSel.nombre) { var n = buscarNombreCercano(loc.lat, loc.lng); destinoSel.nombre = prompt('📍 Nombre del DESTINO:', n || 'Destino'); if (!destinoSel.nombre) return; }
+        pasoActual = 'completo';
+        if (markerD) mapa.removeLayer(markerD);
+        markerD = L.circleMarker([loc.lat, loc.lng], { radius: 14, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8, weight: 3 }).addTo(mapa).bindPopup('🔴 DESTINO: ' + destinoSel.nombre).openPopup();
+        if (controlRuta) mapa.removeControl(controlRuta);
+        controlRuta = L.Routing.control({ waypoints: [L.latLng(origenSel.lat, origenSel.lng), L.latLng(destinoSel.lat, destinoSel.lng)], routeWhileDragging: false, showAlternatives: false, addWaypoints: false, lineOptions: { styles: [{ color: '#22c55e', weight: 6, opacity: 0.9 }] }, createMarker: function() { return null; } }).addTo(mapa);
+        setTimeout(function() { var c = document.querySelector('.leaflet-routing-container'); if (c) c.style.display = 'none'; }, 1000);
+        document.getElementById('instruccionTitulo').textContent = '✅ Ruta trazada';
+        document.getElementById('instruccionSub').textContent = 'Toca AGREGAR PARADA para añadir intermedias';
+        document.getElementById('btnAgregarParada').disabled = false;
+        document.getElementById('btnExtender').disabled = false;
+        document.getElementById('btnGuardar').disabled = false;
+        actualizarPanel();
+    }
+}
+
+function buscarNombreCercano(lat, lng) {
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var mejor = null, min = Infinity;
+    Object.keys(coords).forEach(function(id) { var idn = parseInt(id); if (coords[idn] && obj[idn]) { var d = haversine(lat, lng, coords[idn].lat, coords[idn].lng); if (d < 0.5 && d < min) { min = d; mejor = obj[idn]; } } });
+    return mejor;
+}
+
+function activarModoAgregar() {
+    modoAgregar = true;
+    document.getElementById('instruccionTitulo').textContent = '👆 Toca sobre la línea verde';
+    document.getElementById('instruccionSub').textContent = 'Elige un punto en la carretera para agregar parada';
+    document.getElementById('btnAgregarParada').textContent = '✅ MODO AGREGAR ACTIVO';
+    document.getElementById('btnAgregarParada').style.background = 'var(--verde)';
+}
+
+function mostrarCercanas(lat, lng) {
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var cercanas = [];
+    
+    // Buscar las 5 localidades más cercanas al punto tocado
+    Object.keys(coords).forEach(function(id) {
+        var idn = parseInt(id);
+        if (coords[idn] && obj[idn]) {
+            var d = haversine(lat, lng, coords[idn].lat, coords[idn].lng);
+            if (d < 10) { // A menos de 10 km
+                cercanas.push({ id: idn, nombre: obj[idn], distancia: d, lat: coords[idn].lat, lng: coords[idn].lng });
+            }
+        }
+    });
+    
+    cercanas.sort(function(a, b) { return a.distancia - b.distancia; });
+    cercanas = cercanas.slice(0, 8); // Máximo 8 opciones
+    
+    var lista = document.getElementById('listaCercanas');
+    lista.innerHTML = '';
+    
+    if (cercanas.length === 0) {
+        lista.innerHTML = '<div style="text-align:center;color:#888;padding:3vh;">No hay localidades cercanas. Se usará "Parada sin nombre".</div>';
+    } else {
+        cercanas.forEach(function(loc, i) {
+            var item = document.createElement('div');
+            item.className = 'cercanas-item';
+            item.innerHTML = '<span style="font-size:4.5vw;">📍 ' + loc.nombre + ' <small style="color:#888;">(' + loc.distancia.toFixed(1) + ' km)</small></span>';
+            item.setAttribute('data-id', loc.id);
+            item.setAttribute('data-nombre', loc.nombre);
+            item.onclick = function() {
+                document.querySelectorAll('#listaCercanas .cercanas-item').forEach(function(el) { el.classList.remove('seleccionada'); var c = el.querySelector('.check'); if (c) c.remove(); });
+                this.classList.add('seleccionada');
+                var check = document.createElement('span'); check.className = 'check'; check.textContent = '✅'; this.appendChild(check);
+                window._seleccionCercana = { id: loc.id, nombre: loc.nombre };
+            };
+            lista.appendChild(item);
+            if (i === 0) { item.click(); } // Seleccionar la primera por defecto
+        });
+    }
+    
+    window._seleccionCercana = cercanas.length > 0 ? { id: cercanas[0].id, nombre: cercanas[0].nombre } : { id: nextCustomId, nombre: 'Parada ' + (paradasEnRuta.length + 1) };
+    document.getElementById('modalCercanas').classList.add('active');
+}
+
+function confirmarSeleccion() {
+    if (!window._seleccionCercana || !puntoTocado) return;
+    
+    var sel = window._seleccionCercana;
+    var nuevaParada = {
+        id: sel.id,
+        nombre: sel.nombre,
+        lat: puntoTocado.lat,
+        lng: puntoTocado.lng
+    };
+    
+    paradasEnRuta.push(nuevaParada);
+    var m = L.circleMarker([puntoTocado.lat, puntoTocado.lng], { radius: 10, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.8, weight: 2 }).addTo(mapa).bindPopup('📍 ' + sel.nombre);
+    markersIntermedios.push(m);
+    
+    actualizarPanel();
+    document.getElementById('modalCercanas').classList.remove('active');
+    document.getElementById('instruccionSub').textContent = 'Parada agregada: ' + sel.nombre + ' (GPS exacto en carretera)';
+    puntoTocado = null;
+}
+
+function haversine(lat1, lng1, lat2, lng2) { var R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lng2-lng1)*Math.PI/180,a=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2); return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+
+function actualizarPanel() {
+    var c = document.getElementById('listaParadas'); c.innerHTML = '';
+    if (!origenSel && !destinoSel) { c.innerHTML = '<span style="color:#555;font-size:3.5vw;">Selecciona origen y destino</span>'; return; }
+    var tO = document.createElement('div'); tO.className = 'parada-tag origen'; tO.textContent = '🟢 ' + (origenSel ? origenSel.nombre : '—'); c.appendChild(tO);
+    paradasEnRuta.forEach(function(l, i) {
+        var f = document.createElement('span'); f.className = 'flecha'; f.textContent = '→'; c.appendChild(f);
+        var t = document.createElement('div'); t.className = 'parada-tag intermedia';
+        t.innerHTML = '📍 ' + l.nombre + ' <span class="quitar" onclick="quitarIntermedia('+i+')">×</span>';
+        c.appendChild(t);
+    });
+    if (destinoSel) { var f = document.createElement('span'); f.className = 'flecha'; f.textContent = '→'; c.appendChild(f); var tD = document.createElement('div'); tD.className = 'parada-tag destino'; tD.textContent = '🔴 ' + destinoSel.nombre; c.appendChild(tD); }
+}
+
+function quitarIntermedia(index) { if (markersIntermedios[index]) mapa.removeLayer(markersIntermedios[index]); markersIntermedios.splice(index, 1); paradasEnRuta.splice(index, 1); actualizarPanel(); }
+
+function reiniciar() {
+    pasoActual = 'origen'; origenSel = null; destinoSel = null; paradasEnRuta = []; modoAgregar = false; puntoTocado = null;
+    if (markerO) { mapa.removeLayer(markerO); markerO = null; }
+    if (markerD) { mapa.removeLayer(markerD); markerD = null; }
+    markersIntermedios.forEach(function(m) { mapa.removeLayer(m); }); markersIntermedios = [];
+    if (controlRuta) { mapa.removeControl(controlRuta); controlRuta = null; }
+    document.getElementById('instruccionTitulo').textContent = '👆 Toca el ORIGEN';
+    document.getElementById('instruccionSub').textContent = 'Toca una localidad o doble toque para poner pin';
+    document.getElementById('btnAgregarParada').disabled = true;
+    document.getElementById('btnAgregarParada').textContent = '📍 AGREGAR PARADA INTERMEDIA';
+    document.getElementById('btnAgregarParada').style.background = 'var(--azul)';
+    document.getElementById('btnExtender').disabled = true;
+    document.getElementById('btnGuardar').disabled = true;
+    document.getElementById('nombreRuta').value = '';
+    actualizarPanel();
+}
+
+function guardarRuta() {
+    var nombre = document.getElementById('nombreRuta').value.trim();
+    if (!nombre) { alert('⚠ Pon un nombre'); return; }
+    
+    var todas = [{ id: origenSel.id, nombre: origenSel.nombre, lat: origenSel.lat, lng: origenSel.lng }];
+    paradasEnRuta.forEach(function(l) { todas.push({ id: l.id, nombre: l.nombre, lat: l.lat, lng: l.lng }); });
+    todas.push({ id: destinoSel.id, nombre: destinoSel.nombre, lat: destinoSel.lat, lng: destinoSel.lng });
+    
+    var ruta = {
+        nombre: nombre, origen: origenSel.nombre, origenId: origenSel.id, origenLat: origenSel.lat, origenLng: origenSel.lng,
+        destino: destinoSel.nombre, destinoId: destinoSel.id, destinoLat: destinoSel.lat, destinoLng: destinoSel.lng,
+        paradas: todas.map(function(l) { return l.id; }),
+        paradasNombres: todas.map(function(l) { return l.nombre; }),
+        paradasCoords: todas.map(function(l) { return { lat: l.lat, lng: l.lng }; }),
+        totalParadas: todas.length,
+        fecha: new Date().toLocaleDateString('es-MX')
+    };
+    
+    var guardadas = JSON.parse(localStorage.getItem('rutasPredefinidas') || '[]');
+    guardadas.push(ruta);
+    localStorage.setItem('rutasPredefinidas', JSON.stringify(guardadas));
+    localStorage.setItem('rutasPredefinidas_backup', JSON.stringify(guardadas));
+    
+    alert('✅ Ruta guardada: ' + nombre + '\n🟢 ' + ruta.origen + '\n🔴 ' + ruta.destino + '\n📍 ' + (todas.length - 2) + ' intermedias');
+    window.location.href = 'index.html';
+}
+
+function abrirExtenderRuta() {
+    var selBase = document.getElementById('selectRutaBase');
+    selBase.innerHTML = '<option value="">— Seleccionar ruta existente —</option>';
+    var rutas = JSON.parse(localStorage.getItem('rutasPredefinidas') || '[]');
+    rutas.forEach(function(r, i) { selBase.innerHTML += '<option value="'+i+'">'+r.nombre+' ('+r.origen+' → '+r.destino+')</option>'; });
+    document.getElementById('selectNuevoDestino').innerHTML = '<option value="">— Primero selecciona ruta base —</option>';
+    document.getElementById('extenderStatus').style.display = 'none';
+    document.getElementById('modalExtender').classList.add('active');
+}
+
+function cargarRutaBase() {
+    var index = parseInt(document.getElementById('selectRutaBase').value);
+    if (isNaN(index)) return;
+    var rutas = JSON.parse(localStorage.getItem('rutasPredefinidas') || '[]');
+    var ruta = rutas[index];
+    if (!ruta) return;
+    window._rutaBaseIndex = index; window._rutaBase = ruta;
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var selDestino = document.getElementById('selectNuevoDestino');
+    selDestino.innerHTML = '';
+    var kmDestinoActual = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+ruta.destinoId]) ? MATRIZ_QUERETARO['1-'+ruta.destinoId].km : 0;
+    Object.keys(obj).forEach(function(id) { var idn = parseInt(id); var km = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+idn]) ? MATRIZ_QUERETARO['1-'+idn].km : -1; if (km > kmDestinoActual) selDestino.innerHTML += '<option value="'+idn+'">'+obj[idn]+' (km '+km+')</option>'; });
+    document.getElementById('extenderStatus').style.display = 'block';
+    document.getElementById('extenderStatus').textContent = 'Ruta base: ' + ruta.nombre + ' | Destino actual: ' + ruta.destino;
+    document.getElementById('extenderStatus').className = 'gps-status ok';
+}
+
+function extenderRuta() {
+    var ruta = window._rutaBase; if (!ruta) { alert('⚠ Selecciona una ruta base'); return; }
+    var nuevoDestinoId = parseInt(document.getElementById('selectNuevoDestino').value); if (!nuevoDestinoId) { alert('⚠ Selecciona nuevo destino'); return; }
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    var kmDA = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+ruta.destinoId]) ? MATRIZ_QUERETARO['1-'+ruta.destinoId].km : 0;
+    var kmND = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+nuevoDestinoId]) ? MATRIZ_QUERETARO['1-'+nuevoDestinoId].km : 999;
+    var nuevas = []; Object.keys(coords).forEach(function(id) { var idn = parseInt(id); if (idn === ruta.destinoId || idn === nuevoDestinoId) return; var km = (typeof MATRIZ_QUERETARO !== 'undefined' && MATRIZ_QUERETARO['1-'+idn]) ? MATRIZ_QUERETARO['1-'+idn].km : -1; if (km > kmDA && km < kmND) nuevas.push({ id: idn, nombre: obj[idn], km: km, lat: coords[idn].lat, lng: coords[idn].lng }); });
+    nuevas.sort(function(a,b){return a.km-b.km;});
+    origenSel = { id: ruta.origenId, nombre: ruta.origen, lat: ruta.origenLat||0, lng: ruta.origenLng||0 };
+    destinoSel = { id: nuevoDestinoId, nombre: obj[nuevoDestinoId]||'Destino', lat: coords[nuevoDestinoId]?coords[nuevoDestinoId].lat:0, lng: coords[nuevoDestinoId]?coords[nuevoDestinoId].lng:0 };
+    pasoActual = 'completo'; paradasEnRuta = [];
+    ruta.paradas.forEach(function(id) { if (id !== ruta.origenId && id !== ruta.destinoId) { var loc = { id: id, nombre: obj[id]||'', lat: coords[id]?coords[id].lat:0, lng: coords[id]?coords[id].lng:0, km: (typeof MATRIZ_QUERETARO!=='undefined'&&MATRIZ_QUERETARO['1-'+id])?MATRIZ_QUERETARO['1-'+id].km:0 }; paradasEnRuta.push(loc); } });
+    nuevas.forEach(function(p) { paradasEnRuta.push({ id: p.id, nombre: p.nombre, lat: p.lat, lng: p.lng, km: p.km }); });
+    document.getElementById('nombreRuta').value = ruta.nombre + ' → ' + (obj[nuevoDestinoId]||'Destino');
+    document.getElementById('btnGuardar').disabled = false;
+    document.getElementById('btnAgregarParada').disabled = false;
+    document.getElementById('btnExtender').disabled = false;
+    actualizarPanel();
+    document.getElementById('modalExtender').classList.remove('active');
+    if (controlRuta) mapa.removeControl(controlRuta);
+    if (markerO) mapa.removeLayer(markerO); if (markerD) mapa.removeLayer(markerD);
+    markerO = L.circleMarker([origenSel.lat, origenSel.lng], { radius: 14, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 0.8, weight: 3 }).addTo(mapa).bindPopup('🟢 ORIGEN: '+origenSel.nombre);
+    markerD = L.circleMarker([destinoSel.lat, destinoSel.lng], { radius: 14, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8, weight: 3 }).addTo(mapa).bindPopup('🔴 DESTINO: '+destinoSel.nombre);
+    document.getElementById('instruccionTitulo').textContent = '✅ Ruta extendida';
+    document.getElementById('instruccionSub').textContent = nuevas.length + ' paradas nuevas agregadas';
+    alert('✅ Ruta extendida\n\n🟢 '+origenSel.nombre+'\n🔴 '+destinoSel.nombre+'\n📍 '+paradasEnRuta.length+' intermedias');
+}
+
+inicializarMapa();
+</script>
+</body>
+</html>

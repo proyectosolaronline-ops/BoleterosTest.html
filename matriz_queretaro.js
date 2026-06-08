@@ -85,7 +85,7 @@ const localidadesObj = {
 
 // Coordenadas GPS por localidad (lat, lng)
 const coordenadasLocalidades = {
-    1:  { lat: 20.5931, lng: -100.3832 }, // Central Camionera Querétaro
+    1:  { lat: 20.5765, lng: -100.3586 }, // Central Camionera Querétaro
     2:  { lat: 20.5167, lng: -100.4383 }, // El Pueblito / Corregidora
     3:  { lat: 20.6167, lng: -100.2833 }, // El Marqués (cabecera)
     4:  { lat: 20.7000, lng: -100.4167 }, // Santa Rosa Jáuregui

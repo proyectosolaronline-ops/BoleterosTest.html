@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero Inteligente · Inicio</title>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--morado:#a855f7;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+        }
+
+        .header{
+            background:var(--gris);padding:1.5vh 4vw;height:8vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.4vh solid var(--amarillo);flex-shrink:0;
+        }
+        .header-titulo{font-size:5vw;font-weight:700;color:var(--amarillo)}
+        .header-rol{font-size:3vw;color:var(--gris-texto);background:var(--gris2);padding:0.5vh 2vw;border-radius:1vh}
+
+        .main-content{flex:1;overflow-y:auto;padding:2vh 4vw;display:flex;flex-direction:column;gap:2vh}
+
+        .login-card{background:var(--gris);border-radius:2vh;padding:3vh 4vw;border:0.3vh solid var(--gris2);}
+        .login-titulo{font-size:5vw;font-weight:700;margin-bottom:2vh;text-align:center}
+        .login-input{
+            width:100%;padding:2vh 3vw;background:var(--negro);color:var(--blanco);
+            border:0.2vh solid var(--gris2);border-radius:1vh;font-size:4.5vw;margin-bottom:1.5vh;
+        }
+        .login-input:focus{outline:none;border-color:var(--amarillo)}
+        .login-btn{
+            width:100%;padding:2.5vh;background:var(--amarillo);color:var(--negro);
+            border:none;border-radius:1.5vh;font-size:5vw;font-weight:700;cursor:pointer;
+        }
+        .login-error{color:var(--rojo);font-size:3.5vw;text-align:center;margin-top:1vh}
+
+        .perfil-card{background:var(--gris);border-radius:2vh;padding:2vh 4vw;border:0.3vh solid var(--gris2);}
+        .perfil-titulo{font-size:4vw;font-weight:700;margin-bottom:1vh}
+        .perfil-info{font-size:3.5vw;color:var(--gris-texto);margin-bottom:0.5vh}
+
+        .corridas-card{background:var(--gris);border-radius:2vh;padding:2vh 4vw;border:0.3vh solid var(--gris2);}
+        .corridas-titulo{font-size:4vw;font-weight:700;margin-bottom:1.5vh}
+        .corrida-item{
+            background:var(--negro);padding:1.5vh 3vw;border-radius:1vh;
+            display:flex;justify-content:space-between;align-items:center;
+            margin-bottom:1vh;border-left:1vw solid var(--verde);
+        }
+        .corrida-info{display:flex;flex-direction:column}
+        .corrida-ruta{font-size:3.5vw;font-weight:600}
+        .corrida-fecha{font-size:2.5vw;color:var(--gris-texto)}
+        .corrida-total{font-size:4vw;font-weight:700;color:var(--verde)}
+
+        .btn-nueva-corrida{
+            padding:3vh;background:var(--verde);color:var(--blanco);border:none;border-radius:2vh;
+            font-size:6vw;font-weight:800;cursor:pointer;text-align:center;
+            box-shadow:0 1vh 3vh rgba(34,197,94,0.3);
+        }
+        .btn-admin{
+            padding:2.5vh;background:var(--morado);color:var(--blanco);border:none;border-radius:2vh;
+            font-size:5vw;font-weight:700;cursor:pointer;text-align:center;
+        }
+        .btn-salir{
+            padding:2vh;background:transparent;color:var(--rojo);
+            border:0.2vh solid var(--rojo);border-radius:1.5vh;
+            font-size:4vw;cursor:pointer;text-align:center;
+        }
+
+        .modal-overlay{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.98);z-index:3000;display:none;flex-direction:column;padding:3vh 4vw;
+        }
+        .modal-overlay.active{display:flex}
+        .modal-title{font-size:7vw;font-weight:700;color:var(--amarillo-texto);text-align:center;margin-bottom:3vh}
+        .modal-label{font-size:4vw;color:var(--gris-texto);margin-bottom:1vh}
+        .modal-select{
+            width:100%;padding:2vh 3vw;background:var(--negro);color:var(--blanco);
+            border:0.2vh solid var(--gris2);border-radius:1vh;font-size:5vw;margin-bottom:2vh;
+        }
+        .modal-btn{
+            width:100%;padding:3vh;background:var(--verde);color:var(--blanco);
+            border:none;border-radius:2vh;font-size:5.5vw;font-weight:700;cursor:pointer;margin-top:2vh;
+        }
+        .modal-cerrar{
+            width:100%;padding:2.5vh;background:transparent;color:var(--rojo);
+            border:0.2vh solid var(--rojo);border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;margin-top:1.5vh;
+        }
+
+        .admin-section{background:var(--gris);border-radius:2vh;padding:2vh 4vw;border:0.3vh solid var(--morado);}
+        .admin-titulo{font-size:4vw;font-weight:700;color:var(--morado);margin-bottom:1.5vh}
+        .admin-item{
+            background:var(--negro);padding:1.5vh 3vw;border-radius:1vh;
+            display:flex;justify-content:space-between;align-items:center;margin-bottom:1vh;
+        }
+        .admin-info{display:flex;flex-direction:column}
+        .admin-nombre{font-size:3.5vw;font-weight:600}
+        .admin-detalle{font-size:2.5vw;color:var(--gris-texto)}
+        .sin-datos{text-align:center;color:#555;padding:2vh;font-size:3.5vw}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-titulo">🚌 BOLETERO INTELIGENTE</div>
+    <div class="header-rol" id="headerRol" style="display:none;"></div>
+</div>
+
+<div class="main-content">
+    <div class="login-card" id="loginCard">
+        <div class="login-titulo">🔐 Iniciar Sesión</div>
+        <input type="email" class="login-input" id="loginEmail" placeholder="Correo electrónico">
+        <input type="password" class="login-input" id="loginPassword" placeholder="Contraseña">
+        <button class="login-btn" onclick="iniciarSesion()">INGRESAR</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+
+    <div id="panelOperador" style="display:none;">
+        <div class="perfil-card">
+            <div class="perfil-titulo">👤 Mi Perfil</div>
+            <div class="perfil-info" id="perfilNombre"></div>
+            <div class="perfil-info" id="perfilCamion"></div>
+            <div class="perfil-info" id="perfilEmail"></div>
+        </div>
+        <div class="corridas-card">
+            <div class="corridas-titulo">📋 Mis corridas anteriores</div>
+            <div id="corridasLista"></div>
+        </div>
+        <button class="btn-nueva-corrida" onclick="abrirModalNuevaCorrida()">➕ AGREGAR NUEVA CORRIDA</button>
+    </div>
+
+    <div id="panelAdmin" style="display:none;">
+        <div class="admin-section">
+            <div class="admin-titulo">⚙️ Usuarios del Sistema</div>
+            <div id="usuariosLista"></div>
+            <button class="btn-admin" onclick="abrirModalNuevoUsuario()" style="margin-top:1vh;">➕ AGREGAR USUARIO</button>
+        </div>
+        <div class="admin-section">
+            <div class="admin-titulo">📊 Reporte General de Corridas</div>
+            <div id="reporteCorridas"></div>
+        </div>
+    </div>
+
+    <button class="btn-salir" id="btnSalir" onclick="cerrarSesion()" style="display:none;">🚪 Cerrar sesión</button>
+</div>
+
+<!-- MODAL NUEVA CORRIDA -->
+<div class="modal-overlay" id="modalNuevaCorrida">
+    <div class="modal-title">➕ NUEVA CORRIDA</div>
+    <label class="modal-label">📍 Origen</label>
+    <select class="modal-select" id="selectOrigen"></select>
+    <label class="modal-label">📍 Destino</label>
+    <select class="modal-select" id="selectDestino"></select>
+    <button class="modal-btn" onclick="iniciarNuevaCorrida()">✅ INICIAR CORRIDA</button>
+    <button class="modal-cerrar" onclick="cerrarModalNuevaCorrida()">❌ CANCELAR</button>
+</div>
+
+<!-- MODAL NUEVO USUARIO -->
+<div class="modal-overlay" id="modalNuevoUsuario">
+    <div class="modal-title">➕ NUEVO USUARIO</div>
+    <input type="text" class="login-input" id="nuNombre" placeholder="Nombre completo">
+    <input type="email" class="login-input" id="nuEmail" placeholder="Correo electrónico">
+    <input type="password" class="login-input" id="nuPassword" placeholder="Contraseña">
+    <select class="modal-select" id="nuRol">
+        <option value="operador">Operador</option>
+        <option value="admin">Administrador</option>
+    </select>
+    <input type="text" class="login-input" id="nuCamion" placeholder="Número de camión">
+    <input type="text" class="login-input" id="nuTelefono" placeholder="Teléfono">
+    <button class="modal-btn" onclick="agregarUsuario()">✅ GUARDAR USUARIO</button>
+    <button class="modal-cerrar" onclick="cerrarModalNuevoUsuario()">❌ CANCELAR</button>
+</div>
+
+<!-- CARGAR MATRIZ EXTERNA -->
+<script src="matriz_queretaro.js"></script>
+<!-- GUARD POR SI LA MATRIZ NO CARGA -->
+<script>
+if (typeof localidadesObj === 'undefined') window.localidadesObj = {1:"Central Querétaro"};
+if (typeof MATRIZ_QUERETARO === 'undefined') window.MATRIZ_QUERETARO = {};
+</script>
+
+<script>
+// ============================================================
+// USUARIOS
+// ============================================================
+const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [
+    {usuario_id:"USR001",nombre:"Juan Pérez Hernández",camion:"UH-1234",telefono:"4421234567",email:"juan@email.com",password:"123456",rol:"operador",estado:"Activo"},
+    {usuario_id:"USR002",nombre:"María López García",camion:"UH-5678",telefono:"4427654321",email:"maria@email.com",password:"123456",rol:"operador",estado:"Activo"},
+    {usuario_id:"USR003",nombre:"Admin Sistema",camion:"—",telefono:"4420000000",email:"admin@email.com",password:"admin123",rol:"admin",estado:"Activo"}
+];
+
+// ============================================================
+// LOCALIDADES DESDE MATRIZ
+// ============================================================
+const localidades = Object.keys(localidadesObj).map(id => ({
+    id: parseInt(id),
+    nombre: localidadesObj[id],
+    km: 0
+}));
+
+localidades.forEach(loc => {
+    if (loc.id === 1) {
+        loc.km = 0;
+    } else {
+        const clave = `1-${loc.id}`;
+        if (MATRIZ_QUERETARO && MATRIZ_QUERETARO[clave]) {
+            loc.km = MATRIZ_QUERETARO[clave].km;
+        }
+    }
+});
+
+let sesionActiva = null;
+
+// ============================================================
+// LOGIN
+// ============================================================
+function iniciarSesion() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const errorEl = document.getElementById('loginError');
+    
+    if(!email || !password) {
+        errorEl.textContent = 'Ingresa correo y contraseña';
+        return;
+    }
+    
+    const usuario = usuarios.find(u => u.email === email && u.estado === 'Activo');
+    
+    if(!usuario) {
+        errorEl.textContent = 'Usuario no encontrado o inactivo';
+        return;
+    }
+    
+    if(usuario.password !== password) {
+        errorEl.textContent = 'Contraseña incorrecta';
+        return;
+    }
+    
+    errorEl.textContent = '';
+    sesionActiva = usuario;
+    localStorage.setItem('sesionActiva', JSON.stringify(usuario));
+    
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('btnSalir').style.display = 'block';
+    document.getElementById('headerRol').style.display = 'block';
+    document.getElementById('headerRol').textContent = usuario.rol === 'admin' ? '⚙️ Admin' : '🚌 Operador';
+    
+    if(usuario.rol === 'admin') {
+        document.getElementById('panelAdmin').style.display = 'block';
+        renderAdminPanel();
+    } else {
+        document.getElementById('panelOperador').style.display = 'block';
+        renderPanelOperador();
+    }
+}
+
+function cerrarSesion() {
+    sesionActiva = null;
+    localStorage.removeItem('sesionActiva');
+    document.getElementById('loginCard').style.display = 'block';
+    document.getElementById('panelOperador').style.display = 'none';
+    document.getElementById('panelAdmin').style.display = 'none';
+    document.getElementById('btnSalir').style.display = 'none';
+    document.getElementById('headerRol').style.display = 'none';
+}
+
+// ============================================================
+// PANEL OPERADOR
+// ============================================================
+function renderPanelOperador() {
+    if(!sesionActiva) return;
+    document.getElementById('perfilNombre').textContent = `👤 ${sesionActiva.nombre}`;
+    document.getElementById('perfilCamion').textContent = `🚛 Camión: ${sesionActiva.camion}`;
+    document.getElementById('perfilEmail').textContent = `📧 ${sesionActiva.email}`;
+    
+    const corridas = JSON.parse(localStorage.getItem('corridas')) || [];
+    const misCorridas = corridas.filter(c => c.usuario_id === sesionActiva.usuario_id).slice(-5).reverse();
+    const lista = document.getElementById('corridasLista');
+    if(misCorridas.length === 0) {
+        lista.innerHTML = '<div class="sin-datos">Sin corridas anteriores</div>';
+        return;
+    }
+    lista.innerHTML = '';
+    misCorridas.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'corrida-item';
+        item.innerHTML = `
+            <div class="corrida-info">
+                <div class="corrida-ruta">📍 ${c.origen} → ${c.destino}</div>
+                <div class="corrida-fecha">📅 ${c.fecha} · 🕐 ${c.hora_corte || ''}</div>
+            </div>
+            <div class="corrida-total">$${c.total}</div>
+        `;
+        lista.appendChild(item);
+    });
+}
+
+// ============================================================
+// PANEL ADMIN
+// ============================================================
+function renderAdminPanel() {
+    const listaU = document.getElementById('usuariosLista');
+    listaU.innerHTML = '';
+    usuarios.forEach(u => {
+        const item = document.createElement('div');
+        item.className = 'admin-item';
+        item.innerHTML = `
+            <div class="admin-info">
+                <div class="admin-nombre">👤 ${u.nombre} <span style="color:${u.rol==='admin'?'var(--morado)':'var(--verde)'};font-size:2.5vw;">(${u.rol})</span></div>
+                <div class="admin-detalle">📧 ${u.email} · 🚛 ${u.camion} · ${u.estado}</div>
+            </div>
+        `;
+        listaU.appendChild(item);
+    });
+    
+    const corridas = JSON.parse(localStorage.getItem('corridas')) || [];
+    const listaC = document.getElementById('reporteCorridas');
+    if(corridas.length === 0) {
+        listaC.innerHTML = '<div class="sin-datos">Sin corridas registradas</div>';
+        return;
+    }
+    listaC.innerHTML = '';
+    const totalGeneral = corridas.reduce((s,c)=>s+c.total,0);
+    listaC.innerHTML += `<div class="admin-item"><div class="admin-info"><div class="admin-nombre">💰 Total general</div></div><div class="corrida-total">$${totalGeneral}</div></div>`;
+    corridas.slice(-10).reverse().forEach(c => {
+        const op = usuarios.find(u=>u.usuario_id===c.usuario_id);
+        const item = document.createElement('div');
+        item.className = 'corrida-item';
+        item.innerHTML = `
+            <div class="corrida-info">
+                <div class="corrida-ruta">📍 ${c.origen} → ${c.destino}</div>
+                <div class="corrida-fecha">👤 ${op?op.nombre:'Desconocido'} · 📅 ${c.fecha}</div>
+            </div>
+            <div class="corrida-total">$${c.total}</div>
+        `;
+        listaC.appendChild(item);
+    });
+}
+
+// ============================================================
+// NUEVA CORRIDA
+// ============================================================
+function abrirModalNuevaCorrida() {
+    if(!sesionActiva){alert('⚠ Inicia sesión primero');return}
+    const selOrigen = document.getElementById('selectOrigen');
+    const selDestino = document.getElementById('selectDestino');
+    selOrigen.innerHTML = '';
+    selDestino.innerHTML = '';
+    localidades.forEach(l => {
+        selOrigen.innerHTML += `<option value="${l.id}">${l.nombre} (km ${l.km})</option>`;
+        selDestino.innerHTML += `<option value="${l.id}">${l.nombre} (km ${l.km})</option>`;
+    });
+    document.getElementById('modalNuevaCorrida').classList.add('active');
+}
+
+function cerrarModalNuevaCorrida() {
+    document.getElementById('modalNuevaCorrida').classList.remove('active');
+}
+
+function iniciarNuevaCorrida() {
+    const origenId = parseInt(document.getElementById('selectOrigen').value);
+    const destinoId = parseInt(document.getElementById('selectDestino').value);
+    const origen = localidades.find(l=>l.id==origenId);
+    const destino = localidades.find(l=>l.id==destinoId);
+    
+    if(!origen || !destino) return;
+    if(origenId === destinoId){alert('⚠ Origen y destino no pueden ser iguales');return}
+    
+    sesionActiva.origen = origen.nombre;
+    sesionActiva.destino = destino.nombre;
+    sesionActiva.hora_inicio = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem('sesionActiva', JSON.stringify(sesionActiva));
+    
+    window.location.href = 'boletero.html';
+}
+
+// ============================================================
+// ADMIN: AGREGAR USUARIO
+// ============================================================
+function abrirModalNuevoUsuario() { document.getElementById('modalNuevoUsuario').classList.add('active'); }
+function cerrarModalNuevoUsuario() { document.getElementById('modalNuevoUsuario').classList.remove('active'); }
+function agregarUsuario() {
+    const nombre = document.getElementById('nuNombre').value.trim();
+    const email = document.getElementById('nuEmail').value.trim();
+    const password = document.getElementById('nuPassword').value.trim();
+    const rol = document.getElementById('nuRol').value;
+    const camion = document.getElementById('nuCamion').value.trim();
+    const telefono = document.getElementById('nuTelefono').value.trim();
+    
+    if(!nombre || !email || !password){alert('⚠ Completa los campos obligatorios');return}
+    if(usuarios.find(u=>u.email===email)){alert('⚠ El correo ya está registrado');return}
+    
+    const nuevo = {usuario_id:'USR'+(usuarios.length+1).toString().padStart(3,'0'),nombre,email,password,rol,camion,telefono,estado:'Activo'};
+    usuarios.push(nuevo);
+    localStorage.setItem('usuarios',JSON.stringify(usuarios));
+    alert('✅ Usuario agregado correctamente');
+    cerrarModalNuevoUsuario();
+    renderAdminPanel();
+}
+
+// ============================================================
+// INICIO AUTOMÁTICO
+// ============================================================
+const sesionGuardada = JSON.parse(localStorage.getItem('sesionActiva'));
+if(sesionGuardada) {
+    sesionActiva = sesionGuardada;
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('btnSalir').style.display = 'block';
+    document.getElementById('headerRol').style.display = 'block';
+    document.getElementById('headerRol').textContent = sesionGuardada.rol === 'admin' ? '⚙️ Admin' : '🚌 Operador';
+    if(sesionGuardada.rol === 'admin') {
+        document.getElementById('panelAdmin').style.display = 'block';
+        renderAdminPanel();
+    } else {
+        document.getElementById('panelOperador').style.display = 'block';
+        renderPanelOperador();
+    }
+}
+</script>
+</body>
+</html>

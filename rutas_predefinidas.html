@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Selector de Carretera</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;
+        }
+        .header{
+            background:var(--gris);padding:1.5vh 4vw;height:7vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.4vh solid var(--amarillo);flex-shrink:0;
+        }
+        .header-titulo{font-size:4.5vw;font-weight:700;color:var(--amarillo)}
+        .btn-volver{
+            background:transparent;color:var(--amarillo);border:0.2vh solid var(--amarillo);
+            padding:1vh 3vw;border-radius:1vh;font-size:3.5vw;cursor:pointer;text-decoration:none;
+        }
+        .mapa-container{flex:1;position:relative;min-height:0}
+        #mapa{width:100%;height:100%}
+        
+        .panel-info{
+            position:absolute;top:2vh;left:2vw;right:2vw;
+            background:rgba(10,10,10,0.9);padding:1.5vh 3vw;
+            border-radius:1.5vh;border:0.2vh solid var(--amarillo);
+            z-index:1000;text-align:center;font-size:3.5vw;
+        }
+        .panel-info .gps-text{color:var(--verde);font-weight:700}
+        .panel-info .instruccion{color:var(--gris-texto);margin-top:0.5vh}
+        
+        .panel-inferior{
+            position:absolute;bottom:0;left:0;right:0;
+            background:rgba(10,10,10,0.95);padding:2vh 4vw;
+            border-top:0.3vh solid var(--amarillo);z-index:1000;
+            max-height:40vh;overflow-y:auto;
+        }
+        .ruta-actual{
+            display:flex;flex-wrap:wrap;gap:1.5vw;align-items:center;margin-bottom:1.5vh;
+        }
+        .parada-tag{
+            background:var(--gris2);padding:1vh 2vw;border-radius:1vh;font-size:3vw;
+            display:flex;align-items:center;gap:1vw;
+        }
+        .parada-tag.origen{border:0.2vh solid var(--verde)}
+        .parada-tag.destino{border:0.2vh solid var(--rojo)}
+        .parada-tag .quitar{color:var(--rojo);cursor:pointer;font-weight:700;font-size:4vw}
+        .flecha{color:var(--amarillo);font-size:4vw}
+        .input-nombre{
+            width:100%;padding:1.5vh 3vw;background:var(--negro);color:var(--blanco);
+            border:0.2vh solid var(--amarillo);border-radius:1vh;font-size:4vw;margin-bottom:1.5vh;text-align:center;
+        }
+        .btn-accion{
+            width:100%;padding:2.5vh;border:none;border-radius:1.5vh;font-size:5vw;font-weight:700;cursor:pointer;margin-bottom:1vh;
+        }
+        .btn-guardar{background:var(--verde);color:var(--blanco)}
+        .btn-limpiar{background:transparent;color:var(--rojo);border:0.2vh solid var(--rojo)}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-titulo">🗺️ SELECCIONAR CARRETERA</div>
+    <a class="btn-volver" href="index.html">✕</a>
+</div>
+
+<div class="mapa-container">
+    <div id="mapa"></div>
+    
+    <div class="panel-info" id="panelInfo">
+        <div class="gps-text" id="gpsTexto">📡 Detectando GPS...</div>
+        <div class="instruccion">Toca una línea de carretera para seleccionarla</div>
+    </div>
+    
+    <div class="panel-inferior" id="panelInferior">
+        <div style="font-size:3.5vw;font-weight:700;color:var(--amarillo-texto);margin-bottom:1vh;">
+            📍 Paradas en la ruta seleccionada
+        </div>
+        <div class="ruta-actual" id="rutaActual">
+            <span style="color:#555;font-size:3.5vw;">Toca una carretera para ver sus paradas</span>
+        </div>
+        <input type="text" class="input-nombre" id="nombreRuta" placeholder="Nombre de la ruta (ej: Central → Jalpan)">
+        <button class="btn-accion btn-guardar" onclick="guardarRuta()">💾 GUARDAR RUTA</button>
+        <button class="btn-accion btn-limpiar" onclick="limpiarRuta()">🗑️ Limpiar selección</button>
+    </div>
+</div>
+
+<script src="matriz_queretaro.js?v=5"></script>
+
+<script>
+// ============================================================
+// CARRETERAS DEFINIDAS (tramos con sus localidades)
+// ============================================================
+var carreteras = {
+    "MEX-120": {
+        color: '#f59e0b',
+        nombre: "MEX-120 Querétaro → Jalpan → SLP",
+        paradas: [1,4,5,6,7,8,10,11,12,13,14,15,16,27,28,29,30,31,32,35,36,38,39,40,41,45,46,47,48,49,50,51,52,53,54,57,58,61,62,63,64,65,66,68,69]
+    },
+    "MEX-069": {
+        color: '#3b82f6',
+        nombre: "MEX-069 Jalpan → Arroyo Seco",
+        paradas: [54,55,70,71,72]
+    },
+    "QRO-004": {
+        color: '#a855f7',
+        nombre: "QRO-004 Higuerillas → San Joaquín",
+        paradas: [36,37,41,43,44]
+    },
+    "QRO-005": {
+        color: '#22c55e',
+        nombre: "QRO-005 Colón → Tolimán",
+        paradas: [18,19,20,21,22,23,24,25,26]
+    }
+};
+
+var mapa;
+var markerGPS = null;
+var lineaSeleccionada = null;
+var paradasSeleccionadas = [];
+var carreteraActiva = null;
+var miPosicion = null;
+
+// ============================================================
+// INICIALIZAR MAPA
+// ============================================================
+function inicializarMapa() {
+    mapa = L.map('mapa', { zoomControl: true, attributionControl: false }).setView([20.85, -99.95], 9);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 14 }).addTo(mapa);
+    
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    
+    // Dibujar cada carretera
+    Object.keys(carreteras).forEach(function(clave) {
+        var carr = carreteras[clave];
+        var puntos = [];
+        
+        carr.paradas.forEach(function(id) {
+            if (coords[id]) {
+                puntos.push([coords[id].lat, coords[id].lng]);
+            }
+        });
+        
+        if (puntos.length >= 2) {
+            var linea = L.polyline(puntos, {
+                color: carr.color,
+                weight: 6,
+                opacity: 0.7,
+                className: 'carretera-linea'
+            }).addTo(mapa);
+            
+            linea.on('click', function() {
+                seleccionarCarretera(clave);
+            });
+            
+            linea.bindTooltip(carr.nombre, { permanent: false, direction: 'top' });
+        }
+        
+        // Marcadores de paradas
+        carr.paradas.forEach(function(id) {
+            if (coords[id] && obj[id]) {
+                var marker = L.circleMarker([coords[id].lat, coords[id].lng], {
+                    radius: 5,
+                    color: carr.color,
+                    fillColor: carr.color,
+                    fillOpacity: 0.8
+                }).addTo(mapa);
+                
+                marker.bindTooltip(obj[id], { permanent: false });
+            }
+        });
+    });
+    
+    // Iniciar GPS
+    detectarGPS();
+}
+
+// ============================================================
+// GPS
+// ============================================================
+function detectarGPS() {
+    if (!navigator.geolocation) {
+        document.getElementById('gpsTexto').textContent = '⚠️ GPS no disponible';
+        return;
+    }
+    
+    navigator.geolocation.watchPosition(function(pos) {
+        miPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        
+        if (markerGPS) mapa.removeLayer(markerGPS);
+        markerGPS = L.circleMarker([miPosicion.lat, miPosicion.lng], {
+            radius: 10, color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1, weight: 3
+        }).addTo(mapa).bindPopup('📍 Mi ubicación');
+        
+        mapa.setView([miPosicion.lat, miPosicion.lng], 11);
+        
+        // Buscar carretera más cercana
+        var carreteraCercana = null, menorDist = Infinity;
+        Object.keys(carreteras).forEach(function(clave) {
+            var carr = carreteras[clave];
+            var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+            carr.paradas.forEach(function(id) {
+                if (coords[id]) {
+                    var d = haversine(miPosicion.lat, miPosicion.lng, coords[id].lat, coords[id].lng);
+                    if (d < menorDist) { menorDist = d; carreteraCercana = clave; }
+                }
+            });
+        });
+        
+        if (carreteraCercana && menorDist < 5) {
+            document.getElementById('gpsTexto').textContent = '📍 En ' + carreteras[carreteraCercana].nombre + ' (~' + menorDist.toFixed(1) + ' km)';
+        } else {
+            document.getElementById('gpsTexto').textContent = '📍 Ubicación detectada';
+        }
+    }, function() {}, { enableHighAccuracy: true, maximumAge: 5000 });
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+    var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ============================================================
+// SELECCIONAR CARRETERA
+// ============================================================
+function seleccionarCarretera(clave) {
+    carreteraActiva = clave;
+    var carr = carreteras[clave];
+    var obj = (typeof localidadesObj !== 'undefined') ? localidadesObj : {};
+    var coords = (typeof coordenadasLocalidades !== 'undefined') ? coordenadasLocalidades : {};
+    
+    // Cargar todas las paradas de esta carretera
+    paradasSeleccionadas = [];
+    carr.paradas.forEach(function(id) {
+        if (obj[id]) {
+            paradasSeleccionadas.push({
+                id: id,
+                nombre: obj[id],
+                lat: coords[id] ? coords[id].lat : 0,
+                lng: coords[id] ? coords[id].lng : 0
+            });
+        }
+    });
+    
+    // Resaltar línea seleccionada
+    if (lineaSeleccionada) mapa.removeLayer(lineaSeleccionada);
+    var puntos = paradasSeleccionadas.filter(function(l) { return l.lat !== 0; }).map(function(l) { return [l.lat, l.lng]; });
+    if (puntos.length >= 2) {
+        lineaSeleccionada = L.polyline(puntos, {
+            color: '#ffffff', weight: 8, opacity: 0.9
+        }).addTo(mapa);
+    }
+    
+    actualizarPanel();
+    document.getElementById('nombreRuta').value = carr.nombre;
+}
+
+function quitarParada(index) {
+    paradasSeleccionadas.splice(index, 1);
+    actualizarPanel();
+}
+
+function limpiarRuta() {
+    paradasSeleccionadas = [];
+    carreteraActiva = null;
+    if (lineaSeleccionada) { mapa.removeLayer(lineaSeleccionada); lineaSeleccionada = null; }
+    actualizarPanel();
+}
+
+function actualizarPanel() {
+    var container = document.getElementById('rutaActual');
+    if (paradasSeleccionadas.length === 0) {
+        container.innerHTML = '<span style="color:#555;font-size:3.5vw;">Toca una carretera para ver sus paradas</span>';
+        return;
+    }
+    container.innerHTML = '';
+    paradasSeleccionadas.forEach(function(loc, i) {
+        var esOrigen = (i === 0);
+        var esDestino = (i === paradasSeleccionadas.length - 1);
+        var clase = esOrigen ? 'origen' : (esDestino ? 'destino' : '');
+        var tag = document.createElement('div');
+        tag.className = 'parada-tag ' + clase;
+        tag.innerHTML = (esOrigen ? '🟢 ' : (esDestino ? '🔴 ' : '📍 ')) + loc.nombre + ' <span class="quitar" onclick="quitarParada(' + i + ')">×</span>';
+        container.appendChild(tag);
+        if (i < paradasSeleccionadas.length - 1) {
+            var flecha = document.createElement('span');
+            flecha.className = 'flecha';
+            flecha.textContent = '→';
+            container.appendChild(flecha);
+        }
+    });
+}
+
+// ============================================================
+// GUARDAR RUTA
+// ============================================================
+function guardarRuta() {
+    var nombre = document.getElementById('nombreRuta').value.trim();
+    if (!nombre) { alert('⚠ Asigna un nombre a la ruta'); return; }
+    if (paradasSeleccionadas.length < 2) { alert('⚠ La ruta debe tener al menos 2 paradas'); return; }
+    
+    var ruta = {
+        nombre: nombre,
+        origen: paradasSeleccionadas[0].nombre,
+        origenId: paradasSeleccionadas[0].id,
+        destino: paradasSeleccionadas[paradasSeleccionadas.length - 1].nombre,
+        destinoId: paradasSeleccionadas[paradasSeleccionadas.length - 1].id,
+        paradas: paradasSeleccionadas.map(function(l) { return l.id; }),
+        carretera: carreteraActiva,
+        fecha: new Date().toLocaleDateString('es-MX')
+    };
+    
+    var rutasGuardadas = JSON.parse(localStorage.getItem('rutasPredefinidas') || '[]');
+    rutasGuardadas.push(ruta);
+    localStorage.setItem('rutasPredefinidas', JSON.stringify(rutasGuardadas));
+    
+    alert('✅ Ruta guardada: ' + nombre + '\n\n' + ruta.origen + ' → ' + ruta.destino + '\n' + paradasSeleccionadas.length + ' paradas\nCarretera: ' + (carreteras[carreteraActiva] ? carreteras[carreteraActiva].nombre : 'Personalizada'));
+    
+    window.location.href = 'index.html';
+}
+
+// ============================================================
+// INICIO
+// ============================================================
+inicializarMapa();
+</script>
+</body>
+</html>

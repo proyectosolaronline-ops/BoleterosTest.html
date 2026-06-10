@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Rutas Predefinidas — TransRuta QRO</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#111827;--surface2:#1e293b;--surface3:#334155;
+  --border:#2d3748;--border2:#4a5568;--text:#f1f5f9;--muted:#94a3b8;
+  --amber:#f59e0b;--amber2:#fbbf24;--green:#22c55e;--green2:#16a34a;
+  --red:#ef4444;--red2:#dc2626;--blue:#3b82f6;--blue2:#2563eb;
+  --orange:#e85d04;--purple:#a855f7;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;width:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button,input{font-family:inherit}button{cursor:pointer;border:none;outline:none}input{outline:none}
+
+.layout{display:flex;flex-direction:column;height:100%}
+
+.topbar{display:flex;align-items:center;gap:10px;padding:calc(var(--sat) + 10px) 14px 10px;background:var(--surface);border-bottom:2px solid var(--amber);flex-shrink:0;z-index:500;min-height:calc(var(--sat) + 52px)}
+.topbar-logo{width:36px;height:36px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--amber) 0%,var(--orange) 100%);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 8px rgba(245,158,11,.4)}
+.topbar-title{flex:1;min-width:0}
+.topbar-title h1{font-size:15px;font-weight:700;color:var(--amber2);letter-spacing:-.2px}
+.topbar-title p{font-size:10px;color:var(--muted);margin-top:1px}
+.btn-back{background:transparent;color:var(--amber);border:1px solid var(--amber);border-radius:var(--r-md);padding:8px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;min-height:36px;flex-shrink:0}
+
+.map-zone{flex:1;position:relative;overflow:hidden;min-height:0}
+#mapa{width:100%;height:100%}
+
+.mapa-info{position:absolute;top:10px;left:10px;right:10px;z-index:900;background:rgba(10,10,10,.92);border:1px solid var(--amber);border-radius:var(--r-lg);padding:8px 12px;text-align:center;pointer-events:none}
+.mapa-info .tit{font-size:13px;font-weight:700;color:var(--amber2)}
+.mapa-info .sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+.panel{flex-shrink:0;background:rgba(10,10,10,.97);border-top:1px solid var(--amber);padding:12px 14px calc(12px + var(--sab));max-height:40vh;overflow-y:auto;z-index:800}
+.panel-titulo{font-size:12px;font-weight:700;color:var(--amber2);margin-bottom:8px}
+
+.paradas-chips{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:10px;min-height:28px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:600;background:var(--surface2);border:1px solid var(--border2)}
+.chip.origen{border-color:var(--green);color:var(--green)}
+.chip.destino{border-color:var(--red);color:var(--red)}
+.chip.inter{border-color:var(--blue);color:var(--blue)}
+.chip .del{color:var(--red);font-weight:700;font-size:12px;margin-left:2px;cursor:pointer}
+.flecha{color:var(--amber);font-size:12px}
+
+.input-nombre{width:100%;padding:10px;background:var(--bg);color:var(--text);border:1px solid var(--amber);border-radius:var(--r-md);font-size:13px;margin-bottom:8px;text-align:center}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btn{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border-radius:var(--r-md);font-size:11px;font-weight:700;min-height:38px;transition:all .15s}
+.btn:active{transform:scale(.96)}.btn:disabled{opacity:.4}
+.btn-guardar{background:var(--green);color:#fff;grid-column:1/-1}
+.btn-limpiar{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-ver{background:var(--blue);color:#fff}
+
+.leaflet-routing-container{display:block!important;background:rgba(10,10,10,.92)!important;color:#f1f5f9!important;padding:8px!important;border-radius:10px!important;max-height:25vh!important;overflow-y:auto!important;font-size:10px!important;margin-top:4px!important}
+.leaflet-routing-alt{color:#f1f5f9!important;background:transparent!important;border-bottom:1px solid #334155!important}
+.leaflet-routing-alt h2{color:#fbbf24!important;font-size:11px!important}
+.leaflet-routing-alt h3{color:#94a3b8!important;font-size:10px!important}
+
+.toast{position:fixed;bottom:calc(var(--sab) + 16px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:8px 16px;border-radius:999px;z-index:3000;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <header class="topbar">
+    <div class="topbar-logo">🚌</div>
+    <div class="topbar-title"><h1>RUTAS PREDEFINIDAS</h1><p>Traza tu ruta · Agrega paradas faltantes</p></div>
+    <a class="btn-back" href="index.html">✕</a>
+  </header>
+
+  <div class="map-zone">
+    <div id="mapa"></div>
+    <div class="mapa-info">
+      <div class="tit" id="mapaTitulo">👆 Toca el ORIGEN</div>
+      <div class="sub" id="mapaSub">Toca una localidad o doble toque para poner pin</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titulo">📍 Paradas de la ruta</div>
+    <div class="paradas-chips" id="paradasChips"><span style="color:var(--muted);font-size:10px">Selecciona origen y destino</span></div>
+    <input type="text" class="input-nombre" id="nombreRuta" placeholder="Nombre de la ruta">
+    <div class="btns">
+      <button class="btn btn-ver" onclick="trazarRuta()" id="btnTrazar" disabled>🗺️ TRAZAR RUTA</button>
+      <button class="btn btn-limpiar" onclick="reiniciar()">🔄 Limpiar</button>
+      <button class="btn btn-guardar" onclick="guardarRuta()" id="btnGuardar" disabled>💾 GUARDAR RUTA</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="matriz_queretaro.js?v=15"></script>
+<script>
+var mapa, controlRuta, paso='origen', origenSel=null, destinoSel=null;
+var markerO=null, markerD=null, paradasInter=[], nextId=900;
+var coords={}, obj={};
+
+// Inicializar
+if(typeof localidadesObj !== 'undefined') obj = localidadesObj;
+if(typeof coordenadasLocalidades !== 'undefined') coords = coordenadasLocalidades;
+
+function iniciarMapa(){
+    mapa = L.map('mapa', {zoomControl:true, attributionControl:false}).setView([20.65,-100.10], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(mapa);
+    
+    // Carreteras de fondo
+    var CF={color:'#e05555',weight:3.5,opacity:.85}, CE={color:'#e8941a',weight:2.5,opacity:.8,dashArray:'6 3'};
+    L.polyline([[20.305,-100.22],[20.388,-100.096],[20.47,-100.23],[20.5888,-100.3899],[20.68,-100.42],[20.82,-100.47],[21.0,-100.56],[21.15,-100.65]],{...CF,color:'#e05555'}).addTo(mapa).bindTooltip('MEX-57');
+    L.polyline([[20.31,-100.19],[20.45,-100.28],[20.57,-100.41],[20.72,-100.50]],{...CF,color:'#c03333',dashArray:'9 5'}).addTo(mapa).bindTooltip('MEX-57D Cuota');
+    L.polyline([[20.5888,-100.3899],[20.635,-100.222],[20.690,-99.980],[20.803,-99.750],[20.909,-99.927],[21.058,-99.563],[21.212,-99.473]],{...CF,color:'#e85d04'}).addTo(mapa).bindTooltip('MEX-120');
+    L.polyline([[20.5888,-100.3899],[20.51,-100.35],[20.42,-100.30],[20.30,-100.23],[20.188,-100.147]],{...CE,color:'#22c55e'}).addTo(mapa).bindTooltip('QRO-4');
+    L.polyline([[20.5181,-99.8928],[20.55,-99.87],[20.60,-99.875],[20.6667,-99.883]],{...CE,color:'#a855f7'}).addTo(mapa).bindTooltip('QRO-5');
+    L.polyline([[20.6906,-99.810],[20.75,-99.850],[20.909,-99.927]],{...CE,color:'#22c55e'}).addTo(mapa).bindTooltip('QRO-100');
+
+    // Localidades como círculos cliqueables
+    Object.keys(coords).forEach(function(id){
+        var idn=parseInt(id), c=coords[idn], n=obj[idn];
+        if(!c||!n) return;
+        var m = L.circleMarker([c.lat,c.lng], {radius:7,color:'#f59e0b',fillColor:'#1e293b',fillOpacity:1,weight:2}).addTo(mapa);
+        m.bindTooltip(n);
+        m.on('click', function(e){ L.DomEvent.stopPropagation(e); procesarToque({id:idn,nombre:n,lat:c.lat,lng:c.lng,custom:false}); });
+    });
+
+    // Doble toque para pin personalizado
+    mapa.on('dblclick', function(e){
+        L.DomEvent.stopPropagation(e);
+        var nombre = prompt('📍 Nombre para esta parada:', 'Parada '+(paradasInter.length+1));
+        if(!nombre) return;
+        var loc = {id:nextId,nombre:nombre,lat:e.latlng.lat,lng:e.latlng.lng,custom:true}; nextId++;
+        L.marker([loc.lat,loc.lng], {icon:L.divIcon({className:'',html:'<div style="background:#3b82f6;color:#fff;padding:3px 6px;border-radius:4px;font-size:9px;font-weight:700;white-space:nowrap">'+nombre+'</div>',iconAnchor:[20,10]})}).addTo(mapa);
+        procesarToque(loc);
+    });
+}
+
+function procesarToque(loc){
+    if(paso==='origen'){
+        origenSel=loc; paso='destino';
+        if(markerO) mapa.removeLayer(markerO);
+        markerO=L.circleMarker([loc.lat,loc.lng],{radius:14,color:'#22c55e',fillColor:'#22c55e',fillOpacity:.8,weight:3}).addTo(mapa).bindPopup('🟢 ORIGEN: '+loc.nombre).openPopup();
+        document.getElementById('mapaTitulo').textContent='👆 Toca el DESTINO';
+        actualizarPanel();
+    } else if(paso==='destino'){
+        if(loc.id===origenSel.id){alert('Diferente al origen');return;}
+        destinoSel=loc; paso='completo';
+        if(markerD) mapa.removeLayer(markerD);
+        markerD=L.circleMarker([loc.lat,loc.lng],{radius:14,color:'#ef4444',fillColor:'#ef4444',fillOpacity:.8,weight:3}).addTo(mapa).bindPopup('🔴 DESTINO: '+loc.nombre).openPopup();
+        document.getElementById('mapaTitulo').textContent='✅ Ruta lista';
+        document.getElementById('mapaSub').textContent='Toca TRAZAR RUTA para ver alternativas';
+        document.getElementById('btnTrazar').disabled=false;
+        document.getElementById('btnGuardar').disabled=false;
+        actualizarPanel();
+    }
+}
+
+function trazarRuta(){
+    if(!origenSel||!destinoSel) return;
+    if(controlRuta) mapa.removeControl(controlRuta);
+    
+    controlRuta = L.Routing.control({
+        waypoints: [L.latLng(origenSel.lat,origenSel.lng), L.latLng(destinoSel.lat,destinoSel.lng)],
+        routeWhileDragging: false,
+        showAlternatives: true,
+        altLineOptions: {styles:[{color:'#f59e0b',weight:4,opacity:.7},{color:'#3b82f6',weight:3,opacity:.5}]},
+        lineOptions: {styles:[{color:'#22c55e',weight:6,opacity:.9}]},
+        addWaypoints: false,
+        createMarker: function(){return null;}
+    }).addTo(mapa);
+    
+    document.getElementById('mapaTitulo').textContent='🗺️ Ruta trazada';
+    document.getElementById('mapaSub').textContent='Toca localidades para agregarlas como paradas';
+    
+    // Permitir agregar paradas tocando el mapa
+    paso='agregando';
+}
+
+// Agregar parada intermedia tocando localidad o doble toque
+mapa && mapa.on('click', function(e){
+    if(paso==='agregando'){
+        // Buscar localidad cercana al punto tocado
+        var mejor=null, min=Infinity;
+        Object.keys(coords).forEach(function(id){
+            var idn=parseInt(id), c=coords[idn];
+            if(!c) return;
+            var d=haversine(e.latlng.lat,e.latlng.lng,c.lat,c.lng);
+            if(d<0.5&&d<min){min=d;mejor={id:idn,nombre:obj[idn],lat:c.lat,lng:c.lng};}
+        });
+        if(mejor){
+            // Verificar que no esté ya en la lista
+            var yaExiste = paradasInter.find(function(p){return p.id===mejor.id;}) || 
+                          (origenSel&&origenSel.id===mejor.id) || 
+                          (destinoSel&&destinoSel.id===mejor.id);
+            if(!yaExiste){
+                paradasInter.push(mejor);
+                L.circleMarker([mejor.lat,mejor.lng],{radius:10,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.8,weight:2}).addTo(mapa).bindPopup('📍 '+mejor.nombre);
+                actualizarPanel();
+                toast('📍 Agregada: '+mejor.nombre);
+            }
+        }
+    }
+});
+
+function actualizarPanel(){
+    var c=document.getElementById('paradasChips'); c.innerHTML='';
+    if(!origenSel&&!destinoSel){c.innerHTML='<span style="color:var(--muted);font-size:10px">Selecciona origen y destino</span>';return;}
+    if(origenSel){var o=document.createElement('div');o.className='chip origen';o.innerHTML='🟢 '+origenSel.nombre;c.appendChild(o);}
+    paradasInter.forEach(function(p,i){
+        var f=document.createElement('span');f.className='flecha';f.textContent='›';c.appendChild(f);
+        var chip=document.createElement('div');chip.className='chip inter';
+        chip.innerHTML='📍 '+p.nombre+' <span class="del" onclick="quitarInter('+i+')">✕</span>';
+        c.appendChild(chip);
+    });
+    if(destinoSel){var f=document.createElement('span');f.className='flecha';f.textContent='›';c.appendChild(f);var d=document.createElement('div');d.className='chip destino';d.innerHTML='🔴 '+destinoSel.nombre;c.appendChild(d);}
+}
+
+function quitarInter(i){paradasInter.splice(i,1);actualizarPanel();}
+
+function reiniciar(){
+    paso='origen';origenSel=null;destinoSel=null;paradasInter=[];
+    if(markerO){mapa.removeLayer(markerO);markerO=null;}
+    if(markerD){mapa.removeLayer(markerD);markerD=null;}
+    if(controlRuta){mapa.removeControl(controlRuta);controlRuta=null;}
+    document.getElementById('mapaTitulo').textContent='👆 Toca el ORIGEN';
+    document.getElementById('mapaSub').textContent='Toca una localidad o doble toque para poner pin';
+    document.getElementById('btnTrazar').disabled=true;
+    document.getElementById('btnGuardar').disabled=true;
+    document.getElementById('nombreRuta').value='';
+    actualizarPanel();
+}
+
+function guardarRuta(){
+    var nombre=document.getElementById('nombreRuta').value.trim();
+    if(!nombre){toast('⚠️ Pon un nombre');return;}
+    var todas=[{id:origenSel.id,nombre:origenSel.nombre,lat:origenSel.lat,lng:origenSel.lng}];
+    paradasInter.forEach(function(p){todas.push({id:p.id,nombre:p.nombre,lat:p.lat,lng:p.lng});});
+    todas.push({id:destinoSel.id,nombre:destinoSel.nombre,lat:destinoSel.lat,lng:destinoSel.lng});
+    var ruta={
+        nombre:nombre,origen:origenSel.nombre,origenId:origenSel.id,destino:destinoSel.nombre,destinoId:destinoSel.id,
+        paradas:todas.map(function(l){return l.id}),paradasNombres:todas.map(function(l){return l.nombre}),
+        paradasLat:todas.map(function(l){return l.lat}),paradasLng:todas.map(function(l){return l.lng}),
+        totalParadas:todas.length,fecha:new Date().toLocaleDateString('es-MX')
+    };
+    var guardadas=JSON.parse(localStorage.getItem('rutasPredefinidas')||'[]');guardadas.push(ruta);
+    localStorage.setItem('rutasPredefinidas',JSON.stringify(guardadas));
+    localStorage.setItem('rutasPredefinidas_backup',JSON.stringify(guardadas));
+    toast('✅ Ruta guardada: '+nombre);
+    setTimeout(function(){window.location.href='index.html';},1500);
+}
+
+function haversine(lat1,lng1,lat2,lng2){var R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lng2-lng1)*Math.PI/180,a=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+
+var _tt;
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show');},2500);}
+
+iniciarMapa();
+</script>
+</body>
+</html>

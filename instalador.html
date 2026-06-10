@@ -262,5 +262,50 @@ function copiar(id){
     else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ Copiado');}
 }
 </script>
+
+    <!-- BOTÓN FLOTANTE PARA PROMPT DE CLAUDE -->
+<button id="btnPrompt" style="position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--azul);color:#fff;font-size:20px;border:none;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center;" onclick="generarPrompt()" title="Generar prompt para Claude">🤖</button>
+
+<script>
+function generarPrompt(){
+    var prompt = `Claude, te voy a pasar una foto de la hoja de tarifas que usan los operadores de camiones en Querétaro.
+
+Es una tabla con localidades de ORIGEN, localidades de DESTINO y PRECIOS.
+
+Necesito que:
+1. Extraigas TODOS los datos de la foto.
+2. Me los entregues en este formato EXACTO para pegarlos en mi código:
+
+// TARIFAS EXTRAÍDAS DE HOJA DEL OPERADOR
+MATRIZ_QUERETARO["IDorigen-IDdestino"] = { km: X, tarifa: Y }; // Origen → Destino
+
+Ejemplos del formato que necesito:
+MATRIZ_QUERETARO["1-2"] = { km: 12, tarifa: 15 }; // Querétaro → El Pueblito: $15
+MATRIZ_QUERETARO["1-3"] = { km: 15, tarifa: 18 }; // Querétaro → Santa Rosa: $18
+MATRIZ_QUERETARO["2-3"] = { km: 5, tarifa: 8 };   // El Pueblito → Santa Rosa: $8
+
+REGLAS:
+- El ID de cada localidad es el número que ya tengo en mi matriz (NO lo cambies).
+- Si una localidad de la foto NO está en mi lista, avísame para agregarla.
+- Usa los km que ya tengo definidos en MATRIZ_QUERETARO, NO los calcules de nuevo.
+- Solo cambia el valor de "tarifa" por el precio real de la hoja.
+- Dame el resultado SIN explicaciones, solo el código listo para pegar.`;
+
+    if(navigator.clipboard){
+        navigator.clipboard.writeText(prompt).then(function(){
+            alert('✅ Prompt copiado\n\nPégalo en Claude y adjunta la foto de la hoja de tarifas.');
+        });
+    } else {
+        // Fallback
+        var ta = document.createElement('textarea');
+        ta.value = prompt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('✅ Prompt copiado\n\nPégalo en Claude y adjunta la foto de la hoja de tarifas.');
+    }
+}
+</script>
 </body>
 </html>

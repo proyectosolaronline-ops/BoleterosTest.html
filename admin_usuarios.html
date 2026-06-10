@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Usuarios · Boletero Inteligente</title>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--blanco:#f8fafc;
+            --gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;--azul:#3b82f6;
+            --gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            min-height:100vh;padding:20px;
+        }
+        .container{max-width:600px;margin:0 auto}
+        .header{
+            background:var(--gris);padding:20px;border-radius:16px;
+            border:2px solid var(--amarillo);text-align:center;margin-bottom:20px;
+        }
+        .header h1{font-size:20px;color:var(--amarillo-texto)}
+        
+        .card{background:var(--gris);padding:20px;border-radius:12px;border:1px solid var(--gris2);margin-bottom:15px}
+        .card h2{font-size:16px;color:var(--amarillo-texto);margin-bottom:15px}
+        
+        .usuario-row{
+            background:var(--gris2);padding:15px;border-radius:10px;
+            margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
+        }
+        .usuario-info{flex:1}
+        .usuario-nombre{font-weight:700;font-size:14px}
+        .usuario-detalle{font-size:11px;color:var(--gris-texto);margin-top:3px}
+        .usuario-acciones{display:flex;gap:8px}
+        
+        .btn{
+            padding:10px 16px;border:none;border-radius:8px;
+            font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;
+        }
+        .btn:active{transform:scale(.96)}
+        .btn-amarillo{background:var(--amarillo);color:var(--negro)}
+        .btn-verde{background:var(--verde);color:#fff}
+        .btn-rojo{background:var(--rojo);color:#fff}
+        .btn-azul{background:var(--azul);color:#fff}
+        .btn-outline{background:transparent;color:var(--amarillo);border:1px solid var(--amarillo)}
+        
+        .modal-overlay{
+            position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;
+            display:none;align-items:center;justify-content:center;padding:20px;
+        }
+        .modal-overlay.active{display:flex}
+        .modal{
+            background:var(--gris);padding:20px;border-radius:16px;
+            border:1px solid var(--amarillo);width:100%;max-width:400px;
+        }
+        .modal h3{color:var(--amarillo-texto);margin-bottom:15px;text-align:center}
+        .modal input,.modal select{
+            width:100%;padding:12px;background:var(--negro);color:var(--blanco);
+            border:1px solid var(--gris2);border-radius:8px;font-size:13px;margin-bottom:10px;
+        }
+        .modal input:focus,.modal select:focus{outline:none;border-color:var(--amarillo)}
+        .modal-btns{display:flex;gap:8px}
+        .modal-btns .btn{flex:1}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>👥 ADMINISTRADOR DE USUARIOS</h1>
+    </div>
+
+    <div class="card">
+        <h2>📋 Usuarios Registrados</h2>
+        <div id="listaUsuarios"></div>
+        <button class="btn btn-verde" onclick="abrirModalNuevo()" style="width:100%;margin-top:10px">➕ AGREGAR USUARIO</button>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalUsuario">
+    <div class="modal">
+        <h3 id="modalTitulo">➕ Nuevo Usuario</h3>
+        <input type="hidden" id="editId">
+        <input type="text" id="editNombre" placeholder="Nombre completo">
+        <input type="email" id="editEmail" placeholder="Correo electrónico">
+        <input type="password" id="editPassword" placeholder="Contraseña">
+        <select id="editRol">
+            <option value="operador">Operador</option>
+            <option value="admin">Administrador</option>
+        </select>
+        <input type="text" id="editCamion" placeholder="Número de camión">
+        <input type="text" id="editTelefono" placeholder="Teléfono">
+        <select id="editEstado">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+        </select>
+        <div class="modal-btns">
+            <button class="btn btn-outline" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-verde" onclick="guardarUsuario()">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var usuarios = JSON.parse(localStorage.getItem('usuarios')) || [
+    {usuario_id:"USR001",nombre:"Juan Pérez Hernández",email:"juan@email.com",password:"123456",rol:"operador",camion:"UH-1234",telefono:"4421234567",estado:"Activo"},
+    {usuario_id:"USR002",nombre:"María López García",email:"maria@email.com",password:"123456",rol:"operador",camion:"UH-5678",telefono:"4427654321",estado:"Activo"},
+    {usuario_id:"USR003",nombre:"Admin Sistema",email:"admin@email.com",password:"admin123",rol:"admin",camion:"—",telefono:"4420000000",estado:"Activo"}
+];
+renderUsuarios();
+
+function renderUsuarios(){
+    var lista=document.getElementById('listaUsuarios');
+    if(!usuarios.length){lista.innerHTML='<p style="color:var(--gris-texto);text-align:center">No hay usuarios registrados</p>';return;}
+    lista.innerHTML=usuarios.map(function(u){
+        return '<div class="usuario-row">'+
+            '<div class="usuario-info">'+
+                '<div class="usuario-nombre">👤 '+u.nombre+' <span style="font-size:10px;color:'+(u.rol==='admin'?'var(--amarillo)':'var(--verde)')+'">('+u.rol+')</span></div>'+
+                '<div class="usuario-detalle">📧 '+u.email+' · 🚛 '+u.camion+' · 📱 '+u.telefono+' · <span style="color:'+(u.estado==='Activo'?'var(--verde)':'var(--rojo)')+'">'+u.estado+'</span></div>'+
+            '</div>'+
+            '<div class="usuario-acciones">'+
+                '<button class="btn btn-azul" onclick="editarUsuario(\''+u.usuario_id+'\')">✏️</button>'+
+                '<button class="btn btn-rojo" onclick="eliminarUsuario(\''+u.usuario_id+'\')">🗑️</button>'+
+            '</div>'+
+        '</div>';
+    }).join('');
+}
+
+function abrirModalNuevo(){
+    document.getElementById('modalTitulo').textContent='➕ Nuevo Usuario';
+    document.getElementById('editId').value='';
+    document.getElementById('editNombre').value='';
+    document.getElementById('editEmail').value='';
+    document.getElementById('editPassword').value='';
+    document.getElementById('editRol').value='operador';
+    document.getElementById('editCamion').value='';
+    document.getElementById('editTelefono').value='';
+    document.getElementById('editEstado').value='Activo';
+    document.getElementById('modalUsuario').classList.add('active');
+}
+
+function editarUsuario(id){
+    var u=usuarios.find(function(x){return x.usuario_id===id;});
+    if(!u) return;
+    document.getElementById('modalTitulo').textContent='✏️ Editar Usuario';
+    document.getElementById('editId').value=u.usuario_id;
+    document.getElementById('editNombre').value=u.nombre;
+    document.getElementById('editEmail').value=u.email;
+    document.getElementById('editPassword').value=u.password;
+    document.getElementById('editRol').value=u.rol;
+    document.getElementById('editCamion').value=u.camion;
+    document.getElementById('editTelefono').value=u.telefono;
+    document.getElementById('editEstado').value=u.estado;
+    document.getElementById('modalUsuario').classList.add('active');
+}
+
+function cerrarModal(){document.getElementById('modalUsuario').classList.remove('active');}
+
+function guardarUsuario(){
+    var id=document.getElementById('editId').value;
+    var nombre=document.getElementById('editNombre').value.trim();
+    var email=document.getElementById('editEmail').value.trim();
+    var password=document.getElementById('editPassword').value.trim();
+    var rol=document.getElementById('editRol').value;
+    var camion=document.getElementById('editCamion').value.trim();
+    var telefono=document.getElementById('editTelefono').value.trim();
+    var estado=document.getElementById('editEstado').value;
+    
+    if(!nombre||!email||!password){alert('⚠️ Completa nombre, email y contraseña');return;}
+    
+    if(id){
+        // Editar
+        var idx=usuarios.findIndex(function(x){return x.usuario_id===id;});
+        if(idx>=0){
+            usuarios[idx].nombre=nombre;usuarios[idx].email=email;usuarios[idx].password=password;
+            usuarios[idx].rol=rol;usuarios[idx].camion=camion;usuarios[idx].telefono=telefono;usuarios[idx].estado=estado;
+        }
+    } else {
+        // Nuevo
+        if(usuarios.find(function(x){return x.email===email;})){alert('⚠️ El correo ya está registrado');return;}
+        usuarios.push({usuario_id:'USR'+(usuarios.length+1).toString().padStart(3,'0'),nombre:nombre,email:email,password:password,rol:rol,camion:camion,telefono:telefono,estado:estado});
+    }
+    
+    localStorage.setItem('usuarios',JSON.stringify(usuarios));
+    renderUsuarios();
+    cerrarModal();
+}
+
+function eliminarUsuario(id){
+    if(!confirm('¿Eliminar este usuario?')) return;
+    usuarios=usuarios.filter(function(x){return x.usuario_id!==id;});
+    localStorage.setItem('usuarios',JSON.stringify(usuarios));
+    renderUsuarios();
+}
+</script>
+</body>
+</html>

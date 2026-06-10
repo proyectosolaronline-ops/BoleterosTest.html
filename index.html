@@ -399,5 +399,36 @@ if (sesionGuardada) {
     renderPanelOperador();
 }
 </script>
+<!-- BOTÓN QR FLOTANTE -->
+<button id="btnQR" style="position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--amarillo);color:var(--negro);font-size:24px;border:none;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(245,158,11,.5);display:flex;align-items:center;justify-content:center;" onclick="mostrarQR()">📱</button>
+
+<!-- MODAL QR -->
+<div id="modalQR" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10000;flex-direction:column;align-items:center;justify-content:center;padding:20px;" onclick="this.style.display='none'">
+  <div style="background:#fff;padding:20px;border-radius:16px;text-align:center" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:700;color:#0a0a0a;margin-bottom:10px">📱 ESCANEA PARA ABRIR</div>
+    <div id="qrcode"></div>
+    <button style="margin-top:15px;padding:10px 30px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer" onclick="document.getElementById('modalQR').style.display='none'">CERRAR</button>
+  </div>
+</div>
+
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+function mostrarQR(){
+    var modal = document.getElementById('modalQR');
+    modal.style.display = 'flex';
+    var qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+        text: window.location.href,
+        width: 200,
+        height: 200,
+        colorDark: '#0a0a0a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+    });
+}
+</script>
+    
 </body>
 </html>

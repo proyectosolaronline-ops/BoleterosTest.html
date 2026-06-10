@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Demo · Boletero Inteligente</title>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            min-height:100vh;display:flex;flex-direction:column;align-items:center;
+            padding:20px;gap:20px;
+        }
+        .logo{
+            font-size:40px;text-align:center;margin-top:10px;
+        }
+        .logo h1{font-size:22px;color:var(--amarillo-texto)}
+        .logo p{font-size:12px;color:var(--gris-texto)}
+        
+        .phone-frame{
+            width:100%;max-width:380px;background:var(--gris);
+            border-radius:24px;border:3px solid var(--gris2);
+            overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6);
+        }
+        .phone-top{
+            background:var(--gris2);padding:10px;text-align:center;
+            font-size:12px;font-weight:700;color:var(--amarillo-texto);
+            border-bottom:2px solid var(--amarillo);
+        }
+        .phone-screen{
+            padding:15px;display:flex;flex-direction:column;gap:12px;
+            max-height:500px;overflow-y:auto;
+        }
+        
+        .gps-box{
+            background:var(--gris2);padding:15px;border-radius:12px;text-align:center;
+        }
+        .gps-box .label{font-size:10px;color:var(--gris-texto);text-transform:uppercase;letter-spacing:2px}
+        .gps-box .loc{font-size:28px;font-weight:900;color:var(--amarillo-texto)}
+        .gps-box .prec{font-size:11px;color:var(--verde);margin-top:3px}
+        
+        .indicadores{
+            display:flex;gap:8px;
+        }
+        .ind{
+            flex:1;background:var(--gris2);padding:10px;border-radius:8px;text-align:center;
+        }
+        .ind .num{font-size:22px;font-weight:900}
+        .ind .etq{font-size:9px;color:var(--gris-texto);text-transform:uppercase}
+        .ind.verde .num{color:var(--verde)}
+        .ind.naranja .num{color:var(--naranja)}
+        .ind.amarillo .num{color:var(--amarillo-texto)}
+        
+        .btn-big{
+            width:100%;padding:18px;border:none;border-radius:12px;
+            font-size:18px;font-weight:800;cursor:pointer;text-align:center;
+            transition:all .15s;
+        }
+        .btn-big:active{transform:scale(.96)}
+        .btn-pasajero{background:var(--amarillo);color:var(--negro);box-shadow:0 4px 16px rgba(245,158,11,.4)}
+        .btn-corte{background:var(--rojo);color:#fff}
+        
+        .lista-destinos{
+            display:flex;flex-direction:column;gap:8px;
+        }
+        .dest-row{
+            background:var(--gris2);padding:14px;border-radius:10px;
+            display:flex;justify-content:space-between;align-items:center;
+        }
+        .dest-row .nombre{font-weight:600;font-size:14px}
+        .dest-row .precio{font-weight:800;font-size:16px;color:var(--amarillo-texto)}
+        
+        .modal-demo{
+            background:var(--gris);border:1px solid var(--amarillo);border-radius:16px;
+            padding:20px;margin-top:10px;display:none;
+        }
+        .modal-demo.show{display:block}
+        .modal-demo h3{color:var(--amarillo-texto);text-align:center;margin-bottom:15px}
+        
+        .tipos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}
+        .tipo-card{
+            background:var(--gris2);padding:12px;border-radius:10px;text-align:center;
+        }
+        .tipo-card .icono{font-size:24px}
+        .tipo-card .nombre{font-size:12px;font-weight:600;margin:5px 0}
+        .tipo-card .precio{font-size:14px;font-weight:700;color:var(--verde)}
+        .tipo-card .controles{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:5px}
+        .tipo-card .ctrl-btn{
+            width:30px;height:30px;border-radius:50%;border:none;
+            font-size:18px;font-weight:700;cursor:pointer;
+            background:var(--amarillo);color:var(--negro);
+        }
+        .tipo-card .cant{font-size:18px;font-weight:900}
+        
+        .total-bar{
+            background:var(--gris2);padding:15px;border-radius:10px;
+            display:flex;justify-content:space-between;align-items:center;
+            margin-bottom:15px;
+        }
+        .total-bar .lbl{font-size:14px;color:var(--gris-texto);text-transform:uppercase}
+        .total-bar .monto{font-size:32px;font-weight:900;color:var(--verde)}
+        
+        .vuelto-bar{
+            display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;
+        }
+        .vuelto-btn{
+            padding:10px 16px;border-radius:8px;border:none;
+            font-size:13px;font-weight:700;cursor:pointer;
+            background:var(--gris2);color:var(--blanco);
+        }
+        .vuelto-btn:active{background:var(--amarillo);color:var(--negro)}
+        
+        .btn-cobrar{
+            width:100%;padding:16px;border:none;border-radius:12px;
+            background:var(--verde);color:#fff;font-size:18px;font-weight:800;cursor:pointer;
+        }
+        
+        .pasos{
+            display:flex;gap:10px;justify-content:center;margin-top:15px;
+        }
+        .paso{
+            width:8px;height:8px;border-radius:50%;background:var(--gris2);
+        }
+        .paso.activo{background:var(--amarillo)}
+        
+        .info-box{
+            background:rgba(34,197,94,.1);border:1px solid var(--verde);
+            padding:15px;border-radius:12px;text-align:center;margin-top:15px;
+        }
+        .info-box h3{color:var(--verde);margin-bottom:8px}
+        .info-box p{font-size:12px;color:var(--gris-texto);line-height:1.5}
+        
+        .qr-section{
+            text-align:center;margin-top:20px;
+        }
+        .qr-section button{
+            background:var(--amarillo);color:var(--negro);border:none;
+            padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="logo">
+    <div>🚌</div>
+    <h1>BOLETERO INTELIGENTE</h1>
+    <p>Demo interactiva para operadores</p>
+</div>
+
+<div class="phone-frame">
+    <div class="phone-top">🎫 SISTEMA BOLETERO · Demo</div>
+    <div class="phone-screen" id="screen">
+        <!-- PANTALLA 1: PRINCIPAL -->
+        <div id="pantalla1">
+            <div class="gps-box">
+                <div class="label">📍 LOCALIDAD GPS</div>
+                <div class="loc" id="demoLoc">La Piedad</div>
+                <div class="prec">Precisión: 3m</div>
+            </div>
+            
+            <div class="indicadores">
+                <div class="ind verde"><div class="num" id="demoABordo">0</div><div class="etq">👥 A bordo</div></div>
+                <div class="ind naranja"><div class="num" id="demoBajan">0</div><div class="etq">🔻 Por bajar</div></div>
+                <div class="ind amarillo"><div class="num" id="demoTotal">$0</div><div class="etq">💰 Total</div></div>
+            </div>
+            
+            <button class="btn-big btn-pasajero" onclick="mostrarPaso(2)">
+                🚌 PASAJERO A BORDO
+                <div style="font-size:11px;opacity:.7">Sube en: La Piedad</div>
+            </button>
+            
+            <button class="btn-big btn-corte" onclick="mostrarCorte()" style="margin-top:8px">
+                🏁 CORTE · FINALIZAR
+            </button>
+            
+            <div class="pasos">
+                <div class="paso activo" id="paso1"></div>
+                <div class="paso" id="paso2"></div>
+                <div class="paso" id="paso3"></div>
+            </div>
+        </div>
+        
+        <!-- PANTALLA 2: DESTINO -->
+        <div id="pantalla2" style="display:none">
+            <h3 style="text-align:center;color:var(--amarillo-texto);margin-bottom:10px">¿A dónde va?</h3>
+            <p style="text-align:center;font-size:11px;color:var(--gris-texto);margin-bottom:10px">Sube en: <b>La Piedad</b></p>
+            
+            <div class="lista-destinos">
+                <div class="dest-row" onclick="mostrarPaso(3,'El Puente','10')">
+                    <span class="nombre">📍 El Puente</span>
+                    <span class="precio">$10</span>
+                </div>
+                <div class="dest-row" onclick="mostrarPaso(3,'La Loma','15')">
+                    <span class="nombre">📍 La Loma</span>
+                    <span class="precio">$15</span>
+                </div>
+                <div class="dest-row" onclick="mostrarPaso(3,'Florinda Mesa','25')">
+                    <span class="nombre">📍 Florinda Mesa</span>
+                    <span class="precio">$25</span>
+                </div>
+                <div class="dest-row" onclick="mostrarPaso(3,'Ezequiel Montes','35')">
+                    <span class="nombre">🏁 Ezequiel Montes</span>
+                    <span class="precio">$35</span>
+                </div>
+            </div>
+            
+            <button class="btn-big btn-corte" onclick="mostrarPaso(1)" style="margin-top:10px;background:transparent;color:var(--rojo);border:2px solid var(--rojo);font-size:14px">
+                ❌ CANCELAR
+            </button>
+            
+            <div class="pasos" style="margin-top:10px">
+                <div class="paso" id="paso1b"></div>
+                <div class="paso activo" id="paso2b"></div>
+                <div class="paso" id="paso3b"></div>
+            </div>
+        </div>
+        
+        <!-- PANTALLA 3: COBRO -->
+        <div id="pantalla3" style="display:none">
+            <h3 style="text-align:center;color:var(--amarillo-texto);margin-bottom:5px">COBRAR</h3>
+            <p style="text-align:center;font-size:13px;color:var(--gris-texto);margin-bottom:15px" id="cobroRuta">La Piedad → El Puente</p>
+            
+            <div class="tipos-grid">
+                <div class="tipo-card">
+                    <div class="icono">👤</div>
+                    <div class="nombre">Normal</div>
+                    <div class="precio" id="precioNormal">$10</div>
+                    <div class="controles">
+                        <button class="ctrl-btn" onclick="cambiarCant('normal',-1)">−</button>
+                        <span class="cant" id="cantNormal">0</span>
+                        <button class="ctrl-btn" onclick="cambiarCant('normal',1)">+</button>
+                    </div>
+                </div>
+                <div class="tipo-card">
+                    <div class="icono">🧓</div>
+                    <div class="nombre">Adulto M.</div>
+                    <div class="precio" id="precioAdulto">$5</div>
+                    <div class="controles">
+                        <button class="ctrl-btn" onclick="cambiarCant('adulto',-1)">−</button>
+                        <span class="cant" id="cantAdulto">0</span>
+                        <button class="ctrl-btn" onclick="cambiarCant('adulto',1)">+</button>
+                    </div>
+                </div>
+                <div class="tipo-card">
+                    <div class="icono">🎓</div>
+                    <div class="nombre">Estudiante</div>
+                    <div class="precio" id="precioEstudiante">$5</div>
+                    <div class="controles">
+                        <button class="ctrl-btn" onclick="cambiarCant('estudiante',-1)">−</button>
+                        <span class="cant" id="cantEstudiante">0</span>
+                        <button class="ctrl-btn" onclick="cambiarCant('estudiante',1)">+</button>
+                    </div>
+                </div>
+                <div class="tipo-card">
+                    <div class="icono">📚</div>
+                    <div class="nombre">Maestro</div>
+                    <div class="precio" id="precioMaestro">$5</div>
+                    <div class="controles">
+                        <button class="ctrl-btn" onclick="cambiarCant('maestro',-1)">−</button>
+                        <span class="cant" id="cantMaestro">0</span>
+                        <button class="ctrl-btn" onclick="cambiarCant('maestro',1)">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="total-bar">
+                <span class="lbl">TOTAL</span>
+                <span class="monto" id="totalCobro">$0</span>
+            </div>
+            
+            <div class="vuelto-bar">
+                <button class="vuelto-btn" onclick="calcularVueltoDemo(20)">$20</button>
+                <button class="vuelto-btn" onclick="calcularVueltoDemo(50)">$50</button>
+                <button class="vuelto-btn" onclick="calcularVueltoDemo(100)">$100</button>
+                <button class="vuelto-btn" onclick="calcularVueltoDemo(200)">$200</button>
+                <button class="vuelto-btn" onclick="calcularVueltoDemo(500)">$500</button>
+            </div>
+            <div id="vueltoResultado" style="text-align:center;font-size:16px;font-weight:700;color:var(--azul);margin-bottom:10px"></div>
+            
+            <button class="btn-cobrar" onclick="confirmarCobroDemo()">✅ COBRAR</button>
+            
+            <div class="pasos" style="margin-top:10px">
+                <div class="paso" id="paso1c"></div>
+                <div class="paso" id="paso2c"></div>
+                <div class="paso activo" id="paso3c"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="info-box">
+    <h3>📱 ASÍ FUNCIONA EN LA VIDA REAL</h3>
+    <p>1️⃣ El <b>GPS</b> detecta dónde está el camión.<br>
+    2️⃣ Toca <b>PASAJERO A BORDO</b>.<br>
+    3️⃣ Selecciona <b>destino</b> y <b>cantidad</b>.<br>
+    4️⃣ Cobra y sigue.<br>
+    5️⃣ Al terminar, toca <b>CORTE</b>.</p>
+</div>
+
+<div class="qr-section">
+    <p style="color:var(--gris-texto);margin-bottom:10px;font-size:12px">¿Quieres probar el sistema real?</p>
+    <button onclick="mostrarQRDemo()">📱 VER CÓDIGO QR</button>
+    <div id="qrDemo" style="margin-top:15px;display:none;background:#fff;padding:15px;border-radius:12px"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+var tarifaBase = 10;
+var cantidades = {normal:0,adulto:0,estudiante:0,maestro:0};
+var totalDemo = 0;
+var aBordoDemo = 0;
+
+function mostrarPaso(paso, destino, precio){
+    document.getElementById('pantalla1').style.display = paso===1 ? 'block' : 'none';
+    document.getElementById('pantalla2').style.display = paso===2 ? 'block' : 'none';
+    document.getElementById('pantalla3').style.display = paso===3 ? 'block' : 'none';
+    
+    if(paso===3 && destino){
+        document.getElementById('cobroRuta').textContent = 'La Piedad → ' + destino;
+        tarifaBase = parseInt(precio);
+        cantidades = {normal:0,adulto:0,estudiante:0,maestro:0};
+        document.getElementById('precioNormal').textContent = '$'+tarifaBase;
+        document.getElementById('precioAdulto').textContent = '$'+Math.round(tarifaBase/2);
+        document.getElementById('precioEstudiante').textContent = '$'+Math.round(tarifaBase/2);
+        document.getElementById('precioMaestro').textContent = '$'+Math.round(tarifaBase/2);
+        actualizarTotalDemo();
+    }
+}
+
+function cambiarCant(tipo, delta){
+    if(cantidades[tipo]+delta < 0) return;
+    cantidades[tipo] += delta;
+    document.getElementById('cant'+cap(tipo)).textContent = cantidades[tipo];
+    actualizarTotalDemo();
+}
+
+function actualizarTotalDemo(){
+    var total = cantidades.normal * tarifaBase;
+    total += cantidades.adulto * Math.round(tarifaBase/2);
+    total += cantidades.estudiante * Math.round(tarifaBase/2);
+    total += cantidades.maestro * Math.round(tarifaBase/2);
+    document.getElementById('totalCobro').textContent = '$'+total;
+    totalDemo = total;
+}
+
+function calcularVueltoDemo(billete){
+    if(totalDemo===0){alert('Agrega pasajeros primero');return;}
+    var vuelto = billete - totalDemo;
+    if(vuelto < 0){
+        document.getElementById('vueltoResultado').textContent = '⚠️ Faltan $'+Math.abs(vuelto);
+    } else {
+        document.getElementById('vueltoResultado').textContent = '💵 Vuelto: $'+vuelto;
+    }
+}
+
+function confirmarCobroDemo(){
+    if(totalDemo===0){alert('Agrega al menos un pasajero');return;}
+    var totalPas = cantidades.normal + cantidades.adulto + cantidades.estudiante + cantidades.maestro;
+    aBordoDemo += totalPas;
+    document.getElementById('demoABordo').textContent = aBordoDemo;
+    document.getElementById('demoTotal').textContent = '$'+(parseInt(document.getElementById('demoTotal').textContent.replace('$','')) + totalDemo);
+    alert('✅ COBRO EXITOSO\n\n'+totalPas+' pasajero(s)\nTotal: $'+totalDemo+'\n\nA bordo: '+aBordoDemo+' personas');
+    mostrarPaso(1);
+}
+
+function mostrarCorte(){
+    if(aBordoDemo===0){alert('No hay pasajeros a bordo');return;}
+    if(confirm('🏁 FINALIZAR CORRIDA\n\nPasajeros totales: '+aBordoDemo+'\nTotal recaudado: '+document.getElementById('demoTotal').textContent+'\n\n¿Estás seguro?')){
+        alert('✅ CORRIDA FINALIZADA\n\nSe guardó en el historial.');
+        aBordoDemo = 0;
+        document.getElementById('demoABordo').textContent = '0';
+        document.getElementById('demoBajan').textContent = '0';
+        document.getElementById('demoTotal').textContent = '$0';
+    }
+}
+
+function mostrarQRDemo(){
+    var div = document.getElementById('qrDemo');
+    div.style.display = 'block';
+    div.innerHTML = '';
+    new QRCode(div, {
+        text: window.location.href,
+        width: 150, height: 150,
+        colorDark: '#0a0a0a', colorLight: '#ffffff'
+    });
+}
+
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+</script>
+</body>
+</html>

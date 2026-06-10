@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Instalador · Boletero Inteligente</title>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--blanco:#f8fafc;
+            --gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;--azul:#3b82f6;
+            --gris-texto:#94a3b8;--naranja:#e85d04;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            min-height:100vh;padding:20px;
+        }
+        .container{max-width:600px;margin:0 auto}
+        .header{
+            background:var(--gris);padding:20px;border-radius:16px;
+            border:2px solid var(--amarillo);text-align:center;margin-bottom:20px;
+        }
+        .header h1{font-size:20px;color:var(--amarillo-texto);margin-bottom:5px}
+        .header p{font-size:13px;color:var(--gris-texto)}
+        
+        .card{
+            background:var(--gris);padding:20px;border-radius:12px;
+            border:1px solid var(--gris2);margin-bottom:15px;
+        }
+        .card h2{font-size:16px;color:var(--amarillo-texto);margin-bottom:10px}
+        .card h3{font-size:14px;color:var(--naranja);margin-bottom:8px}
+        .card p{font-size:13px;color:var(--gris-texto);margin-bottom:15px;line-height:1.5}
+        
+        .btn{
+            width:100%;padding:14px;border:none;border-radius:10px;
+            font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;
+            transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;
+        }
+        .btn:active{transform:scale(.96)}
+        .btn-amarillo{background:var(--amarillo);color:var(--negro)}
+        .btn-verde{background:var(--verde);color:#fff}
+        .btn-azul{background:var(--azul);color:#fff}
+        
+        .code-block{
+            background:var(--negro);padding:15px;border-radius:8px;
+            border:1px solid var(--gris2);font-size:11px;color:var(--verde);
+            font-family:monospace;white-space:pre-wrap;word-break:break-all;
+            max-height:400px;overflow-y:auto;margin-bottom:15px;display:none;
+        }
+        .code-block.show{display:block}
+        
+        .copy-btn{
+            background:var(--azul);color:#fff;border:none;
+            padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;
+            margin-bottom:10px;
+        }
+        
+        .step{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+        .step-num{width:28px;height:28px;border-radius:50%;background:var(--amarillo);color:var(--negro);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .step-text{font-size:13px;line-height:1.6}
+        .step-text b{color:var(--amarillo-texto)}
+        .step-text code{background:var(--negro);padding:2px 6px;border-radius:4px;color:var(--verde);font-size:12px}
+        
+        input[type=text]{width:100%;padding:12px;background:var(--negro);color:var(--blanco);border:1px solid var(--amarillo);border-radius:8px;font-size:13px;margin-bottom:10px}
+        
+        .pestanas-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+        .pestana-chip{background:var(--gris2);padding:8px;border-radius:8px;text-align:center;font-size:11px;color:var(--amarillo-texto);border:1px solid var(--border2)}
+        .pestana-chip.nueva{background:rgba(232,93,4,0.2);border-color:var(--naranja);color:var(--naranja)}
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>🚌 INSTALADOR BOLETERO INTELIGENTE</h1>
+        <p>Genera Google Sheets + Apps Script · 7 pestañas automáticas</p>
+    </div>
+
+    <div class="card">
+        <h2>📋 PASO 1: Crear Google Sheet</h2>
+        <div class="step"><div class="step-num">1</div><div class="step-text">Abre <b>Google Sheets</b> y crea una nueva hoja en blanco.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Copia el <b>ID de la hoja</b> de la URL:<br><code>https://docs.google.com/spreadsheets/d/<b style="color:var(--amarillo)">TU_ID_AQUI</b>/edit</code></div></div>
+        <input type="text" id="sheetId" placeholder="Pega aquí el ID de tu Google Sheet">
+        <button class="btn btn-amarillo" onclick="generarTodo()">🚀 GENERAR APPS SCRIPT</button>
+        
+        <div style="margin-top:10px;text-align:center">
+            <span style="font-size:11px;color:var(--gris-texto)">Pestañas que se crearán:</span>
+            <div class="pestanas-grid">
+                <div class="pestana-chip">👤 Usuarios</div>
+                <div class="pestana-chip">📋 Corridas</div>
+                <div class="pestana-chip">📝 Detalle_Corrida</div>
+                <div class="pestana-chip">📍 Localidades</div>
+                <div class="pestana-chip">💰 Tarifas</div>
+                <div class="pestana-chip">🗺️ Rutas_Predefinidas</div>
+                <div class="pestana-chip nueva">🛰️ Trazado_Automático</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultado" style="display:none">
+        <div class="card">
+            <h2>📜 PASO 2: Apps Script</h2>
+            <p>Copia este código, ve a <b>Extensiones → Apps Script</b> en tu Google Sheet, pega todo, ejecuta la función <code>crearPestanas()</code> una vez y luego despliega como <b>Web App</b> (Ejecutar como: Yo, Acceso: Cualquiera).</p>
+            <button class="copy-btn" onclick="copiar('appsScript')">📋 Copiar Apps Script</button>
+            <div class="code-block show" id="appsScript"></div>
+        </div>
+        <div class="card">
+            <h2>🔗 PASO 3: Conectar Boletero</h2>
+            <p>Después de desplegar, copia la URL de la Web App y pégala en:</p>
+            <p>• <code>index.html</code> → variable <code>GOOGLE_SHEETS_URL</code><br>
+            • <code>rutas_predefinidas.html</code> → variable <code>GOOGLE_SHEETS_URL</code></p>
+            <p style="color:var(--amarillo-texto);font-weight:700;margin-top:10px">✅ ¡Listo! El trazado automático se guardará en Google Sheets cada 4 horas.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function generarTodo(){
+    var sheetId = document.getElementById('sheetId').value.trim();
+    if(!sheetId){alert('⚠️ Pega el ID de tu Google Sheet primero');return;}
+    document.getElementById('appsScript').textContent = generarAppsScript(sheetId);
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('resultado').scrollIntoView({behavior:'smooth'});
+    window.open('https://docs.google.com/spreadsheets/d/'+sheetId+'/edit', '_blank');
+}
+
+function generarAppsScript(sheetId){
+    return `// ============================================================
+// APPS SCRIPT — BOLETERO INTELIGENTE · TRANS-RUTA QRO
+// Sheet ID: ${sheetId}
+// ═══════════════════════════════════════════
+// 1. Ejecuta crearPestanas() UNA SOLA VEZ
+// 2. Despliega como WebApp (Yo, Cualquiera)
+// 3. Pega la URL en index.html y rutas_predefinidas.html
+// ============================================================
+
+const SHEET_ID = '${sheetId}';
+
+// ═══════════════════════════════════════
+// CREAR LAS 7 PESTAÑAS
+// ═══════════════════════════════════════
+function crearPestanas() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  
+  // Eliminar Sheet1 por defecto
+  var s1 = ss.getSheetByName('Sheet1'); if(s1) ss.deleteSheet(s1);
+  
+  crearUsuarios(ss);
+  crearCorridas(ss);
+  crearDetalleCorrida(ss);
+  crearLocalidades(ss);
+  crearTarifas(ss);
+  crearRutasPredefinidas(ss);
+  crearTrazadoAutomatico(ss);  // ← NUEVA PESTAÑA
+  
+  SpreadsheetApp.getUi().alert('✅ 7 pestañas creadas:\\n\\n👤 Usuarios\\n📋 Corridas\\n📝 Detalle_Corrida\\n📍 Localidades\\n💰 Tarifas\\n🗺️ Rutas_Predefinidas\\n🛰️ Trazado_Automático');
+}
+
+// ═══════════════════════════════════════
+// PESTAÑAS EXISTENTES
+// ═══════════════════════════════════════
+function crearUsuarios(ss){
+  var h = ss.getSheetByName('Usuarios');
+  if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Usuarios');
+  h.appendRow(['usuario_id','nombre','email','password','rol','camion','telefono','estado']);
+  h.appendRow(['USR001','Juan Pérez Hernández','juan@email.com','123456','operador','UH-1234','4421234567','Activo']);
+  h.appendRow(['USR002','María López García','maria@email.com','123456','operador','UH-5678','4427654321','Activo']);
+  h.appendRow(['USR003','Admin Sistema','admin@email.com','admin123','admin','—','4420000000','Activo']);
+}
+
+function crearCorridas(ss){
+  var h = ss.getSheetByName('Corridas'); if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Corridas');
+  h.appendRow(['corrida_id','usuario_id','fecha','hora_inicio','hora_corte','origen','destino','camion','total_venta','estado']);
+}
+
+function crearDetalleCorrida(ss){
+  var h = ss.getSheetByName('Detalle_Corrida'); if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Detalle_Corrida');
+  h.appendRow(['detalle_id','corrida_id','localidad_subida','localidad_bajada','tipo_pasajero','tarifa','fecha_cobro','estado']);
+}
+
+function crearLocalidades(ss){
+  var h = ss.getSheetByName('Localidades'); if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Localidades');
+  h.appendRow(['id','nombre','lat','lng','km']);
+  var loc=[
+    [1,'Querétaro (Centro)',20.5888,-100.3899,0],
+    [9,'Juriquilla',20.7000,-100.4500,13],
+    [39,'San Juan del Río',20.3881,-99.9965,55],
+    [55,'Pedro Escobedo',20.5094,-100.1278,32],
+    [62,'Tequisquiapan',20.5181,-99.8928,70],
+    [69,'Ezequiel Montes',20.6667,-99.8833,75],
+    [74,'Cadereyta de Montes',20.6906,-99.8103,80],
+    [81,'Colón',20.8028,-99.7044,95],
+    [94,'Tolimán',20.9094,-99.9272,110],
+    [105,'Jalpan de Serra',21.2122,-99.4728,175],
+    [118,'Arroyo Seco',21.5278,-99.6908,210],
+    [124,'Pinal de Amoles',21.1047,-99.7294,155],
+    [130,'Peñamiller',21.0406,-99.7886,145]
+  ];
+  loc.forEach(function(l){h.appendRow(l);});
+}
+
+function crearTarifas(ss){
+  var h = ss.getSheetByName('Tarifas'); if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Tarifas');
+  h.appendRow(['origen_id','destino_id','tarifa']);
+}
+
+function crearRutasPredefinidas(ss){
+  var h = ss.getSheetByName('Rutas_Predefinidas'); if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Rutas_Predefinidas');
+  h.appendRow(['id','nombre','origen','origen_id','destino','destino_id','paradas_ids','paradas_nombres','total_paradas','fecha']);
+}
+
+// ═══════════════════════════════════════
+// 🛰️ NUEVA PESTAÑA: TRAZADO AUTOMÁTICO
+// ═══════════════════════════════════════
+function crearTrazadoAutomatico(ss){
+  var h = ss.getSheetByName('Trazado_Automático'); if(h) ss.deleteSheet(h);
+  h = ss.insertSheet('Trazado_Automático');
+  h.appendRow([
+    'trazado_id',
+    'fecha',
+    'hora_inicio',
+    'hora_fin',
+    'origen',
+    'destino',
+    'distancia_km',
+    'tiempo_total',
+    'velocidad_promedio',
+    'velocidad_maxima',
+    'paradas_detectadas',
+    'puntos_gps',
+    'operador',
+    'recorrido_json',
+    'paradas_json',
+    'fecha_registro'
+  ]);
+  // Formatear cabecera
+  h.getRange(1,1,1,16).setFontWeight('bold').setBackground('#f59e0b').setFontColor('#0a0a0a');
+  h.setFrozenRows(1);
+}
+
+// ═══════════════════════════════════════
+// WEB APP — ENDPOINTS
+// ═══════════════════════════════════════
+function doGet(e){
+  var a = e.parameter.action;
+  var r = {};
+  try{
+    if(a === 'getUsuarios') r = getUsuarios();
+    else if(a === 'getLocalidades') r = getLocalidades();
+    else if(a === 'getCorridas') r = getCorridas(e.parameter.usuario_id);
+    else if(a === 'getTrazados') r = getTrazados(e.parameter.operador);
+    else if(a === 'getRutasPredefinidas') r = getRutasPredefinidas();
+    else r = {error: 'Acción no reconocida'};
+  }catch(err){ r = {error: err.message}; }
+  return ContentService.createTextOutput(JSON.stringify(r))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e){
+  var d = JSON.parse(e.postData.contents);
+  var r = {};
+  try{
+    if(d.action === 'registrarCorrida') r = registrarCorrida(d);
+    else if(d.action === 'registrarDetalle') r = registrarDetalle(d);
+    else if(d.action === 'registrarUsuario') r = registrarUsuario(d);
+    else if(d.action === 'actualizarUsuario') r = actualizarUsuario(d);
+    else if(d.action === 'eliminarUsuario') r = eliminarUsuario(d);
+    else if(d.action === 'guardarTrazado') r = guardarTrazado(d);
+    else if(d.action === 'guardarRutaPredefinida') r = guardarRutaPredefinida(d);
+    else r = {error: 'Acción no reconocida'};
+  }catch(err){ r = {error: err.message}; }
+  return ContentService.createTextOutput(JSON.stringify(r))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ═══════════════════════════════════════
+// FUNCIONES EXISTENTES
+// ═══════════════════════════════════════
+function getUsuarios(){
+  var d = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Usuarios').getDataRange().getValues();
+  var u = [];
+  for(var i=1; i<d.length; i++){
+    u.push({
+      usuario_id: d[i][0], nombre: d[i][1], email: d[i][2],
+      password: d[i][3], rol: d[i][4], camion: d[i][5],
+      telefono: d[i][6], estado: d[i][7]
+    });
+  }
+  return {usuarios: u};
+}
+
+function getLocalidades(){
+  var d = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Localidades').getDataRange().getValues();
+  var l = [];
+  for(var i=1; i<d.length; i++){
+    l.push({id: d[i][0], nombre: d[i][1], lat: d[i][2], lng: d[i][3], km: d[i][4]});
+  }
+  return {localidades: l};
+}
+
+function getCorridas(uid){
+  var d = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Corridas').getDataRange().getValues();
+  var c = [];
+  for(var i=1; i<d.length; i++){
+    if(!uid || d[i][1] === uid){
+      c.push({
+        corrida_id: d[i][0], usuario_id: d[i][1], fecha: d[i][2],
+        hora_inicio: d[i][3], hora_corte: d[i][4], origen: d[i][5],
+        destino: d[i][6], camion: d[i][7], total_venta: d[i][8], estado: d[i][9]
+      });
+    }
+  }
+  return {corridas: c};
+}
+
+function getRutasPredefinidas(){
+  var d = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Rutas_Predefinidas').getDataRange().getValues();
+  var r = [];
+  for(var i=1; i<d.length; i++){
+    r.push({
+      id: d[i][0], nombre: d[i][1], origen: d[i][2], origen_id: d[i][3],
+      destino: d[i][4], destino_id: d[i][5], paradas_ids: d[i][6],
+      paradas_nombres: d[i][7], total_paradas: d[i][8], fecha: d[i][9]
+    });
+  }
+  return {rutas: r};
+}
+
+function registrarCorrida(d){
+  SpreadsheetApp.openById(SHEET_ID).getSheetByName('Corridas').appendRow([
+    d.corrida_id, d.usuario_id, d.fecha, d.hora_inicio, d.hora_corte,
+    d.origen, d.destino, d.camion, d.total_venta, d.estado || 'Terminado'
+  ]);
+  return {ok: true};
+}
+
+function registrarDetalle(d){
+  SpreadsheetApp.openById(SHEET_ID).getSheetByName('Detalle_Corrida').appendRow([
+    d.detalle_id, d.corrida_id, d.localidad_subida, d.localidad_bajada,
+    d.tipo_pasajero, d.tarifa, d.fecha_cobro, d.estado || 'Bajó'
+  ]);
+  return {ok: true};
+}
+
+function registrarUsuario(d){
+  SpreadsheetApp.openById(SHEET_ID).getSheetByName('Usuarios').appendRow([
+    d.usuario_id, d.nombre, d.email, d.password,
+    d.rol || 'operador', d.camion || '', d.telefono || '', d.estado || 'Activo'
+  ]);
+  return {ok: true};
+}
+
+function actualizarUsuario(d){
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Usuarios');
+  var data = h.getDataRange().getValues();
+  for(var i=1; i<data.length; i++){
+    if(data[i][0] === d.usuario_id){
+      h.getRange(i+1,2).setValue(d.nombre);
+      h.getRange(i+1,3).setValue(d.email);
+      h.getRange(i+1,4).setValue(d.password);
+      h.getRange(i+1,5).setValue(d.rol);
+      h.getRange(i+1,6).setValue(d.camion);
+      h.getRange(i+1,7).setValue(d.telefono);
+      h.getRange(i+1,8).setValue(d.estado);
+      return {ok: true};
+    }
+  }
+  return {error: 'Usuario no encontrado'};
+}
+
+function eliminarUsuario(d){
+  var h = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Usuarios');
+  var data = h.getDataRange().getValues();
+  for(var i=data.length-1; i>=1; i--){
+    if(data[i][0] === d.usuario_id){
+      h.deleteRow(i+1);
+      return {ok: true};
+    }
+  }
+  return {error: 'Usuario no encontrado'};
+}
+
+function guardarRutaPredefinida(d){
+  SpreadsheetApp.openById(SHEET_ID).getSheetByName('Rutas_Predefinidas').appendRow([
+    d.id, d.nombre, d.origen, d.origen_id, d.destino, d.destino_id,
+    d.paradas_ids, d.paradas_nombres, d.total_paradas, d.fecha
+  ]);
+  return {ok: true};
+}
+
+// ═══════════════════════════════════════
+// 🛰️ NUEVA FUNCIÓN: GUARDAR TRAZADO GPS
+// ═══════════════════════════════════════
+function getTrazados(operador){
+  var d = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Trazado_Automático').getDataRange().getValues();
+  var t = [];
+  for(var i=1; i<d.length; i++){
+    if(!operador || d[i][12] === operador){
+      t.push({
+        trazado_id: d[i][0], fecha: d[i][1], hora_inicio: d[i][2],
+        hora_fin: d[i][3], origen: d[i][4], destino: d[i][5],
+        distancia_km: d[i][6], tiempo_total: d[i][7],
+        velocidad_promedio: d[i][8], velocidad_maxima: d[i][9],
+        paradas_detectadas: d[i][10], puntos_gps: d[i][11],
+        operador: d[i][12], recorrido_json: d[i][13],
+        paradas_json: d[i][14], fecha_registro: d[i][15]
+      });
+    }
+  }
+  return {trazados: t};
+}
+
+function guardarTrazado(d){
+  var hoja = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Trazado_Automático');
+  
+  // Si vienen múltiples trazados (respaldo masivo)
+  if(d.trazados && Array.isArray(d.trazados)){
+    d.trazados.forEach(function(t){
+      hoja.appendRow([
+        t.trazado_id || t.id || ('TRZ-'+Date.now()),
+        t.fecha || new Date().toLocaleDateString('es-MX'),
+        t.hora_inicio || t.horaInicio || '',
+        t.hora_fin || t.horaFin || '',
+        t.origen || '',
+        t.destino || '',
+        t.telemetria ? t.telemetria.distanciaTotal : (t.distancia_km || 0),
+        t.telemetria ? t.telemetria.tiempoTotal : (t.tiempo_total || ''),
+        t.telemetria ? t.telemetria.velocidadPromedio : (t.velocidad_promedio || 0),
+        t.telemetria ? (t.telemetria.velocidadMaxima || 0) : (t.velocidad_maxima || 0),
+        t.paradas ? t.paradas.length : (t.paradas_detectadas || 0),
+        t.recorrido ? t.recorrido.length : (t.puntos_gps || 0),
+        t.operador || '',
+        JSON.stringify(t.recorrido || []),
+        JSON.stringify(t.paradas || []),
+        new Date().toLocaleString('es-MX')
+      ]);
+    });
+  } else {
+    // Un solo trazado
+    hoja.appendRow([
+      d.trazado_id || d.id || ('TRZ-'+Date.now()),
+      d.fecha || new Date().toLocaleDateString('es-MX'),
+      d.hora_inicio || d.horaInicio || '',
+      d.hora_fin || d.horaFin || '',
+      d.origen || '',
+      d.destino || '',
+      d.telemetria ? d.telemetria.distanciaTotal : (d.distancia_km || 0),
+      d.telemetria ? d.telemetria.tiempoTotal : (d.tiempo_total || ''),
+      d.telemetria ? d.telemetria.velocidadPromedio : (d.velocidad_promedio || 0),
+      d.telemetria ? (d.telemetria.velocidadMaxima || 0) : (d.velocidad_maxima || 0),
+      d.paradas ? d.paradas.length : (d.paradas_detectadas || 0),
+      d.recorrido ? d.recorrido.length : (d.puntos_gps || 0),
+      d.operador || '',
+      JSON.stringify(d.recorrido || []),
+      JSON.stringify(d.paradas || []),
+      new Date().toLocaleString('es-MX')
+    ]);
+  }
+  
+  return {ok: true, mensaje: '✅ Trazado(s) guardado(s) en Google Sheets'};
+}`;
+}
+
+function copiar(id){
+    var t = document.getElementById(id).textContent;
+    if(navigator.clipboard){
+        navigator.clipboard.writeText(t).then(function(){alert('✅ Apps Script copiado al portapapeles');});
+    } else {
+        var ta = document.createElement('textarea');
+        ta.value = t;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('✅ Apps Script copiado al portapapeles');
+    }
+}
+</script>
+
+<!-- BOTÓN FLOTANTE PARA PROMPT DE CLAUDE -->
+<button id="btnPrompt" style="position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--azul);color:#fff;font-size:20px;border:none;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center;" onclick="generarPrompt()" title="Generar prompt para Claude">🤖</button>
+
+<script>
+function generarPrompt(){
+    var prompt = `Claude, te voy a pasar una foto de la hoja de tarifas que usan los operadores de camiones en Querétaro.
+
+Es una tabla con localidades de ORIGEN, localidades de DESTINO y PRECIOS.
+
+Necesito que:
+1. Extraigas TODOS los datos de la foto.
+2. Me los entregues en este formato EXACTO para pegarlos en mi código:
+
+// TARIFAS EXTRAÍDAS DE HOJA DEL OPERADOR
+MATRIZ_QUERETARO["IDorigen-IDdestino"] = { km: X, tarifa: Y }; // Origen → Destino
+
+Ejemplos del formato que necesito:
+MATRIZ_QUERETARO["1-2"] = { km: 12, tarifa: 15 }; // Querétaro → El Pueblito: $15
+MATRIZ_QUERETARO["1-3"] = { km: 15, tarifa: 18 }; // Querétaro → Santa Rosa: $18
+MATRIZ_QUERETARO["2-3"] = { km: 5, tarifa: 8 };   // El Pueblito → Santa Rosa: $8
+
+REGLAS:
+- El ID de cada localidad es el número que ya tengo en mi matriz (NO lo cambies).
+- Si una localidad de la foto NO está en mi lista, avísame para agregarla.
+- Usa los km que ya tengo definidos en MATRIZ_QUERETARO, NO los calcules de nuevo.
+- Solo cambia el valor de "tarifa" por el precio real de la hoja.
+- Dame el resultado SIN explicaciones, solo el código listo para pegar.`;
+
+    if(navigator.clipboard){
+        navigator.clipboard.writeText(prompt).then(function(){
+            alert('✅ Prompt copiado\n\nPégalo en Claude y adjunta la foto de la hoja de tarifas.');
+        });
+    } else {
+        var ta = document.createElement('textarea');
+        ta.value = prompt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('✅ Prompt copiado\n\nPégalo en Claude y adjunta la foto de la hoja de tarifas.');
+    }
+}
+</script>
+</body>
+</html>

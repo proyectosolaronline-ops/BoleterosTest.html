@@ -112,6 +112,8 @@ button,input{font-family:inherit}button{cursor:pointer;border:none;outline:none}
   <div class="panel">
     <div class="panel-titulo">📍 Paradas de la ruta</div>
     <div class="paradas-chips" id="paradasChips"><span style="color:var(--muted);font-size:10px">Selecciona origen y destino</span></div>
+  
+    <button onclick="window.location.href='trazado_automatico.html'" style="width:100%;padding:12px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">🛰️ TRAZADO AUTOMÁTICO</button>
     <input type="text" class="input-nombre" id="nombreRuta" placeholder="Nombre de la ruta">
     <div class="btns">
       <button class="btn btn-ver" onclick="trazarRuta()" id="btnTrazar" disabled>🗺️ TRAZAR RUTA</button>

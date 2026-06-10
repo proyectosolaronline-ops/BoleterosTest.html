@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Rutas Predefinidas — TransRuta QRO</title>
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#111827;--surface2:#1e293b;--surface3:#334155;
+  --border:#2d3748;--border2:#4a5568;--text:#f1f5f9;--muted:#94a3b8;
+  --amber:#f59e0b;--amber2:#fbbf24;--green:#22c55e;--green2:#16a34a;
+  --red:#ef4444;--red2:#dc2626;--blue:#3b82f6;--blue2:#2563eb;
+  --orange:#e85d04;--purple:#a855f7;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none;overflow-x:hidden}
+button,input,select{font-family:inherit}
+button{cursor:pointer;border:none;outline:none}
+input,select{outline:none}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;gap:10px;padding:calc(var(--sat) + 10px) 14px 10px;background:var(--surface);border-bottom:2px solid var(--amber);flex-shrink:0;z-index:200;min-height:calc(var(--sat) + 52px);position:sticky;top:0}
+.topbar-logo{width:36px;height:36px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--amber) 0%,var(--orange) 100%);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 8px rgba(245,158,11,.4)}
+.topbar-title{flex:1;min-width:0}
+.topbar-title h1{font-size:15px;font-weight:700;color:var(--amber2);letter-spacing:-.2px}
+.topbar-title p{font-size:10px;color:var(--muted);margin-top:1px}
+.btn-back{background:transparent;color:var(--amber);border:1px solid var(--amber);border-radius:var(--r-md);padding:8px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;min-height:36px;flex-shrink:0;transition:background .15s}
+.btn-back:hover{background:rgba(245,158,11,.12)}
+
+/* ── LAYOUT ── */
+.page{padding:14px;display:flex;flex-direction:column;gap:14px;max-width:700px;margin:0 auto;padding-bottom:calc(14px + var(--sab))}
+
+/* ── FORM CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
+.card-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.06)}
+.card-header-icon{font-size:16px}
+.card-header-title{font-size:13px;font-weight:700;color:var(--amber2)}
+.card-header-sub{font-size:10px;color:var(--muted);margin-left:auto;white-space:nowrap}
+.card-body{padding:14px;display:flex;flex-direction:column;gap:10px}
+
+/* ── FORM FIELDS ── */
+.field-label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-full{grid-column:1/-1}
+select.field-input,input.field-input{width:100%;padding:11px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:var(--r-md);font-size:13px;-webkit-appearance:none;transition:border-color .15s}
+select.field-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+select.field-input:focus,input.field-input:focus{border-color:var(--amber)}
+select.field-input option{background:var(--surface2)}
+
+/* ── PARADAS BUILDER ── */
+.paradas-zona{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:10px;min-height:54px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.parada-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:600;background:var(--surface2);border:1px solid var(--border2);max-width:180px;flex-shrink:0}
+.parada-chip .nom{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.parada-chip.origen{border-color:var(--green);color:var(--green)}
+.parada-chip.destino{border-color:var(--red);color:var(--red)}
+.parada-chip.inter{border-color:var(--blue);color:var(--blue)}
+.chip-del{font-size:13px;font-weight:700;color:var(--red);background:none;border:none;padding:0 0 0 2px;cursor:pointer;flex-shrink:0;line-height:1}
+.flecha{color:var(--amber);font-size:14px;flex-shrink:0}
+.paradas-empty{color:var(--muted);font-size:11px;font-style:italic}
+
+.add-parada-row{display:flex;gap:8px}
+.add-parada-row select{flex:1}
+.btn-add-inter{background:var(--blue);color:#fff;border-radius:var(--r-md);padding:0 14px;font-size:12px;font-weight:700;min-height:42px;white-space:nowrap;transition:background .15s}
+.btn-add-inter:hover{background:var(--blue2)}
+.btn-add-inter:disabled{opacity:.4;pointer-events:none}
+
+/* ── BOTONES PRINCIPALES ── */
+.btns-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-full-row{grid-column:1/-1}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 10px;border-radius:var(--r-md);font-size:12px;font-weight:700;min-height:44px;transition:opacity .15s,transform .1s,background .15s}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn-guardar{background:var(--green);color:#fff}.btn-guardar:hover{background:var(--green2)}
+.btn-limpiar{background:transparent;color:var(--red);border:1px solid var(--red)}.btn-limpiar:hover{background:rgba(239,68,68,.1)}
+.btn-importar{background:var(--blue);color:#fff}.btn-importar:hover{background:var(--blue2)}
+.btn-exportar{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}.btn-exportar:hover{border-color:var(--amber);color:var(--amber)}
+
+/* ── LISTA DE RUTAS GUARDADAS ── */
+.rutas-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rutas-count{font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px 10px}
+.search-box{width:100%;padding:10px 12px 10px 34px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:var(--r-md);font-size:13px;-webkit-appearance:none;transition:border-color .15s;margin-bottom:10px}
+.search-box:focus{border-color:var(--amber)}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none}
+
+.rutas-list{display:flex;flex-direction:column;gap:8px}
+.ruta-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:border-color .15s}
+.ruta-card:hover{border-color:var(--amber)}
+.ruta-card-top{padding:12px 12px 8px;display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.ruta-badge{background:linear-gradient(135deg,var(--amber),var(--orange));color:#000;font-size:9px;font-weight:800;border-radius:var(--r-sm);padding:3px 7px;flex-shrink:0;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.ruta-info{flex:1;min-width:0}
+.ruta-nombre{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ruta-tramo{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ruta-meta{display:flex;gap:8px;margin-top:5px;flex-wrap:wrap}
+.meta-pill{font-size:9px;font-weight:600;padding:2px 7px;border-radius:var(--r-pill);background:var(--surface3)}
+.meta-pill.verde{color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.meta-pill.azul{color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.meta-pill.naranja{color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.ruta-expand{font-size:18px;color:var(--muted);flex-shrink:0;transition:transform .2s;align-self:center}
+.ruta-expand.open{transform:rotate(180deg)}
+
+.ruta-detail{display:none;padding:0 12px 12px;border-top:1px solid var(--border)}
+.ruta-detail.open{display:block}
+.paradas-scroll{display:flex;flex-wrap:wrap;gap:5px;padding:10px 0}
+.ruta-actions{display:flex;gap:8px;margin-top:8px}
+.btn-sm{font-size:11px;font-weight:700;padding:8px 14px;border-radius:var(--r-md);min-height:34px;display:flex;align-items:center;gap:4px;transition:background .15s}
+.btn-sm-del{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3)}.btn-sm-del:hover{background:rgba(239,68,68,.22)}
+.btn-sm-edit{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3)}.btn-sm-edit:hover{background:rgba(245,158,11,.22)}
+.btn-sm-dup{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.3)}.btn-sm-dup:hover{background:rgba(59,130,246,.22)}
+
+.empty-rutas{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-rutas .empty-icon{font-size:40px;margin-bottom:10px}
+.empty-rutas p{font-size:13px}
+
+/* ── STATS BAR ── */
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;text-align:center}
+.stat-num{font-size:22px;font-weight:800;color:var(--amber2);line-height:1}
+.stat-label{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:2000;display:none;align-items:flex-end;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.modal-overlay.active{display:flex}
+@media(min-width:600px){.modal-overlay{align-items:center;justify-content:center}.modal-sheet{border-radius:var(--r-xl)!important;max-width:440px;margin:auto}}
+.modal-sheet{width:100%;background:var(--surface);border-radius:var(--r-xl) var(--r-xl) 0 0;border-top:1px solid var(--border2);padding:20px 18px calc(20px + var(--sab));display:flex;flex-direction:column;max-height:88vh;animation:sheetUp .22s cubic-bezier(.4,0,.2,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-grip{width:36px;height:4px;background:var(--border2);border-radius:var(--r-pill);margin:0 auto 14px}
+.modal-title{font-size:17px;font-weight:700;color:var(--amber2);margin-bottom:12px}
+.modal-btns{display:flex;gap:8px;flex-shrink:0;margin-top:14px}
+.modal-btns .btn{flex:1;padding:13px}
+
+/* ── TOAST ── */
+#__toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;font-weight:500;padding:9px 18px;border-radius:999px;z-index:3000;opacity:0;transition:opacity .2s,transform .2s;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;flex-shrink:0}
+.tab{flex:1;padding:11px 8px;font-size:12px;font-weight:700;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:background .15s,color .15s;text-align:center}
+.tab.active{background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(232,93,4,.12));color:var(--amber2);border-bottom:2px solid var(--amber)}
+
+/* ── SECTION TOGGLE ── */
+.section-pane{display:none}.section-pane.active{display:flex;flex-direction:column;gap:14px}
+
+/* ── MUNICIPIO GROUP en select ── */
+optgroup{background:var(--surface2);color:var(--amber2);font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-logo">🚌</div>
+  <div class="topbar-title"><h1>RUTAS PREDEFINIDAS</h1><p>TransRuta QRO · 133 localidades</p></div>
+  <a class="btn-back" href="index.html">✕ Salir</a>
+</header>
+
+<div class="page">
+
+  <!-- STATS -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Rutas</div></div>
+    <div class="stat-box"><div class="stat-num" id="statParadas">0</div><div class="stat-label">Paradas prom.</div></div>
+    <div class="stat-box"><div class="stat-num" id="statKm">0</div><div class="stat-label">km prom.</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('crear')">➕ Crear ruta</button>
+    <button class="tab" onclick="switchTab('lista')">📋 Mis rutas</button>
+    <button class="tab" onclick="switchTab('importar')">📥 Importar</button>
+  </div>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║   TAB: CREAR RUTA            ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <div id="pane-crear" class="section-pane active">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-icon">🗺️</span>
+        <span class="card-header-title">Nueva ruta</span>
+        <span class="card-header-sub">133 localidades disponibles</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Nombre -->
+        <div>
+          <div class="field-label">Nombre de la ruta</div>
+          <input type="text" class="field-input" id="inNombre" placeholder="Ej: Querétaro → Jalpan Express" maxlength="80"/>
+        </div>
+
+        <!-- Origen / Destino -->
+        <div class="field-row">
+          <div>
+            <div class="field-label">🟢 Origen</div>
+            <select class="field-input" id="inOrigen" onchange="onOrigenChange()">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-label">🔴 Destino</div>
+            <select class="field-input" id="inDestino" onchange="onDestinoChange()">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Paradas intermedias -->
+        <div>
+          <div class="field-label">📍 Paradas intermedias</div>
+          <div class="paradas-zona" id="paradasZona">
+            <span class="paradas-empty">Sin paradas intermedias — la ruta va directo</span>
+          </div>
+        </div>
+
+        <!-- Agregar parada -->
+        <div>
+          <div class="field-label">Agregar parada intermedia</div>
+          <div class="add-parada-row">
+            <select class="field-input" id="inParada">
+              <option value="">— Elige una localidad —</option>
+            </select>
+            <button class="btn-add-inter" id="btnAddParada" onclick="agregarParada()" disabled>+ Agregar</button>
+          </div>
+        </div>
+
+        <!-- Info distancia -->
+        <div id="infoDistancia" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:var(--r-md);padding:10px 12px;font-size:12px;color:var(--amber2)"></div>
+
+        <!-- Botones -->
+        <div class="btns-row">
+          <button class="btn btn-guardar btn-full-row" onclick="guardarRuta()">💾 GUARDAR RUTA</button>
+          <button class="btn btn-limpiar" onclick="limpiarForm()">🔄 Limpiar</button>
+          <button class="btn btn-exportar" onclick="autoNombre()">✨ Auto-nombre</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║   TAB: MIS RUTAS             ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <div id="pane-lista" class="section-pane">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-icon">📋</span>
+        <span class="card-header-title">Rutas guardadas</span>
+        <span class="rutas-count" id="contadorRutas">0 rutas</span>
+      </div>
+      <div class="card-body" style="gap:8px">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-box" id="searchRutas" placeholder="Buscar por nombre, origen o destino…" oninput="renderLista()"/>
+        </div>
+        <div class="rutas-list" id="rutasList"></div>
+      </div>
+    </div>
+
+    <!-- Acciones masivas -->
+    <div class="card">
+      <div class="card-header"><span class="card-header-icon">⚙️</span><span class="card-header-title">Acciones</span></div>
+      <div class="card-body">
+        <div class="btns-row">
+          <button class="btn btn-exportar" onclick="exportarJSON()">📤 Exportar JSON</button>
+          <button class="btn btn-limpiar" onclick="confirmarBorrarTodo()">🗑️ Borrar todo</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║   TAB: IMPORTAR              ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <div id="pane-importar" class="section-pane">
+    <div class="card">
+      <div class="card-header"><span class="card-header-icon">📥</span><span class="card-header-title">Importar rutas desde JSON</span></div>
+      <div class="card-body">
+        <div class="field-label">Pegar JSON exportado</div>
+        <textarea id="jsonImport" style="width:100%;height:140px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;font-family:monospace;resize:vertical;-webkit-appearance:none" placeholder='[{"nombre":"Mi Ruta","origen":"Querétaro","destino":"Jalpan",...}]'></textarea>
+        <div class="btns-row">
+          <button class="btn btn-importar btn-full-row" onclick="importarJSON()">📥 IMPORTAR RUTAS</button>
+        </div>
+        <p style="font-size:10px;color:var(--muted);text-align:center">Las rutas importadas se agregan a las existentes sin duplicar.</p>
+      </div>
+    </div>
+
+    <!-- Rutas de ejemplo -->
+    <div class="card">
+      <div class="card-header"><span class="card-header-icon">🌟</span><span class="card-header-title">Cargar rutas de ejemplo</span></div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Carga un conjunto de rutas típicas del estado de Querétaro para comenzar rápido.</p>
+        <button class="btn btn-guardar" onclick="cargarEjemplos()">🚌 Cargar rutas de ejemplo</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ── MODAL CONFIRMAR BORRAR ── -->
+<div class="modal-overlay" id="modalBorrar">
+  <div class="modal-sheet">
+    <div class="modal-grip"></div>
+    <div class="modal-title">🗑️ ¿Borrar todas las rutas?</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:4px">Esta acción no se puede deshacer. Se eliminarán todas las rutas guardadas.</p>
+    <div class="modal-btns">
+      <button class="btn btn-exportar" onclick="document.getElementById('modalBorrar').classList.remove('active')">Cancelar</button>
+      <button class="btn btn-limpiar" onclick="borrarTodo()">🗑️ Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+<div id="__toast"></div>
+
+<script>
+// ============================================================
+// 133 LOCALIDADES — OBJETO COMPLETO
+// ============================================================
+const localidadesObj = {
+  1:"Querétaro (Centro)",2:"Del. Centro Histórico",3:"Del. Santa Rosa Jáuregui",
+  4:"Del. Villa Cayetano Rubio",5:"Del. Josefa Vergara",6:"Del. Félix Osores Sotomayor",
+  7:"Del. Felipe Carrillo Puerto",8:"Del. Epigmenio González",9:"Juriquilla",
+  10:"El Pueblito (Corregidora)",11:"La Cañada (Querétaro)",12:"Tlacote el Alto",
+  13:"San Isidro Miranda",14:"Chichimequillas",15:"San Pedro Mártir",16:"Mompaní",
+  17:"Pie de Gallo",18:"El Nabo",19:"El Sauzal",20:"La Solana",
+  21:"Corregidora",22:"Del. El Pueblito (Corregidora)",23:"Del. Huimilpan (Corregidora)",
+  24:"La Negreta",25:"El Salitre",26:"Candiles",27:"La Griega",28:"Playa Azul",
+  29:"El Marqués",30:"Del. Amazcala (El Marqués)",31:"Del. La Cañada (El Marqués)",
+  32:"Del. Palmillas",33:"Apapátaro",34:"El Colorado",35:"Virreyes",
+  36:"San José el Alto",37:"Rancho Viejo",38:"Hacienda Galindo",
+  39:"San Juan del Río",40:"Del. Ajuchitlán (SJR)",41:"Del. La Llave (SJR)",
+  42:"Del. Tequisquiapan (SJR)",43:"El Organal",44:"El Pinto",45:"Paso de Mata",
+  46:"San Nicolás (SJR)",47:"Galindo (SJR)",48:"Los Olvera",
+  49:"Huimilpan",50:"Del. Cuauhtémoc (Huimilpan)",51:"Del. Paredones",
+  52:"Arroyo Zarco",53:"La Loma (Huimilpan)",54:"San Ildefonso (Huimilpan)",
+  55:"Pedro Escobedo",56:"Del. Galindo (Pedro Escobedo)",57:"Del. Amazcala (Pedro Escobedo)",
+  58:"La Lira",59:"Jofre",60:"El Sauz",61:"Presa Allende",
+  62:"Tequisquiapan",63:"Del. San Nicolás (Tequis)",64:"Del. Ezequiel Montes (Tequis)",
+  65:"Fuentezuelas",66:"La Magdalena",67:"El Ciervo",68:"Bordo Blanco",
+  69:"Ezequiel Montes",70:"Del. Bernal",71:"Del. San Pablo (Ezequiel)",
+  72:"Ajuchitlán (Ezequiel)",73:"Santa María (Ezequiel)",
+  74:"Cadereyta de Montes",75:"Del. Vizarrón (Cadereyta)",76:"Del. La Noria (Cadereyta)",
+  77:"San Pedro (Cadereyta)",78:"Río Blanco (Cadereyta)",79:"El Paredón",80:"Rancho Nuevo (Cadereyta)",
+  81:"Colón",82:"Del. Ajuchitlán (Colón)",83:"Del. La Llave (Colón)",
+  84:"Higuerillas",85:"Las Rosas",86:"San Miguel Amazcala",
+  87:"Amealco de Bonfil",88:"Del. San Ildefonso (Amealco)",89:"Del. Santiago Mexquititlán",
+  90:"San Miguel (Amealco)",91:"Agua Azul",92:"Los Guajes",93:"El Nith",
+  94:"Tolimán",95:"Del. San Pablo Tolimán",96:"Del. Salitre de Guadalupe",
+  97:"Tancoyol (Tolimán)",98:"Tierra Blanca",99:"La Laja",
+  100:"San Joaquín",101:"Del. Rioverde",102:"La Cañada (San Joaquín)",
+  103:"El Doctor",104:"Las Adjuntas",
+  105:"Jalpan de Serra",106:"Del. Tilaco",107:"Del. Tancoyol (Jalpan)",
+  108:"Del. La Lagunita (Jalpan)",109:"El Banco",110:"Valle Verde",111:"Tancuilín",
+  112:"Landa de Matamoros",113:"Del. Acatitlán",114:"Del. Neblinas",
+  115:"Agua Zarca (Landa)",116:"Pisaflores",117:"Las Ranas",
+  118:"Arroyo Seco",119:"Del. Tancama",120:"Del. El Lobo",
+  121:"Concá",122:"Purísima",123:"La Yesca",
+  124:"Pinal de Amoles",125:"Del. Bucareli",126:"Del. La Lagunita (Pinal)",
+  127:"Altas Delicias",128:"Maconí",129:"Ahuacatlán",
+  130:"Peñamiller",131:"Del. Río Blanco",132:"Del. Agua Fría",
+  133:"Ojo de Agua",134:"La Soledad",135:"Vizarrón (Peñamiller)"
+};
+
+// Grupos por municipio para los selects
+const MUNICIPIOS = [
+  {label:"Querétaro (Capital)",ids:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]},
+  {label:"Corregidora",ids:[21,22,23,24,25,26,27,28]},
+  {label:"El Marqués",ids:[29,30,31,32,33,34,35,36,37,38]},
+  {label:"San Juan del Río",ids:[39,40,41,42,43,44,45,46,47,48]},
+  {label:"Huimilpan",ids:[49,50,51,52,53,54]},
+  {label:"Pedro Escobedo",ids:[55,56,57,58,59,60,61]},
+  {label:"Tequisquiapan",ids:[62,63,64,65,66,67,68]},
+  {label:"Ezequiel Montes",ids:[69,70,71,72,73]},
+  {label:"Cadereyta de Montes",ids:[74,75,76,77,78,79,80]},
+  {label:"Colón",ids:[81,82,83,84,85,86]},
+  {label:"Amealco de Bonfil",ids:[87,88,89,90,91,92,93]},
+  {label:"Tolimán",ids:[94,95,96,97,98,99]},
+  {label:"San Joaquín",ids:[100,101,102,103,104]},
+  {label:"Jalpan de Serra",ids:[105,106,107,108,109,110,111]},
+  {label:"Landa de Matamoros",ids:[112,113,114,115,116,117]},
+  {label:"Arroyo Seco",ids:[118,119,120,121,122,123]},
+  {label:"Pinal de Amoles",ids:[124,125,126,127,128,129]},
+  {label:"Peñamiller",ids:[130,131,132,133,134,135]}
+];
+
+const MATRIZ = {
+  "1-2":{km:1},"1-3":{km:15},"1-4":{km:5},"1-5":{km:4},"1-6":{km:5},
+  "1-7":{km:3},"1-8":{km:7},"1-9":{km:13},"1-10":{km:8},"1-11":{km:6},
+  "1-12":{km:15},"1-13":{km:16},"1-14":{km:16},"1-15":{km:7},"1-16":{km:5},
+  "1-17":{km:4},"1-18":{km:15},"1-19":{km:12},"1-20":{km:17},
+  "1-21":{km:12},"1-24":{km:16},"1-25":{km:14},"1-26":{km:19},"1-27":{km:17},"1-28":{km:19},
+  "1-29":{km:18},"1-30":{km:26},"1-31":{km:13},"1-32":{km:32},"1-33":{km:20},
+  "1-34":{km:22},"1-35":{km:25},"1-36":{km:24},"1-37":{km:13},"1-38":{km:19},
+  "1-39":{km:55},"1-40":{km:50},"1-41":{km:62},"1-42":{km:70},"1-43":{km:58},
+  "1-44":{km:60},"1-45":{km:65},"1-46":{km:52},"1-47":{km:48},"1-48":{km:54},
+  "1-49":{km:35},"1-50":{km:38},"1-51":{km:40},"1-52":{km:45},"1-53":{km:36},"1-54":{km:42},
+  "1-55":{km:32},"1-56":{km:30},"1-57":{km:35},"1-58":{km:34},"1-59":{km:28},"1-60":{km:33},"1-61":{km:38},
+  "1-62":{km:70},"1-63":{km:72},"1-64":{km:75},"1-65":{km:73},"1-66":{km:68},"1-67":{km:76},"1-68":{km:74},
+  "1-69":{km:75},"1-70":{km:85},"1-71":{km:78},"1-72":{km:80},"1-73":{km:76},
+  "1-74":{km:80},"1-75":{km:95},"1-76":{km:78},"1-77":{km:82},"1-78":{km:84},"1-79":{km:88},"1-80":{km:90},
+  "1-81":{km:95},"1-82":{km:100},"1-83":{km:90},"1-84":{km:92},"1-85":{km:98},"1-86":{km:96},
+  "1-87":{km:80},"1-88":{km:85},"1-89":{km:90},"1-90":{km:78},"1-91":{km:82},"1-92":{km:86},"1-93":{km:80},
+  "1-94":{km:110},"1-95":{km:110},"1-96":{km:105},"1-97":{km:115},"1-98":{km:112},"1-99":{km:108},
+  "1-100":{km:165},"1-101":{km:170},"1-102":{km:168},"1-103":{km:160},"1-104":{km:175},
+  "1-105":{km:175},"1-106":{km:180},"1-107":{km:195},"1-108":{km:185},"1-109":{km:190},"1-110":{km:182},"1-111":{km:198},
+  "1-112":{km:185},"1-113":{km:180},"1-114":{km:200},"1-115":{km:190},"1-116":{km:195},"1-117":{km:188},
+  "1-118":{km:210},"1-119":{km:215},"1-120":{km:205},"1-121":{km:200},"1-122":{km:212},"1-123":{km:218},
+  "1-124":{km:155},"1-125":{km:150},"1-126":{km:160},"1-127":{km:148},"1-128":{km:145},"1-129":{km:152},
+  "1-130":{km:145},"1-131":{km:150},"1-132":{km:142},"1-133":{km:148},"1-134":{km:140},"1-135":{km:138}
+};
+
+// ── ESTADO ──
+var paradasInter = []; // [{id, nombre}]
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', function(){
+  poblarSelects();
+  renderLista();
+  actualizarStats();
+});
+
+// ── POBLAR SELECTS ──
+function poblarSelects(){
+  var selects = ['inOrigen','inDestino','inParada'];
+  selects.forEach(function(sid){
+    var sel = document.getElementById(sid);
+    MUNICIPIOS.forEach(function(mun){
+      var grp = document.createElement('optgroup');
+      grp.label = mun.label;
+      mun.ids.forEach(function(id){
+        if(localidadesObj[id]){
+          var opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = localidadesObj[id];
+          grp.appendChild(opt);
+        }
+      });
+      sel.appendChild(grp);
+    });
+  });
+}
+
+// ── CAMBIO ORIGEN / DESTINO ──
+function onOrigenChange(){
+  var o = parseInt(document.getElementById('inOrigen').value);
+  var d = parseInt(document.getElementById('inDestino').value);
+  actualizarInfoDistancia(o, d);
+  document.getElementById('btnAddParada').disabled = !document.getElementById('inParada').value;
+}
+function onDestinoChange(){
+  var o = parseInt(document.getElementById('inOrigen').value);
+  var d = parseInt(document.getElementById('inDestino').value);
+  actualizarInfoDistancia(o, d);
+}
+
+function actualizarInfoDistancia(o, d){
+  var box = document.getElementById('infoDistancia');
+  if(!o || !d){ box.style.display='none'; return; }
+  var kmO = (MATRIZ['1-'+o]||{km:0}).km;
+  var kmD = (MATRIZ['1-'+d]||{km:0}).km;
+  var diff = Math.abs(kmD - kmO);
+  box.style.display = 'block';
+  box.innerHTML = '📏 Distancia aprox.: <b>'+diff+' km</b> &nbsp;|&nbsp; Origen: '+kmO+' km de Qro &nbsp;|&nbsp; Destino: '+kmD+' km de Qro';
+}
+
+// ── AGREGAR PARADA INTERMEDIA ──
+function agregarParada(){
+  var sel = document.getElementById('inParada');
+  var id = parseInt(sel.value);
+  if(!id) return;
+  var nombre = localidadesObj[id];
+  if(!nombre) return;
+  if(paradasInter.find(function(p){ return p.id===id; })){ toast('⚠️ Esa parada ya está en la ruta'); return; }
+  var oId = parseInt(document.getElementById('inOrigen').value);
+  var dId = parseInt(document.getElementById('inDestino').value);
+  if(id===oId || id===dId){ toast('⚠️ No puede ser igual al origen o destino'); return; }
+  paradasInter.push({id:id, nombre:nombre});
+  renderParadas();
+  toast('📍 Agregada: '+nombre);
+}
+
+// ── RENDER PARADAS ZONA ──
+function renderParadas(){
+  var zona = document.getElementById('paradasZona');
+  zona.innerHTML = '';
+  if(paradasInter.length===0){
+    zona.innerHTML = '<span class="paradas-empty">Sin paradas intermedias — la ruta va directo</span>';
+    return;
+  }
+  paradasInter.forEach(function(p, i){
+    if(i>0){ var f=document.createElement('span');f.className='flecha';f.textContent='›';zona.appendChild(f); }
+    var chip = document.createElement('div');
+    chip.className = 'parada-chip inter';
+    chip.innerHTML = '<span class="nom">📍 '+p.nombre+'</span><button class="chip-del" onclick="quitarParada('+i+')">✕</button>';
+    zona.appendChild(chip);
+  });
+}
+
+function quitarParada(i){
+  paradasInter.splice(i,1);
+  renderParadas();
+}
+
+// ── AUTO-NOMBRE ──
+function autoNombre(){
+  var oId = parseInt(document.getElementById('inOrigen').value);
+  var dId = parseInt(document.getElementById('inDestino').value);
+  if(!oId || !dId){ toast('⚠️ Selecciona origen y destino primero'); return; }
+  var nombre = localidadesObj[oId]+' → '+localidadesObj[dId];
+  document.getElementById('inNombre').value = nombre;
+  toast('✨ Nombre generado');
+}
+
+// ── GUARDAR RUTA ──
+function guardarRuta(){
+  var nombre = document.getElementById('inNombre').value.trim();
+  var oId = parseInt(document.getElementById('inOrigen').value);
+  var dId = parseInt(document.getElementById('inDestino').value);
+  if(!nombre){ toast('⚠️ Escribe un nombre para la ruta'); return; }
+  if(!oId){ toast('⚠️ Selecciona el origen'); return; }
+  if(!dId){ toast('⚠️ Selecciona el destino'); return; }
+  if(oId===dId){ toast('⚠️ Origen y destino deben ser distintos'); return; }
+
+  var kmO = (MATRIZ['1-'+oId]||{km:0}).km;
+  var kmD = (MATRIZ['1-'+dId]||{km:0}).km;
+
+  var todas = [{id:oId,nombre:localidadesObj[oId]}];
+  paradasInter.forEach(function(p){ todas.push(p); });
+  todas.push({id:dId,nombre:localidadesObj[dId]});
+
+  var ruta = {
+    id: Date.now(),
+    nombre: nombre,
+    origen: localidadesObj[oId], origenId: oId,
+    destino: localidadesObj[dId], destinoId: dId,
+    paradas: todas.map(function(p){return p.id;}),
+    paradasNombres: todas.map(function(p){return p.nombre;}),
+    totalParadas: todas.length,
+    kmOrigen: kmO, kmDestino: kmD,
+    distancia: Math.abs(kmD-kmO),
+    fecha: new Date().toLocaleDateString('es-MX')
+  };
+
+  var guardadas = cargarRutas();
+  guardadas.push(ruta);
+  guardarStorage(guardadas);
+  toast('✅ Ruta guardada: '+nombre);
+  limpiarForm();
+  actualizarStats();
+}
+
+// ── LIMPIAR FORM ──
+function limpiarForm(){
+  document.getElementById('inNombre').value='';
+  document.getElementById('inOrigen').value='';
+  document.getElementById('inDestino').value='';
+  document.getElementById('inParada').value='';
+  document.getElementById('infoDistancia').style.display='none';
+  paradasInter=[];
+  renderParadas();
+}
+
+// ── STORAGE ──
+function cargarRutas(){
+  try{ return JSON.parse(localStorage.getItem('rutasPredefinidas')||'[]'); }
+  catch(e){ return []; }
+}
+function guardarStorage(arr){
+  localStorage.setItem('rutasPredefinidas', JSON.stringify(arr));
+  localStorage.setItem('rutasPredefinidas_backup', JSON.stringify(arr));
+  renderLista();
+  actualizarStats();
+}
+
+// ── RENDER LISTA ──
+function renderLista(){
+  var rutas = cargarRutas();
+  var q = (document.getElementById('searchRutas')||{value:''}).value.toLowerCase();
+  if(q) rutas = rutas.filter(function(r){
+    return (r.nombre+r.origen+r.destino).toLowerCase().includes(q);
+  });
+
+  var lista = document.getElementById('rutasList');
+  var contador = document.getElementById('contadorRutas');
+  if(contador) contador.textContent = rutas.length+' '+(rutas.length===1?'ruta':'rutas');
+
+  if(!lista) return;
+  if(rutas.length===0){
+    lista.innerHTML = '<div class="empty-rutas"><div class="empty-icon">🚌</div><p>No hay rutas guardadas aún.<br>Crea tu primera ruta en la pestaña <b>Crear ruta</b>.</p></div>';
+    return;
+  }
+
+  lista.innerHTML = '';
+  rutas.forEach(function(r, i){
+    var card = document.createElement('div');
+    card.className = 'ruta-card';
+    var interCount = r.totalParadas - 2;
+    card.innerHTML =
+      '<div class="ruta-card-top" onclick="toggleDetalle('+i+')">' +
+        '<div class="ruta-badge">Ruta</div>' +
+        '<div class="ruta-info">' +
+          '<div class="ruta-nombre">'+r.nombre+'</div>' +
+          '<div class="ruta-tramo">'+r.origen+' → '+r.destino+'</div>' +
+          '<div class="ruta-meta">' +
+            '<span class="meta-pill verde">'+r.totalParadas+' paradas</span>' +
+            (r.distancia?'<span class="meta-pill naranja">~'+r.distancia+' km</span>':'')+
+            (interCount>0?'<span class="meta-pill azul">'+interCount+' intermedias</span>':'')+
+            '<span class="meta-pill" style="color:var(--muted)">' +r.fecha+'</span>'+
+          '</div>' +
+        '</div>' +
+        '<span class="ruta-expand" id="exp-'+i+'">⌄</span>' +
+      '</div>' +
+      '<div class="ruta-detail" id="det-'+i+'">' +
+        '<div class="paradas-scroll">' + buildChipsHTML(r) + '</div>' +
+        '<div class="ruta-actions">' +
+          '<button class="btn-sm btn-sm-del" onclick="borrarRuta('+r.id+')">🗑️ Eliminar</button>' +
+          '<button class="btn-sm btn-sm-dup" onclick="duplicarRuta('+r.id+')">📋 Duplicar</button>' +
+          '<button class="btn-sm btn-sm-edit" onclick="editarRuta('+r.id+')">✏️ Editar nombre</button>' +
+        '</div>' +
+      '</div>';
+    lista.appendChild(card);
+  });
+}
+
+function buildChipsHTML(r){
+  if(!r.paradasNombres || r.paradasNombres.length===0) return '';
+  var html='';
+  r.paradasNombres.forEach(function(n,i){
+    var cls = i===0?'origen':(i===r.paradasNombres.length-1?'destino':'inter');
+    var icon = i===0?'🟢':(i===r.paradasNombres.length-1?'🔴':'📍');
+    if(i>0) html+='<span class="flecha">›</span>';
+    html+='<div class="parada-chip '+cls+'"><span class="nom">'+icon+' '+n+'</span></div>';
+  });
+  return html;
+}
+
+function toggleDetalle(i){
+  var det=document.getElementById('det-'+i);
+  var exp=document.getElementById('exp-'+i);
+  if(!det)return;
+  var open=det.classList.toggle('open');
+  if(exp) exp.classList.toggle('open',open);
+}
+
+// ── ACCIONES RUTA ──
+function borrarRuta(id){
+  var rutas=cargarRutas().filter(function(r){return r.id!==id;});
+  guardarStorage(rutas);
+  toast('🗑️ Ruta eliminada');
+}
+
+function duplicarRuta(id){
+  var rutas=cargarRutas();
+  var r=rutas.find(function(x){return x.id===id;});
+  if(!r)return;
+  var copia=Object.assign({},r);
+  copia.id=Date.now();
+  copia.nombre=r.nombre+' (copia)';
+  copia.fecha=new Date().toLocaleDateString('es-MX');
+  rutas.push(copia);
+  guardarStorage(rutas);
+  toast('📋 Ruta duplicada');
+}
+
+function editarRuta(id){
+  var rutas=cargarRutas();
+  var r=rutas.find(function(x){return x.id===id;});
+  if(!r)return;
+  var nuevo=prompt('Nuevo nombre:',r.nombre);
+  if(!nuevo||!nuevo.trim())return;
+  r.nombre=nuevo.trim();
+  guardarStorage(rutas);
+  toast('✏️ Nombre actualizado');
+}
+
+// ── BORRAR TODO ──
+function confirmarBorrarTodo(){document.getElementById('modalBorrar').classList.add('active');}
+function borrarTodo(){
+  guardarStorage([]);
+  document.getElementById('modalBorrar').classList.remove('active');
+  toast('🗑️ Todas las rutas eliminadas');
+}
+
+// ── EXPORTAR JSON ──
+function exportarJSON(){
+  var rutas=cargarRutas();
+  if(rutas.length===0){toast('⚠️ No hay rutas para exportar');return;}
+  var json=JSON.stringify(rutas,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='rutas_transruta_qro.json';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast('📤 Exportado: '+rutas.length+' rutas');
+}
+
+// ── IMPORTAR JSON ──
+function importarJSON(){
+  var txt=document.getElementById('jsonImport').value.trim();
+  if(!txt){toast('⚠️ Pega el JSON primero');return;}
+  try{
+    var arr=JSON.parse(txt);
+    if(!Array.isArray(arr)){toast('⚠️ El JSON debe ser un array');return;}
+    var existentes=cargarRutas();
+    var idsExist=existentes.map(function(r){return r.id;});
+    var nuevas=arr.filter(function(r){return !idsExist.includes(r.id);});
+    if(nuevas.length===0){toast('ℹ️ Todas las rutas ya existen');return;}
+    guardarStorage(existentes.concat(nuevas));
+    document.getElementById('jsonImport').value='';
+    toast('✅ Importadas: '+nuevas.length+' rutas nuevas');
+  }catch(e){toast('❌ JSON inválido: '+e.message);}
+}
+
+// ── RUTAS DE EJEMPLO ──
+function cargarEjemplos(){
+  var ejemplos=[
+    {id:1001,nombre:'Querétaro → Jalpan de Serra',origen:'Querétaro (Centro)',origenId:1,destino:'Jalpan de Serra',destinoId:105,paradas:[1,29,55,62,69,74,81,94,100,105],paradasNombres:['Querétaro (Centro)','El Marqués','Pedro Escobedo','Tequisquiapan','Ezequiel Montes','Cadereyta de Montes','Colón','Tolimán','San Joaquín','Jalpan de Serra'],totalParadas:10,distancia:175,kmOrigen:0,kmDestino:175,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1002,nombre:'Querétaro → San Juan del Río',origen:'Querétaro (Centro)',origenId:1,destino:'San Juan del Río',destinoId:39,paradas:[1,29,55,39],paradasNombres:['Querétaro (Centro)','El Marqués','Pedro Escobedo','San Juan del Río'],totalParadas:4,distancia:55,kmOrigen:0,kmDestino:55,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1003,nombre:'Querétaro → Amealco de Bonfil',origen:'Querétaro (Centro)',origenId:1,destino:'Amealco de Bonfil',destinoId:87,paradas:[1,49,87],paradasNombres:['Querétaro (Centro)','Huimilpan','Amealco de Bonfil'],totalParadas:3,distancia:80,kmOrigen:0,kmDestino:80,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1004,nombre:'Querétaro → Arroyo Seco',origen:'Querétaro (Centro)',origenId:1,destino:'Arroyo Seco',destinoId:118,paradas:[1,69,74,94,105,118],paradasNombres:['Querétaro (Centro)','Ezequiel Montes','Cadereyta de Montes','Tolimán','Jalpan de Serra','Arroyo Seco'],totalParadas:6,distancia:210,kmOrigen:0,kmDestino:210,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1005,nombre:'San Juan del Río → Tequisquiapan',origen:'San Juan del Río',origenId:39,destino:'Tequisquiapan',destinoId:62,paradas:[39,62],paradasNombres:['San Juan del Río','Tequisquiapan'],totalParadas:2,distancia:15,kmOrigen:55,kmDestino:70,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1006,nombre:'Querétaro → Pinal de Amoles',origen:'Querétaro (Centro)',origenId:1,destino:'Pinal de Amoles',destinoId:124,paradas:[1,74,100,124],paradasNombres:['Querétaro (Centro)','Cadereyta de Montes','San Joaquín','Pinal de Amoles'],totalParadas:4,distancia:155,kmOrigen:0,kmDestino:155,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1007,nombre:'Querétaro → Peñamiller',origen:'Querétaro (Centro)',origenId:1,destino:'Peñamiller',destinoId:130,paradas:[1,74,130],paradasNombres:['Querétaro (Centro)','Cadereyta de Montes','Peñamiller'],totalParadas:3,distancia:145,kmOrigen:0,kmDestino:145,fecha:new Date().toLocaleDateString('es-MX')},
+    {id:1008,nombre:'Querétaro → Colón',origen:'Querétaro (Centro)',origenId:1,destino:'Colón',destinoId:81,paradas:[1,29,62,69,81],paradasNombres:['Querétaro (Centro)','El Marqués','Tequisquiapan','Ezequiel Montes','Colón'],totalParadas:5,distancia:95,kmOrigen:0,kmDestino:95,fecha:new Date().toLocaleDateString('es-MX')}
+  ];
+  var existentes=cargarRutas();
+  var idsExist=existentes.map(function(r){return r.id;});
+  var nuevas=ejemplos.filter(function(r){return !idsExist.includes(r.id);});
+  guardarStorage(existentes.concat(nuevas));
+  toast('🚌 '+nuevas.length+' rutas de ejemplo cargadas');
+}
+
+// ── STATS ──
+function actualizarStats(){
+  var rutas=cargarRutas();
+  document.getElementById('statTotal').textContent=rutas.length;
+  if(rutas.length===0){
+    document.getElementById('statParadas').textContent='—';
+    document.getElementById('statKm').textContent='—';
+    return;
+  }
+  var totalP=rutas.reduce(function(a,r){return a+(r.totalParadas||0);},0);
+  var totalK=rutas.reduce(function(a,r){return a+(r.distancia||0);},0);
+  document.getElementById('statParadas').textContent=Math.round(totalP/rutas.length);
+  document.getElementById('statKm').textContent=Math.round(totalK/rutas.length);
+}
+
+// ── TABS ──
+function switchTab(tab){
+  ['crear','lista','importar'].forEach(function(t){
+    document.getElementById('pane-'+t).classList.toggle('active',t===tab);
+    document.querySelectorAll('.tab')[['crear','lista','importar'].indexOf(t)].classList.toggle('active',t===tab);
+  });
+  if(tab==='lista') renderLista();
+}
+
+// ── TOAST ──
+var _tt;
+function toast(msg){
+  var t=document.getElementById('__toast');
+  t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(_tt);
+  _tt=setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(10px)';},2800);
+}
+
+// Cerrar modal al tocar fondo
+document.getElementById('modalBorrar').addEventListener('click',function(e){if(e.target===this)this.classList.remove('active');});
+
+// Select parada — habilitar botón
+document.getElementById('inParada').addEventListener('change',function(){
+  document.getElementById('btnAddParada').disabled=!this.value;
+});
+</script>
+</body>
+</html>

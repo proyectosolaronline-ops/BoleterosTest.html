@@ -5,7 +5,7 @@
 
 const localidadesObj = {
     1: "Santiago de Querétaro (Centro)",
-    1.1 "parque Bernardo Quintana",
+    1.1: "parque Bernardo Quintana",
   2: "El Pueblito (Corregidora)",
     3: "La Cañada (El Marqués)",
     4: "San Juan del Río",

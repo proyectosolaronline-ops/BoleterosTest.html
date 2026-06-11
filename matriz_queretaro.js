@@ -16,7 +16,7 @@ const localidadesObj = {
     10: "Colón",
     11: "Amealco de Bonfil",
     12: "Tolimán",
-    13: "San Joaquín",
+    13: "San Joaquín terminal",
     14: "Jalpan de Serra",
     15: "Landa de Matamoros",
     16: "Arroyo Seco",

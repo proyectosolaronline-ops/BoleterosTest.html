@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Rutas Predefinidas — TransRuta QRO</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#111827;--surface2:#1e293b;--surface3:#334155;
+  --border:#2d3748;--border2:#4a5568;--text:#f1f5f9;--muted:#94a3b8;
+  --amber:#f59e0b;--amber2:#fbbf24;--green:#22c55e;--green2:#16a34a;
+  --red:#ef4444;--red2:#dc2626;--blue:#3b82f6;--blue2:#2563eb;
+  --orange:#e85d04;--purple:#a855f7;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+  --r-sm:4px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;width:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;user-select:none;-webkit-user-select:none}
+button,input{font-family:inherit}button{cursor:pointer;border:none;outline:none}input{outline:none;-webkit-user-select:text;user-select:text}
+
+.layout{display:flex;flex-direction:column;height:100%}
+
+.topbar{display:flex;align-items:center;gap:10px;padding:calc(var(--sat) + 10px) 14px 10px;background:var(--surface);border-bottom:2px solid var(--amber);flex-shrink:0;z-index:500;min-height:calc(var(--sat) + 52px)}
+.topbar-logo{width:36px;height:36px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--amber) 0%,var(--orange) 100%);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 2px 8px rgba(245,158,11,.4)}
+.topbar-title{flex:1;min-width:0}
+.topbar-title h1{font-size:15px;font-weight:700;color:var(--amber2);letter-spacing:-.2px}
+.topbar-title p{font-size:10px;color:var(--muted);margin-top:1px}
+.btn-back{background:transparent;color:var(--amber);border:1px solid var(--amber);border-radius:var(--r-md);padding:8px 12px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;min-height:36px;flex-shrink:0}
+
+.map-zone{flex:1;position:relative;overflow:hidden;min-height:0}
+#mapa{width:100%;height:100%}
+
+.mapa-info{position:absolute;top:10px;left:10px;right:10px;z-index:900;background:rgba(10,10,10,.92);border:1px solid var(--amber);border-radius:var(--r-lg);padding:8px 12px;text-align:center;pointer-events:none}
+.mapa-info .tit{font-size:13px;font-weight:700;color:var(--amber2)}
+.mapa-info .sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+.buscadores{position:absolute;bottom:10px;left:10px;right:10px;z-index:900;display:flex;gap:6px;flex-wrap:wrap}
+.buscador-wrap{flex:1;min-width:120px;position:relative}
+.buscador-input{width:100%;padding:10px 12px;background:rgba(10,10,10,.92);color:var(--text);border:1px solid var(--amber);border-radius:var(--r-lg);font-size:11px}
+.buscador-input:focus{outline:none;border-color:var(--amber2)}
+.buscador-input.sel{border-color:var(--green)}
+.buscador-input.sel-dest{border-color:var(--red)}
+.buscador-drop{position:absolute;bottom:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--surface2);border:1px solid var(--amber);border-radius:var(--r-lg);margin-bottom:4px;display:none;z-index:1000;box-shadow:0 -4px 16px rgba(0,0,0,.6)}
+.buscador-drop.open{display:block}
+.buscador-item{padding:10px 12px;font-size:11px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.buscador-item:last-child{border-bottom:none}
+.buscador-item:hover,.buscador-item:active{background:rgba(245,158,11,.15);color:var(--amber2)}
+.buscador-item .km{color:var(--muted);font-size:10px;margin-left:6px}
+.buscador-empty{padding:10px 12px;font-size:11px;color:var(--muted);text-align:center}
+
+/* Selector de rutas alternativas */
+.selector-rutas{
+    position:absolute;top:60px;right:10px;z-index:950;
+    display:none;flex-direction:column;gap:6px;
+}
+.selector-rutas.active{display:flex}
+.btn-ruta-alt{
+    padding:10px 14px;border-radius:var(--r-lg);font-size:11px;font-weight:700;
+    color:#fff;cursor:pointer;text-align:center;min-width:100px;
+    transition:all .15s;border:2px solid transparent;
+}
+.btn-ruta-alt:active{transform:scale(.95)}
+.btn-ruta-alt.ruta-0{background:rgba(34,197,94,.8);border-color:var(--green)}
+.btn-ruta-alt.ruta-1{background:rgba(245,158,11,.8);border-color:var(--amber)}
+.btn-ruta-alt.ruta-2{background:rgba(59,130,246,.8);border-color:var(--blue)}
+.btn-ruta-alt.seleccionada{transform:scale(1.08);box-shadow:0 0 20px rgba(255,255,255,.4);border-color:#fff}
+
+.panel{flex-shrink:0;background:rgba(10,10,10,.97);border-top:1px solid var(--amber);padding:12px 14px calc(12px + var(--sab));max-height:35vh;overflow-y:auto;z-index:800}
+.panel-titulo{font-size:12px;font-weight:700;color:var(--amber2);margin-bottom:8px}
+.paradas-chips{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:10px;min-height:28px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:600;background:var(--surface2);border:1px solid var(--border2)}
+.chip.origen{border-color:var(--green);color:var(--green)}
+.chip.destino{border-color:var(--red);color:var(--red)}
+.chip.inter{border-color:var(--blue);color:var(--blue)}
+.chip .del{color:var(--red);font-weight:700;font-size:12px;margin-left:2px;cursor:pointer}
+.flecha{color:var(--amber);font-size:12px}
+.input-nombre{width:100%;padding:10px;background:var(--bg);color:var(--text);border:1px solid var(--amber);border-radius:var(--r-md);font-size:13px;margin-bottom:8px;text-align:center}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btn{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px;border-radius:var(--r-md);font-size:11px;font-weight:700;min-height:38px;transition:all .15s}
+.btn:active{transform:scale(.96)}.btn:disabled{opacity:.4}
+.btn-guardar{background:var(--green);color:#fff;grid-column:1/-1}
+.btn-limpiar{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-ver{background:var(--blue);color:#fff}
+.toast{position:fixed;bottom:calc(var(--sab) + 16px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:8px 16px;border-radius:999px;z-index:3000;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.leaflet-routing-container{display:block!important;background:rgba(10,10,10,.92)!important;color:#f1f5f9!important;padding:8px!important;border-radius:10px!important;max-height:20vh!important;overflow-y:auto!important;font-size:10px!important;margin-top:4px!important}
+.leaflet-routing-alt{color:#f1f5f9!important;background:transparent!important;border-bottom:1px solid #334155!important}
+.leaflet-routing-alt h2{color:#fbbf24!important;font-size:11px!important}
+.leaflet-routing-alt h3{color:#94a3b8!important;font-size:10px!important}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <header class="topbar">
+    <div class="topbar-logo">🚌</div>
+    <div class="topbar-title"><h1>RUTAS PREDEFINIDAS</h1><p>Busca · Traza · Selecciona · Guarda</p></div>
+    <a class="btn-back" href="index.html">✕</a>
+  </header>
+
+  <div class="map-zone">
+    <div id="mapa"></div>
+    <div class="mapa-info">
+      <div class="tit" id="mapaTitulo">🔍 Busca o toca ORIGEN</div>
+      <div class="sub" id="mapaSub">Escribe en los buscadores o toca el mapa</div>
+    </div>
+    
+    <!-- SELECTOR DE RUTAS ALTERNATIVAS -->
+    <div class="selector-rutas" id="selectorRutas">
+        <button class="btn-ruta-alt ruta-0 seleccionada" id="btnRuta0" onclick="seleccionarRuta(0)">🟢 Ruta 1</button>
+        <button class="btn-ruta-alt ruta-1" id="btnRuta1" onclick="seleccionarRuta(1)" style="display:none">🟠 Ruta 2</button>
+        <button class="btn-ruta-alt ruta-2" id="btnRuta2" onclick="seleccionarRuta(2)" style="display:none">🔵 Ruta 3</button>
+    </div>
+    
+    <div class="buscadores">
+      <div class="buscador-wrap">
+        <input type="text" class="buscador-input" id="searchOrigen" placeholder="🟢 Origen..." autocomplete="off" oninput="filtrar('origen')" onfocus="abrirDrop('origen')"/>
+        <div class="buscador-drop" id="dropOrigen"></div>
+      </div>
+      <div class="buscador-wrap">
+        <input type="text" class="buscador-input" id="searchDestino" placeholder="🔴 Destino..." autocomplete="off" oninput="filtrar('destino')" onfocus="abrirDrop('destino')"/>
+        <div class="buscador-drop" id="dropDestino"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-titulo">📍 Paradas de la ruta</div>
+    <div class="paradas-chips" id="paradasChips"><span style="color:var(--muted);font-size:10px">Selecciona origen y destino</span></div>
+    <input type="text" class="input-nombre" id="nombreRuta" placeholder="Nombre de la ruta">
+    <div class="btns">
+      <button class="btn btn-ver" onclick="trazarRuta()" id="btnTrazar" disabled>🗺️ TRAZAR RUTA</button>
+      <button class="btn btn-limpiar" onclick="reiniciar()">🔄 Limpiar</button>
+      <button class="btn btn-guardar" onclick="guardarRuta()" id="btnGuardar" disabled>💾 GUARDAR RUTA</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Carga externa de la matriz -->
+<script src="matriz_queretaro.js"></script>
+
+<script>
+var mapa, controlRuta, paso='origen', origenSel=null, destinoSel=null;
+var markerO=null, markerD=null, paradasInter=[], nextId=900;
+var coords={}, obj={}, localidadesArr=[];
+var markersInter=[];
+var rutaSeleccionada = 0; // 0 = principal, 1 = alt1, 2 = alt2
+var rutasDisponibles = [];
+
+obj   = localidadesObj;
+coords = coordenadasLocalidades;
+
+Object.keys(obj).forEach(function(id){
+    var idn=parseInt(id);
+    var km=(MATRIZ_QUERETARO['1-'+idn])?MATRIZ_QUERETARO['1-'+idn].km:0;
+    localidadesArr.push({id:idn,nombre:obj[idn],km:km,lat:coords[idn]?coords[idn].lat:0,lng:coords[idn]?coords[idn].lng:0});
+});
+localidadesArr.sort(function(a,b){return a.km-b.km});
+
+function iniciarMapa(){
+    mapa = L.map('mapa', {zoomControl:true, attributionControl:false}).setView([20.75,-99.9], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(mapa);
+
+    Object.keys(coords).forEach(function(id){
+        var idn=parseInt(id), c=coords[idn], n=obj[idn];
+        if(!c||!n) return;
+        var km=(MATRIZ_QUERETARO['1-'+idn])?MATRIZ_QUERETARO['1-'+idn].km:'?';
+        var circle = L.circleMarker([c.lat,c.lng], {radius:8,color:'#f59e0b',fillColor:'#1e293b',fillOpacity:1,weight:2}).addTo(mapa);
+        L.marker([c.lat,c.lng], {icon:L.divIcon({className:'',html:'<div style="background:#1e293b;border:1px solid #f59e0b;color:#fbbf24;font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;white-space:nowrap;margin-left:12px;margin-top:-8px;">'+n+' <span style="color:#94a3b8;font-size:8px;">('+km+'km)</span></div>',iconAnchor:[0,8]}),interactive:false}).addTo(mapa);
+        circle.bindTooltip(n+' ('+km+' km)');
+        circle.on('click', function(e){ L.DomEvent.stopPropagation(e); procesarToque({id:idn,nombre:n,lat:c.lat,lng:c.lng,custom:false,km:km}); });
+    });
+
+    mapa.on('click', function(e){
+        if(paso==='agregando'){
+            var mejor=null, min=Infinity;
+            Object.keys(coords).forEach(function(id){
+                var idn=parseInt(id), c=coords[idn];
+                if(!c) return;
+                var d=haversine(e.latlng.lat,e.latlng.lng,c.lat,c.lng);
+                if(d<0.5&&d<min){min=d;mejor={id:idn,nombre:obj[idn],lat:c.lat,lng:c.lng,km:(MATRIZ_QUERETARO['1-'+idn])?MATRIZ_QUERETARO['1-'+idn].km:'?'};}
+            });
+            if(mejor){
+                var yaExiste=paradasInter.find(function(p){return p.id===mejor.id;})||(origenSel&&origenSel.id===mejor.id)||(destinoSel&&destinoSel.id===mejor.id);
+                if(!yaExiste){
+                    paradasInter.push(mejor);
+                    var m=L.circleMarker([mejor.lat,mejor.lng],{radius:10,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.8,weight:2}).addTo(mapa).bindPopup('📍 '+mejor.nombre);
+                    markersInter.push(m);
+                    actualizarPanel();
+                    trazarRuta();
+                    toast('📍 '+mejor.nombre+' — Ruta actualizada');
+                }
+            }
+        }
+    });
+
+    mapa.on('dblclick', function(e){
+        L.DomEvent.stopPropagation(e);
+        var nombre = prompt('📍 Nombre para esta parada:', 'Parada '+(paradasInter.length+1));
+        if(!nombre) return;
+        var loc = {id:nextId,nombre:nombre,lat:e.latlng.lat,lng:e.latlng.lng,custom:true,km:'?'}; nextId++;
+        L.marker([loc.lat,loc.lng], {icon:L.divIcon({className:'',html:'<div style="background:#3b82f6;color:#fff;padding:3px 6px;border-radius:4px;font-size:9px;font-weight:700;white-space:nowrap">'+nombre+'</div>',iconAnchor:[20,10]})}).addTo(mapa);
+        procesarToque(loc);
+    });
+}
+
+function filtrar(tipo){
+    var input=document.getElementById('search'+cap(tipo));
+    var drop=document.getElementById('drop'+cap(tipo));
+    var q=input.value.trim().toLowerCase();
+    if(!q){drop.innerHTML='';drop.classList.remove('open');return;}
+    var resultados=localidadesArr.filter(function(l){return l.nombre.toLowerCase().indexOf(q)>=0;});
+    if(!resultados.length){drop.innerHTML='<div class="buscador-empty">Sin resultados</div>';}
+    else{drop.innerHTML=resultados.slice(0,12).map(function(l){return '<div class="buscador-item" onclick="seleccionarBuscador(\''+tipo+'\','+l.id+',\''+l.nombre.replace(/'/g,"\\'")+'\','+l.lat+','+l.lng+','+l.km+')">📍 '+l.nombre+' <span class="km">('+l.km+' km)</span></div>';}).join('');}
+    drop.classList.add('open');
+}
+function abrirDrop(tipo){var input=document.getElementById('search'+cap(tipo));if(input.value.trim())document.getElementById('drop'+cap(tipo)).classList.add('open');}
+function seleccionarBuscador(tipo,id,nombre,lat,lng,km){
+    document.getElementById('search'+cap(tipo)).value=nombre;
+    document.getElementById('search'+cap(tipo)).classList.add(tipo==='origen'?'sel':'sel-dest');
+    document.getElementById('drop'+cap(tipo)).classList.remove('open');
+    var loc={id:id,nombre:nombre,lat:lat,lng:lng,custom:false,km:km};
+    if(tipo==='origen'){origenSel=loc;paso='destino';if(markerO)mapa.removeLayer(markerO);markerO=L.circleMarker([lat,lng],{radius:14,color:'#22c55e',fillColor:'#22c55e',fillOpacity:.8,weight:3}).addTo(mapa).bindPopup('🟢 '+nombre).openPopup();document.getElementById('mapaTitulo').textContent='🔍 Busca o toca DESTINO';}
+    else{destinoSel=loc;paso='completo';if(markerD)mapa.removeLayer(markerD);markerD=L.circleMarker([lat,lng],{radius:14,color:'#ef4444',fillColor:'#ef4444',fillOpacity:.8,weight:3}).addTo(mapa).bindPopup('🔴 '+nombre).openPopup();document.getElementById('mapaTitulo').textContent='✅ Ruta lista — Selecciona alternativa';document.getElementById('btnTrazar').disabled=false;document.getElementById('btnGuardar').disabled=false;}
+    actualizarPanel();mapa.setView([lat,lng],11);
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+document.addEventListener('click',function(e){if(!e.target.closest('.buscador-wrap')){document.getElementById('dropOrigen').classList.remove('open');document.getElementById('dropDestino').classList.remove('open');}});
+
+function procesarToque(loc){
+    if(paso==='origen'){origenSel=loc;paso='destino';if(markerO)mapa.removeLayer(markerO);markerO=L.circleMarker([loc.lat,loc.lng],{radius:14,color:'#22c55e',fillColor:'#22c55e',fillOpacity:.8,weight:3}).addTo(mapa).bindPopup('🟢 '+loc.nombre).openPopup();document.getElementById('searchOrigen').value=loc.nombre;document.getElementById('searchOrigen').classList.add('sel');document.getElementById('mapaTitulo').textContent='🔍 Busca o toca DESTINO';actualizarPanel();}
+    else if(paso==='destino'){if(loc.id===origenSel.id){alert('Diferente al origen');return;}destinoSel=loc;paso='completo';if(markerD)mapa.removeLayer(markerD);markerD=L.circleMarker([loc.lat,loc.lng],{radius:14,color:'#ef4444',fillColor:'#ef4444',fillOpacity:.8,weight:3}).addTo(mapa).bindPopup('🔴 '+loc.nombre).openPopup();document.getElementById('searchDestino').value=loc.nombre;document.getElementById('searchDestino').classList.add('sel-dest');document.getElementById('mapaTitulo').textContent='✅ Ruta lista — Selecciona alternativa';document.getElementById('btnTrazar').disabled=false;document.getElementById('btnGuardar').disabled=false;actualizarPanel();}
+}
+
+function trazarRuta(){
+    if(!origenSel||!destinoSel) return;
+    if(controlRuta) mapa.removeControl(controlRuta);
+    
+    rutaSeleccionada = 0;
+    rutasDisponibles = [];
+    
+    var todas = [origenSel];
+    var ordenadas = paradasInter.slice().sort(function(a,b){return (a.km||999)-(b.km||999);});
+    todas = todas.concat(ordenadas);
+    todas.push(destinoSel);
+    var waypoints = todas.map(function(loc){return L.latLng(loc.lat, loc.lng);});
+    
+    controlRuta = L.Routing.control({
+        waypoints: waypoints,
+        routeWhileDragging: false,
+        showAlternatives: true,
+        altLineOptions: {styles:[
+            {color:'#f59e0b',weight:4,opacity:.7},
+            {color:'#3b82f6',weight:3,opacity:.5}
+        ]},
+        lineOptions: {styles:[{color:'#22c55e',weight:6,opacity:.9}]},
+        addWaypoints: false,
+        createMarker: function(){return null;}
+    }).addTo(mapa);
+    
+    // Esperar a que se calculen las rutas para mostrar el selector
+    controlRuta.on('routesfound', function(e){
+        rutasDisponibles = e.routes;
+        mostrarSelectorRutas(rutasDisponibles.length);
+    });
+    
+    document.getElementById('mapaTitulo').textContent='🗺️ Ruta actualizada — Elige alternativa';
+    document.getElementById('mapaSub').textContent='Toca los botones laterales para elegir ruta';
+}
+
+function mostrarSelectorRutas(total){
+    var selector = document.getElementById('selectorRutas');
+    selector.classList.add('active');
+    
+    document.getElementById('btnRuta0').style.display = (total >= 1) ? 'block' : 'none';
+    document.getElementById('btnRuta1').style.display = (total >= 2) ? 'block' : 'none';
+    document.getElementById('btnRuta2').style.display = (total >= 3) ? 'block' : 'none';
+    
+    // Actualizar textos con distancia
+    if(rutasDisponibles.length >= 1){
+        var d0 = (rutasDisponibles[0].summary.totalDistance / 1000).toFixed(1);
+        document.getElementById('btnRuta0').textContent = '🟢 Ruta 1 ('+d0+' km)';
+    }
+    if(rutasDisponibles.length >= 2){
+        var d1 = (rutasDisponibles[1].summary.totalDistance / 1000).toFixed(1);
+        document.getElementById('btnRuta1').textContent = '🟠 Ruta 2 ('+d1+' km)';
+    }
+    if(rutasDisponibles.length >= 3){
+        var d2 = (rutasDisponibles[2].summary.totalDistance / 1000).toFixed(1);
+        document.getElementById('btnRuta2').textContent = '🔵 Ruta 3 ('+d2+' km)';
+    }
+    
+    seleccionarRuta(0);
+}
+
+function seleccionarRuta(index){
+    if(index >= rutasDisponibles.length) return;
+    rutaSeleccionada = index;
+    
+    // Quitar selección de todos
+    document.querySelectorAll('.btn-ruta-alt').forEach(function(b){ b.classList.remove('seleccionada'); });
+    document.getElementById('btnRuta'+index).classList.add('seleccionada');
+    
+    // Cambiar estilo de la ruta seleccionada
+    var container = document.querySelector('.leaflet-routing-container');
+    if(container){
+        var alts = container.querySelectorAll('.leaflet-routing-alt');
+        alts.forEach(function(alt, i){
+            if(i === index){
+                alt.style.border = '2px solid #fff';
+                alt.style.background = 'rgba(255,255,255,0.15)';
+                alt.style.borderRadius = '8px';
+                alt.style.padding = '6px';
+            } else {
+                alt.style.border = 'none';
+                alt.style.background = 'transparent';
+                alt.style.padding = '0';
+            }
+        });
+    }
+    
+    var nombres = ['principal (verde)', 'alterna 1 (ámbar)', 'alterna 2 (azul)'];
+    toast('✅ Seleccionada: Ruta ' + (index+1) + ' — ' + (nombres[index] || ''));
+    document.getElementById('mapaSub').textContent = 'Ruta '+(index+1)+' seleccionada. Toca otra para cambiar.';
+}
+
+function actualizarPanel(){
+    var c=document.getElementById('paradasChips');c.innerHTML='';
+    if(!origenSel&&!destinoSel){c.innerHTML='<span style="color:var(--muted);font-size:10px">Selecciona origen y destino</span>';return;}
+    if(origenSel){var o=document.createElement('div');o.className='chip origen';o.innerHTML='🟢 '+origenSel.nombre;c.appendChild(o);}
+    var ordenadas = paradasInter.slice().sort(function(a,b){return (a.km||999)-(b.km||999);});
+    ordenadas.forEach(function(p,i){var f=document.createElement('span');f.className='flecha';f.textContent='›';c.appendChild(f);var chip=document.createElement('div');chip.className='chip inter';chip.innerHTML='📍 '+p.nombre+' ('+p.km+'km) <span class="del" onclick="quitarInter('+i+')">✕</span>';c.appendChild(chip);});
+    if(destinoSel){var f=document.createElement('span');f.className='flecha';f.textContent='›';c.appendChild(f);var d=document.createElement('div');d.className='chip destino';d.innerHTML='🔴 '+destinoSel.nombre;c.appendChild(d);}
+}
+function quitarInter(i){
+    var ordenadas = paradasInter.slice().sort(function(a,b){return (a.km||999)-(b.km||999);});
+    var aQuitar = ordenadas[i];
+    var idx = paradasInter.findIndex(function(p){return p.id===aQuitar.id;});
+    if(idx>=0){paradasInter.splice(idx,1);if(markersInter[idx]){mapa.removeLayer(markersInter[idx]);markersInter.splice(idx,1);}}
+    actualizarPanel();
+    if(origenSel&&destinoSel) trazarRuta();
+}
+function reiniciar(){
+    paso='origen';origenSel=null;destinoSel=null;paradasInter=[];rutaSeleccionada=0;rutasDisponibles=[];
+    if(markerO){mapa.removeLayer(markerO);markerO=null;}if(markerD){mapa.removeLayer(markerD);markerD=null;}
+    markersInter.forEach(function(m){mapa.removeLayer(m);});markersInter=[];
+    if(controlRuta){mapa.removeControl(controlRuta);controlRuta=null;}
+    document.getElementById('searchOrigen').value='';document.getElementById('searchOrigen').classList.remove('sel');
+    document.getElementById('searchDestino').value='';document.getElementById('searchDestino').classList.remove('sel-dest');
+    document.getElementById('mapaTitulo').textContent='🔍 Busca o toca ORIGEN';
+    document.getElementById('mapaSub').textContent='Escribe en los buscadores o toca el mapa';
+    document.getElementById('btnTrazar').disabled=true;document.getElementById('btnGuardar').disabled=true;
+    document.getElementById('nombreRuta').value='';actualizarPanel();
+    document.getElementById('selectorRutas').classList.remove('active');
+}
+function guardarRuta(){
+    var nombre=document.getElementById('nombreRuta').value.trim();
+    if(!nombre){toast('⚠️ Pon un nombre');return;}
+    var todas=[{id:origenSel.id,nombre:origenSel.nombre,lat:origenSel.lat,lng:origenSel.lng}];
+    var ordenadas=paradasInter.slice().sort(function(a,b){return(a.km||999)-(b.km||999);});
+    ordenadas.forEach(function(p){todas.push({id:p.id,nombre:p.nombre,lat:p.lat,lng:p.lng});});
+    todas.push({id:destinoSel.id,nombre:destinoSel.nombre,lat:destinoSel.lat,lng:destinoSel.lng});
+    
+    var distanciaTotal = rutasDisponibles.length > rutaSeleccionada ? 
+        (rutasDisponibles[rutaSeleccionada].summary.totalDistance / 1000).toFixed(1) : '?';
+    
+    var ruta={
+        nombre:nombre,
+        origen:origenSel.nombre,origenId:origenSel.id,
+        destino:destinoSel.nombre,destinoId:destinoSel.id,
+        paradas:todas.map(function(l){return l.id}),
+        paradasNombres:todas.map(function(l){return l.nombre}),
+        paradasLat:todas.map(function(l){return l.lat}),
+        paradasLng:todas.map(function(l){return l.lng}),
+        totalParadas:todas.length,
+        rutaSeleccionada: rutaSeleccionada,
+        distanciaTotal: distanciaTotal,
+        fecha:new Date().toLocaleDateString('es-MX')
+    };
+    var guardadas=JSON.parse(localStorage.getItem('rutasPredefinidas')||'[]');guardadas.push(ruta);
+    localStorage.setItem('rutasPredefinidas',JSON.stringify(guardadas));
+    localStorage.setItem('rutasPredefinidas_backup',JSON.stringify(guardadas));
+    toast('✅ Guardada: '+nombre+' ('+distanciaTotal+' km)');
+    setTimeout(function(){window.location.href='index.html';},1500);
+}
+function haversine(lat1,lng1,lat2,lng2){var R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lng2-lng1)*Math.PI/180,a=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+var _tt;function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show');},2500);}
+
+iniciarMapa();
+</script>
+</body>
+</html>

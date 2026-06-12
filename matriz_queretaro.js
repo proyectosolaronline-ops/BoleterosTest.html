@@ -5,7 +5,7 @@
 
 const localidadesObj = {
     1: "Santiago de Querétaro (Centro)",
-    1.1: "parque Bernardo Quintana",
+    101: "parque Bernardo Quintana",
   2: "El Pueblito (Corregidora)",
     3: "La Cañada (El Marqués)",
     4: "San Juan del Río",
@@ -28,7 +28,7 @@ const localidadesObj = {
 const coordenadasLocalidades = {
     1:  { lat: 20.5881, lng: -100.3899 },
 
-      1.1: {lat: 20.5711, lng: -100.2814},
+      101: {lat: 20.5711, lng: -100.2814},
     
     2:  { lat: 20.5403, lng: -100.4415 },
     3:  { lat: 20.5833, lng: -100.2417 },

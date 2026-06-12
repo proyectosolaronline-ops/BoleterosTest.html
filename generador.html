@@ -489,8 +489,8 @@
         if (!municipioActivo && !estadoActivo.esNuevo) {
             titulo.textContent = '🏙️ ¿A qué municipio agregar estas subparadas?';
             contenido.innerHTML = '<p style="color:var(--muted);font-size:11px;margin-bottom:8px;">Municipios existentes en ' + estadoActivo.nombre + ':</p>';
-            var ids = Object.keys(localidadesObj).map(Number).filter(function(id){return id >= estadoActivo.idBase && id <= estadoActivo.idMax && id % 100 === 0;});
-            if (ids.length === 0) ids = [estadoActivo.idBase];
+              var ids = Object.keys(localidadesObj).map(Number).filter(function(id){return id >= estadoActivo.idBase && id <= estadoActivo.idMax;}).sort(function(a, b) { return a - b; });
+if (ids.length === 0) ids = [estadoActivo.idBase];
             ids.forEach(function(id) {
                 var b = document.createElement('button'); b.className = 'btn btn-amber'; b.style.marginBottom = '6px';
                 b.textContent = '📍 ' + localidadesObj[id] + ' (ID ' + id + ')';

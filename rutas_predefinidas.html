@@ -170,7 +170,58 @@ localidadesArr.sort(function(a,b){ return a.km - b.km; });
 // ================================================================
 // MAPA
 // ================================================================
-function iniciarMapa(){
+
+  function agregarIntermediaGPS() {
+    if (!origenSel || !destinoSel) {
+        toast('⚠️ Selecciona origen y destino primero', true);
+        return;
+    }
+    if (!navigator.geolocation) {
+        toast('⚠️ GPS no disponible en este dispositivo', true);
+        return;
+    }
+    
+    toast('📍 Obteniendo ubicación GPS...');
+    
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            var lat = pos.coords.latitude;
+            var lng = pos.coords.longitude;
+            var nombre = prompt('✏️ Nombre de esta parada GPS:', 'Parada GPS ' + (interSel ? '2' : '1'));
+            if (!nombre) return;
+            
+            interSel = { id: 900 + Date.now(), nombre: nombre, lat: lat, lng: lng, km: 'GPS' };
+            document.getElementById('searchInter').value = nombre + ' (GPS)';
+            document.getElementById('searchInter').classList.add('sel');
+            document.getElementById('interClear').style.display = 'block';
+            
+            if (markerI) { mapa.removeLayer(markerI); }
+            markerI = L.circleMarker([lat, lng], {
+                radius: 11, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: .85, weight: 3
+            }).addTo(mapa).bindTooltip('📍 ' + nombre + ' (GPS)').openTooltip();
+            
+            actualizarPanel(interSel);
+            setTimeout(trazarRuta, 200);
+            toast('✅ Parada GPS: ' + nombre + ' (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')');
+        },
+        function(err) {
+            var msg = '⚠️ Error GPS: ';
+            switch(err.code) {
+                case err.PERMISSION_DENIED: msg += 'Permiso denegado'; break;
+                case err.POSITION_UNAVAILABLE: msg += 'No disponible'; break;
+                case err.TIMEOUT: msg += 'Tiempo agotado'; break;
+                default: msg += 'Desconocido'; break;
+            }
+            toast(msg, true);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+    );
+}
+  function iniciarMapa(){
     mapa = L.map('mapa', {zoomControl:true, attributionControl:false}).setView([20.75,-99.9], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(mapa);
 

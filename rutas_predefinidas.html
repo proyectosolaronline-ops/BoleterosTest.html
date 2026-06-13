@@ -131,6 +131,7 @@ button,input{font-family:inherit}button{cursor:pointer;border:none;outline:none}
     <div class="btns">
       <button class="btn btn-ver" onclick="trazarRuta()" id="btnTrazar" disabled>🗺️ TRAZAR RUTA</button>
       <button class="btn btn-limpiar" onclick="reiniciar()">🔄 Limpiar</button>
+      <button class="btn btn-amber" onclick="agregarParadaGPS()" id="btnGPS" disabled>📍 GPS (Agregar Parada)</button>
       <button class="btn btn-guardar" onclick="guardarRuta()" id="btnGuardar" disabled>💾 GUARDAR RUTA</button>
     </div>
   </div>
@@ -171,7 +172,7 @@ localidadesArr.sort(function(a,b){ return a.km - b.km; });
 // MAPA
 // ================================================================
 
-  function agregarIntermediaGPS() {
+function agregarIntermediaGPS() {
     if (!origenSel || !destinoSel) {
         toast('⚠️ Selecciona origen y destino primero', true);
         return;
@@ -187,22 +188,21 @@ localidadesArr.sort(function(a,b){ return a.km - b.km; });
         function(pos) {
             var lat = pos.coords.latitude;
             var lng = pos.coords.longitude;
-            var nombre = prompt('✏️ Nombre de esta parada GPS:', 'Parada GPS ' + (interSel ? '2' : '1'));
+            var nombre = prompt('✏️ Nombre de la localidad GPS:', 'Localidad GPS ' + (paradasInter.length + 1));
             if (!nombre) return;
             
-            interSel = { id: 900 + Date.now(), nombre: nombre, lat: lat, lng: lng, km: 'GPS' };
-            document.getElementById('searchInter').value = nombre + ' (GPS)';
-            document.getElementById('searchInter').classList.add('sel');
-            document.getElementById('interClear').style.display = 'block';
+            var loc = { id: nextId, nombre: nombre, lat: lat, lng: lng, custom: true, km: 'GPS' };
+            nextId++;
+            paradasInter.push(loc);
             
-            if (markerI) { mapa.removeLayer(markerI); }
-            markerI = L.circleMarker([lat, lng], {
+            var m = L.circleMarker([lat, lng], {
                 radius: 11, color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: .85, weight: 3
             }).addTo(mapa).bindTooltip('📍 ' + nombre + ' (GPS)').openTooltip();
+            markersInter.push(m);
             
-            actualizarPanel(interSel);
-            setTimeout(trazarRuta, 200);
-            toast('✅ Parada GPS: ' + nombre + ' (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')');
+            actualizarPanel();
+            trazarRuta();
+            toast('✅ Localidad GPS: ' + nombre + ' (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')');
         },
         function(err) {
             var msg = '⚠️ Error GPS: ';
@@ -214,11 +214,7 @@ localidadesArr.sort(function(a,b){ return a.km - b.km; });
             }
             toast(msg, true);
         },
-        {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-        }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
 }
   function iniciarMapa(){

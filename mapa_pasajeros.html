@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<title>Mapa de Pasajeros</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#1e293b;--text:#f1f5f9;--muted:#94a3b8;
+  --amber:#f59e0b;--amber2:#fbbf24;--green:#22c55e;--red:#ef4444;
+  --blue:#3b82f6;--orange:#e85d04;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;width:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+
+/* TOPBAR */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(var(--sat) + 10px) 14px 10px;
+  background:var(--surface);border-bottom:2px solid var(--amber);
+  flex-shrink:0;z-index:500;min-height:calc(var(--sat) + 52px);
+}
+.topbar-logo{width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,var(--amber),var(--orange));
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.topbar-info{flex:1;min-width:0}
+.topbar-info h1{font-size:14px;font-weight:700;color:var(--amber2)}
+.topbar-info p{font-size:10px;color:var(--muted);margin-top:1px}
+.btn-back{
+  background:transparent;color:var(--amber);border:1px solid var(--amber);
+  border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+
+/* MAPA */
+.map-zone{flex:1;position:relative;overflow:hidden;min-height:0}
+#mapa{width:100%;height:100%}
+.layout{display:flex;flex-direction:column;height:100%}
+
+/* INFO FLOTANTE */
+.mapa-info{
+  position:absolute;top:10px;left:10px;right:10px;z-index:900;
+  background:rgba(10,10,10,.93);border:1px solid var(--amber);
+  border-radius:12px;padding:8px 12px;text-align:center;pointer-events:none;
+}
+.mapa-info .tit{font-size:13px;font-weight:700;color:var(--amber2)}
+.mapa-info .sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* PANEL INFERIOR */
+.panel{
+  flex-shrink:0;background:rgba(10,10,10,.97);
+  border-top:1px solid var(--amber);
+  padding:10px 14px calc(10px + var(--sab));
+  z-index:800;
+}
+.indicadores{display:flex;gap:8px;margin-bottom:8px}
+.ind{flex:1;background:var(--surface);border-radius:8px;padding:8px;text-align:center}
+.ind .num{font-size:22px;font-weight:900}
+.ind .etq{font-size:9px;color:var(--muted);text-transform:uppercase}
+.ind.verde .num{color:var(--green)}
+.ind.naranja .num{color:var(--orange)}
+.ind.amarillo .num{color:var(--amber2)}
+
+/* MODAL DETALLE PARADA */
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.95);
+  z-index:2000;display:none;flex-direction:column;padding:20px 16px;
+}
+.modal.active{display:flex}
+.modal-tit{font-size:20px;font-weight:800;color:var(--amber2);text-align:center;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px}
+.grupo-item{
+  background:var(--surface);border-radius:10px;padding:12px 14px;
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+}
+.grupo-ruta{font-size:13px;font-weight:600}
+.grupo-pax{font-size:12px;color:var(--muted);margin-top:2px}
+.grupo-total{font-size:16px;font-weight:800;color:var(--amber2)}
+.lista-grupos{flex:1;overflow-y:auto;margin-bottom:12px}
+.btn-confirmar{
+  width:100%;padding:14px;background:var(--green);color:#fff;
+  border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;
+  margin-bottom:8px;flex-shrink:0;
+}
+.btn-cerrar{
+  width:100%;padding:12px;background:transparent;color:var(--red);
+  border:1px solid var(--red);border-radius:10px;font-size:14px;
+  font-weight:700;cursor:pointer;flex-shrink:0;
+}
+
+/* PIN PARPADEANTE */
+@keyframes parpadeo{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(1.15)}
+}
+.pin-wrap{
+  display:flex;flex-direction:column;align-items:center;cursor:pointer;
+}
+.pin-circulo{
+  background:var(--red);color:#fff;border-radius:50%;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:900;border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+  animation:parpadeo 1.2s ease-in-out infinite;
+}
+.pin-etiqueta{
+  background:rgba(10,10,10,.85);color:var(--amber2);
+  font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;
+  margin-top:3px;white-space:nowrap;max-width:90px;
+  overflow:hidden;text-overflow:ellipsis;text-align:center;
+}
+.pin-gps{
+  background:var(--green);width:16px;height:16px;border-radius:50%;
+  border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <header class="topbar">
+    <div class="topbar-logo">🗺️</div>
+    <div class="topbar-info">
+      <h1 id="tituloRuta">Mapa de Pasajeros</h1>
+      <p id="subtituloRuta">Cargando sesión...</p>
+    </div>
+    <button class="btn-back" onclick="window.location.href='boletero.html'">⬅️ BOLETERO</button>
+  </header>
+
+  <div class="map-zone">
+    <div id="mapa"></div>
+    <div class="mapa-info">
+      <div class="tit" id="mapaTit">📍 Ruta activa</div>
+      <div class="sub" id="mapaSub">Toca un pin para ver detalle de bajada</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="indicadores">
+      <div class="ind verde"><div class="num" id="indABordo">0</div><div class="etq">👥 A bordo</div></div>
+      <div class="ind naranja"><div class="num" id="indBajan">0</div><div class="etq">🔻 Próx. bajada</div></div>
+      <div class="ind amarillo"><div class="num" id="indTotal">$0</div><div class="etq">💰 Recaudado</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL DETALLE PARADA -->
+<div class="modal" id="modalParada">
+  <div class="modal-tit" id="modalParadaTit">📍 Parada</div>
+  <div class="modal-sub" id="modalParadaSub">Pasajeros que bajan aquí</div>
+  <div class="lista-grupos" id="listaGruposParada"></div>
+  <button class="btn-confirmar" id="btnConfirmarBajada" onclick="confirmarBajada()">✅ CONFIRMAR BAJADA</button>
+  <button class="btn-cerrar" onclick="cerrarModal()">❌ CERRAR</button>
+</div>
+
+<script src="matriz_queretaro.js"></script>
+<script>
+// ── Estado ────────────────────────────────────────────────────
+var mapa, marcadorGPS = null;
+var pinesParadas = {};       // destinoId → marker Leaflet
+var paradaActiva = null;     // parada seleccionada en modal
+var gpsWatch = null;
+
+// ── Leer datos del boletero vía localStorage ──────────────────
+var sesion = null, estadoBoletero = null, localidades = [];
+
+function cargarDatos() {
+    try { sesion = JSON.parse(localStorage.getItem('sesionActiva')); } catch(e){}
+
+    // Estado de pasajeros guardado por el boletero
+    var uid = sesion ? sesion.usuario_id : 'default';
+    try { estadoBoletero = JSON.parse(localStorage.getItem('estadoPasajeros_' + uid)); } catch(e){}
+
+    // Construir localidades desde la matriz
+    if (typeof localidadesObj !== 'undefined') {
+        var mat  = typeof MATRIZ_QUERETARO !== 'undefined' ? MATRIZ_QUERETARO : {};
+        var coords = typeof coordenadasLocalidades !== 'undefined' ? coordenadasLocalidades : {};
+        localidades = Object.keys(localidadesObj).map(function(id){
+            var idn = parseInt(id);
+            var km  = mat['1-'+idn] ? mat['1-'+idn].km : 0;
+            var c   = coords[idn] || null;
+            return {id:idn, nombre:localidadesObj[idn], km:km,
+                    lat:c?c.lat:null, lng:c?c.lng:null};
+        });
+    }
+
+    // Actualizar header
+    if (sesion) {
+        document.getElementById('tituloRuta').textContent =
+            (sesion.origen || '?') + ' → ' + (sesion.destino || '?');
+        document.getElementById('subtituloRuta').textContent =
+            '👤 ' + (sesion.nombre || '') + ' · 🚛 ' + (sesion.camion || '');
+    }
+}
+
+// ── MAPA ──────────────────────────────────────────────────────
+function iniciarMapa() {
+    mapa = L.map('mapa', {zoomControl:true, attributionControl:false}).setView([20.75,-99.9], 9);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:17}).addTo(mapa);
+}
+
+// ── PINES PARPADEANTES ────────────────────────────────────────
+function crearPinHTML(cantidad, nombre) {
+    return '<div class="pin-wrap">' +
+           '<div class="pin-circulo">' + cantidad + '</div>' +
+           '<div class="pin-etiqueta">' + nombre + '</div>' +
+           '</div>';
+}
+
+function actualizarPines() {
+    if (!estadoBoletero || !estadoBoletero.pasajerosABordo) return;
+    var pasajeros = estadoBoletero.pasajerosABordo;
+
+    // Agrupar por destino
+    var porDestino = {};
+    pasajeros.forEach(function(g) {
+        if (!porDestino[g.destinoId]) porDestino[g.destinoId] = [];
+        porDestino[g.destinoId].push(g);
+    });
+
+    // Quitar pines que ya no aplican
+    Object.keys(pinesParadas).forEach(function(id) {
+        if (!porDestino[id]) {
+            mapa.removeLayer(pinesParadas[id]);
+            delete pinesParadas[id];
+        }
+    });
+
+    // Agregar / actualizar pines
+    Object.keys(porDestino).forEach(function(id) {
+        var grupos = porDestino[id];
+        var total  = grupos.reduce(function(s,g){
+            return s + Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);
+        }, 0);
+        var loc = localidades.find(function(l){ return l.id === parseInt(id); });
+        if (!loc || !loc.lat) return;
+
+        var icon = L.divIcon({
+            className: '',
+            html: crearPinHTML(total, loc.nombre),
+            iconAnchor: [18, 18]
+        });
+
+        if (pinesParadas[id]) {
+            pinesParadas[id].setIcon(icon);
+        } else {
+            var m = L.marker([loc.lat, loc.lng], {icon:icon}).addTo(mapa);
+            m.on('click', function(){ abrirModal(parseInt(id), grupos, loc); });
+            pinesParadas[id] = m;
+        }
+    });
+
+    actualizarIndicadores(pasajeros);
+}
+
+// ── INDICADORES ───────────────────────────────────────────────
+function actualizarIndicadores(pasajeros) {
+    var aBordo = pasajeros.reduce(function(s,g){
+        return s + Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);
+    }, 0);
+    document.getElementById('indABordo').textContent = aBordo;
+
+    // Próxima bajada = destino más cercano al GPS actual
+    var bajan = 0;
+    if (estadoBoletero && estadoBoletero.localidadActualId) {
+        bajan = pasajeros.filter(function(g){
+            return g.destinoId === estadoBoletero.localidadActualId;
+        }).reduce(function(s,g){
+            return s + Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);
+        }, 0);
+    }
+    document.getElementById('indBajan').textContent = bajan;
+    document.getElementById('indTotal').textContent =
+        '$' + (estadoBoletero ? (estadoBoletero.totalRecaudado || 0) : 0);
+}
+
+// ── MODAL DETALLE ─────────────────────────────────────────────
+function abrirModal(destinoId, grupos, loc) {
+    paradaActiva = { destinoId: destinoId, loc: loc };
+    document.getElementById('modalParadaTit').textContent = '📍 ' + loc.nombre;
+
+    var total = grupos.reduce(function(s,g){
+        return s + Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);
+    }, 0);
+    document.getElementById('modalParadaSub').textContent =
+        total + ' pasajero(s) bajan aquí';
+
+    var lista = document.getElementById('listaGruposParada');
+    lista.innerHTML = '';
+    grupos.forEach(function(g) {
+        var pax = Object.entries(g.cantidades)
+            .filter(function(e){ return e[1] > 0; })
+            .map(function(e){ return e[1] + ' ' + e[0]; }).join(', ');
+        var div = document.createElement('div');
+        div.className = 'grupo-item';
+        div.innerHTML =
+            '<div><div class="grupo-ruta">' + (g.origenNombre || 'Sube en ruta') + ' → ' + loc.nombre + '</div>' +
+            '<div class="grupo-pax">' + pax + '</div></div>' +
+            '<div class="grupo-total">$' + g.total + '</div>';
+        lista.appendChild(div);
+    });
+
+    document.getElementById('modalParada').classList.add('active');
+}
+
+function cerrarModal() {
+    document.getElementById('modalParada').classList.remove('active');
+    paradaActiva = null;
+}
+
+function confirmarBajada() {
+    if (!paradaActiva || !estadoBoletero) return;
+    var uid = sesion ? sesion.usuario_id : 'default';
+
+    // Quitar pasajeros de ese destino
+    estadoBoletero.pasajerosABordo = estadoBoletero.pasajerosABordo.filter(function(g){
+        return g.destinoId !== paradaActiva.destinoId;
+    });
+    localStorage.setItem('estadoPasajeros_' + uid, JSON.stringify(estadoBoletero));
+
+    // Quitar pin
+    if (pinesParadas[paradaActiva.destinoId]) {
+        mapa.removeLayer(pinesParadas[paradaActiva.destinoId]);
+        delete pinesParadas[paradaActiva.destinoId];
+    }
+
+    cerrarModal();
+    actualizarPines();
+}
+
+// ── GPS ───────────────────────────────────────────────────────
+function iniciarGPS() {
+    if (!navigator.geolocation) return;
+    gpsWatch = navigator.geolocation.watchPosition(function(pos){
+        var lat = pos.coords.latitude, lng = pos.coords.longitude;
+        if (marcadorGPS) mapa.removeLayer(marcadorGPS);
+        marcadorGPS = L.marker([lat,lng], {
+            icon: L.divIcon({className:'', html:'<div class="pin-gps"></div>', iconAnchor:[8,8]})
+        }).addTo(mapa);
+
+        // Actualizar info
+        document.getElementById('mapaTit').textContent = '🚌 En movimiento';
+        document.getElementById('mapaSub').textContent =
+            'GPS ±' + Math.round(pos.coords.accuracy) + 'm · Toca un pin rojo para ver bajadas';
+    }, function(){}, {enableHighAccuracy:true, maximumAge:3000, timeout:15000});
+}
+
+// ── REFRESCO AUTOMÁTICO cada 5 segundos ──────────────────────
+function refrescar() {
+    var uid = sesion ? sesion.usuario_id : 'default';
+    try { estadoBoletero = JSON.parse(localStorage.getItem('estadoPasajeros_' + uid)); } catch(e){}
+    actualizarPines();
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+cargarDatos();
+iniciarMapa();
+iniciarGPS();
+actualizarPines();
+setInterval(refrescar, 5000);
+</script>
+</body>
+</html>

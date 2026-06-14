@@ -30,7 +30,9 @@
         .header-ruta{font-size:4.5vw;font-weight:700;color:var(--amarillo)}
         .header-operador{font-size:3vw;color:var(--gris-texto)}
         .header-fecha{font-size:2.5vw;color:var(--gris-texto)}
+       
         .header-actions{display:flex;gap:2vw;flex-shrink:0;align-items:center}
+       
         .btn-volver{
             background:transparent;border:0.2vh solid var(--amarillo);color:var(--amarillo);
             padding:1vh 2vw;border-radius:1vh;font-size:3vw;cursor:pointer;text-decoration:none;
@@ -128,6 +130,8 @@
     </div>
     <div class="header-actions">
         <button class="btn-invertir-header" onclick="invertirRutaBoletero()" title="Invertir ruta">🔄</button>
+      
+        <button onclick="window.location.href='mapa_pasajeros.html'" style="background:#3b82f6;color:#fff;border:none;padding:1vh 2vw;border-radius:1vh;font-size:3vw;font-weight:700;cursor:pointer;">🗺️ MAPA</button>
         <a class="btn-volver" href="index.html">📋</a>
     </div>
 </div>
@@ -171,6 +175,8 @@
         <div class="cobro-total-bar"><div class="cobro-total-label">TOTAL</div><div class="cobro-total-monto" id="cobroTotalMonto">$0</div></div>
         <div class="cobro-vuelto"><span style="font-size:3vw;color:var(--gris-texto)">Vuelto:</span><div class="vuelto-billetes"><button class="billete-btn" onclick="calcularVuelto(20)">$20</button><button class="billete-btn" onclick="calcularVuelto(50)">$50</button><button class="billete-btn" onclick="calcularVuelto(100)">$100</button><button class="billete-btn" onclick="calcularVuelto(200)">$200</button><button class="billete-btn" onclick="calcularVuelto(500)">$500</button></div><div class="vuelto-resultado" id="vueltoResultado"></div></div>
         <button class="btn-cobrar-final" id="btnCobrarFinal" onclick="confirmarCobro()" disabled>✅ COBRAR</button>
+
+        
         <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
     </div>
 </div>
@@ -349,8 +355,19 @@ function abrirModalDestino() {
 function cerrarModalDestino() { document.getElementById('modalDestino').classList.remove('active'); }
 function abrirModalCobro(destino, tarifa) { estado.destinoSeleccionado = destino; estado.tarifaBaseUnitaria = tarifa; estado.cantidades = { normal: 0, adulto: 0, estudiante: 0, maestro: 0 }; estado.billeteSeleccionado = null; document.getElementById('cobroRuta').textContent = estado.localidadActual.nombre + ' → ' + destino.nombre; ['normal','adulto','estudiante','maestro'].forEach(function(t) { document.getElementById('precio-' + t).textContent = '$' + precioPorTipo(t); document.getElementById('cant-' + t).textContent = '0'; document.getElementById('sub-' + t).textContent = ''; }); document.getElementById('cobroTotalMonto').textContent = '$0'; document.getElementById('btnCobrarFinal').disabled = true; document.getElementById('vueltoResultado').textContent = ''; document.querySelectorAll('.btn-menos').forEach(function(b) { b.disabled = true; }); document.getElementById('modalDestino').classList.remove('active'); document.getElementById('modalCobro').classList.add('active'); }
 function cerrarModalCobro() { document.getElementById('modalCobro').classList.remove('active'); }
-function confirmarCobro() { if (!totalPasajerosGrupo()) return; var grupo = { destinoId: estado.destinoSeleccionado.id, destinoNombre: estado.destinoSeleccionado.nombre, cantidades: Object.assign({}, estado.cantidades), total: totalGeneral() }; estado.pasajerosABordo.push(grupo); estado.totalRecaudado += grupo.total; document.getElementById('totalCorrida').textContent = '$' + estado.totalRecaudado; actualizarIndicadores(); alert('✅ COBRO EXITOSO\n\n' + estado.localidadActual.nombre + ' → ' + estado.destinoSeleccionado.nombre + '\nTotal: $' + grupo.total); cerrarModalCobro(); }
 
+function confirmarCobro() { if (!totalPasajerosGrupo()) return; 
+    var grupo = { destinoId: estado.destinoSeleccionado.id, destinoNombre: estado.destinoSeleccionado.nombre, 
+                 cantidades: Object.assign({}, estado.cantidades), total: totalGeneral() };
+    estado.pasajerosABordo.push(grupo); estado.totalRecaudado += grupo.total; document.getElementById('totalCorrida').textContent = '$' + estado.totalRecaudado; actualizarIndicadores();
+    var uid = sesion ? sesion.usuario_id : 'default';
+    localStorage.setItem('estadoPasajeros_' + uid, JSON.stringify({
+        pasajerosABordo: estado.pasajerosABordo,
+        totalRecaudado: estado.totalRecaudado,
+        localidadActualId: estado.localidadActual ? estado.localidadActual.id : null
+    }));
+    alert('✅ COBRO EXITOSO\n\n' + estado.localidadActual.nombre + ' → ' + estado.destinoSeleccionado.nombre + '\nTotal: $' + grupo.total); 
+    cerrarModalCobro(); }
 function confirmarCorte() {
     var aBordo = estado.pasajerosABordo.reduce(function(s,g) { return s + Object.values(g.cantidades).reduce(function(a,b){return a+b;},0); }, 0);
     var origen = sesion ? sesion.origen : 'Sin ruta', destino = sesion ? sesion.destino : 'Sin ruta';

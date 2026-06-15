@@ -367,8 +367,112 @@
 
     function obtenerClaveEstadoPorId(id){for(var i=0;i<estadosDetectados.length;i++){if(id>=estadosDetectados[i].idBase&&id<=estadosDetectados[i].idMax)return 'bKm_'+estadosDetectados[i].clave;}return 'bKm_'+(estadosDetectados[0]?estadosDetectados[0].clave:'QRO');}
 
-    function generarTXT(tipo){tipoGeneracion=tipo;cerrarModal();if(!municipioActivo)municipioActivo={id:estadoActivo.idBase,nombre:localidadesObj[estadoActivo.idBase]||estadoActivo.nombre};var txt='',bKmVar='bKm_'+estadoActivo.clave,bKmValor=estadoActivo.bKm;var porMunicipio={};subparadas.forEach(function(s){var munId=s.municipioId||municipioActivo.id;if(!porMunicipio[munId])porMunicipio[munId]=[];porMunicipio[munId].push(s);});if(tipo==='completa'){txt+='// ============================================================\n// MATRIZ DE TARIFAS — MÉXICO\n// ============================================================\n\n';var todos=estadosDetectados.slice();if(estadoActivo.esNuevo)todos.push(estadoActivo);txt+='// ===== TARIFAS POR ESTADO =====\n';todos.forEach(function(e){txt+='const bKm_'+e.clave+' = '+e.bKm+';\n';});txt+='\nconst localidadesObj = {\n';Object.keys(localidadesObj).forEach(function(id){txt+='    '+id+': "'+localidadesObj[id]+'",\n';});subparadas.forEach(function(s){txt+='    '+s.id+': "'+s.nombre+'",\n';});txt+='};\n\nconst coordenadasLocalidades = {\n';Object.keys(coordenadasLocalidades).forEach(function(id){var c=coordenadasLocalidades[id];txt+='    '+id+': { lat: '+c.lat+', lng: '+c.lng+' },\n';});subparadas.forEach(function(s){txt+='    '+s.id+': { lat: '+s.lat+', lng: '+s.lng+' },\n';});txt+='};\n\nconst MATRIZ_QUERETARO = {\n';Object.keys(MATRIZ_QUERETARO).forEach(function(k){var origen=parseInt(k.split('-')[0]);txt+='    "'+k+'":{km:'+MATRIZ_QUERETARO[k].km+', tarifa: '+MATRIZ_QUERETARO[k].km+' * '+obtenerClaveEstadoPorId(origen)+'},\n';});Object.keys(porMunicipio).forEach(function(munId){var nombreMun=localidadesObj[munId]||'Municipio '+munId;txt+='\n    // --- '+nombreMun+' ---\n';porMunicipio[munId].forEach(function(s){txt+='    "'+munId+'-'+s.id+'":{km:0, tarifa: 0 * '+bKmVar+'},  // '+s.nombre+'\n';});});txt+='};\n';}else{txt+='// ===== '+estadoActivo.nombre.toUpperCase()+' =====\nconst '+bKmVar+' = '+bKmValor+';\n\n';txt+='// --- Agregar en localidadesObj ---\n';subparadas.forEach(function(s){txt+=s.id+': "'+s.nombre+'",\n';});txt+='\n// --- Agregar en coordenadasLocalidades ---\n';subparadas.forEach(function(s){txt+=s.id+': { lat: '+s.lat+', lng: '+s.lng+' },\n';});txt+='\n// --- Agregar en MATRIZ_QUERETARO ---\n';Object.keys(porMunicipio).forEach(function(munId){var nombreMun=localidadesObj[munId]||'Municipio '+munId;txt+='\n    // --- '+nombreMun+' ---\n';porMunicipio[munId].forEach(function(s){txt+='"'+munId+'-'+s.id+'":{km:0, tarifa: 0 * '+bKmVar+'},  // '+s.nombre+'\n';});});}document.getElementById('codigoOutput').textContent=txt;document.getElementById('outputCard').style.display='block';document.getElementById('outputCard').scrollIntoView({behavior:'smooth'});mostrarToast('✅ Generado');}
+    function generarTXT(tipo){
+    tipoGeneracion=tipo;cerrarModal();
+    if(!municipioActivo)municipioActivo={id:estadoActivo.idBase,nombre:localidadesObj[estadoActivo.idBase]||estadoActivo.nombre};
+    var txt='',bKmVar='bKm_'+estadoActivo.clave,bKmValor=estadoActivo.bKm;
 
+    // Agrupar subparadas por municipio
+    var porMunicipio = {};
+    subparadas.forEach(function(s){
+        var munId = s.municipioId || municipioActivo.id;
+        if(!porMunicipio[munId]) porMunicipio[munId] = [];
+        porMunicipio[munId].push(s);
+    });
+
+    // Ordenar municipios existentes + nuevos
+    var todosIds = Object.keys(localidadesObj).map(Number).filter(function(n){return !isNaN(n);});
+    // Agregar municipios nuevos
+    Object.keys(porMunicipio).forEach(function(munId){ if(todosIds.indexOf(parseInt(munId))===-1) todosIds.push(parseInt(munId)); });
+    todosIds.sort(function(a,b){ return a-b; });
+
+    if(tipo==='completa'){
+        txt+='// ============================================================\n// MATRIZ DE TARIFAS — MÉXICO\n// ============================================================\n\n';
+        var todos=estadosDetectados.slice();if(estadoActivo.esNuevo)todos.push(estadoActivo);
+        txt+='// ===== TARIFAS POR ESTADO =====\n';todos.forEach(function(e){txt+='const bKm_'+e.clave+' = '+e.bKm+';\n';});
+        txt+='\nconst localidadesObj = {\n';
+
+        // Recorrer TODOS los IDs ordenados
+        todosIds.forEach(function(id){
+            // Escribir el municipio original si existe
+            if(localidadesObj[id]){
+                txt+='    '+id+': "'+localidadesObj[id]+'",\n';
+            }
+            // Escribir las subparadas de este municipio debajo
+            if(porMunicipio[id]){
+                porMunicipio[id].sort(function(a,b){ return a.id - b.id; }).forEach(function(s){
+                    txt+='    '+s.id+': "'+s.nombre+'",\n';
+                });
+            }
+        });
+
+        txt+='};\n\nconst coordenadasLocalidades = {\n';
+
+        // Mismo orden para coordenadas
+        todosIds.forEach(function(id){
+            if(coordenadasLocalidades[id]){
+                var c=coordenadasLocalidades[id];
+                txt+='    '+id+': { lat: '+c.lat+', lng: '+c.lng+' },\n';
+            }
+            if(porMunicipio[id]){
+                porMunicipio[id].sort(function(a,b){ return a.id - b.id; }).forEach(function(s){
+                    txt+='    '+s.id+': { lat: '+s.lat+', lng: '+s.lng+' },\n';
+                });
+            }
+        });
+
+        txt+='};\n\nconst MATRIZ_QUERETARO = {\n';
+        Object.keys(MATRIZ_QUERETARO).forEach(function(k){var origen=parseInt(k.split('-')[0]);txt+='    "'+k+'":{km:'+MATRIZ_QUERETARO[k].km+', tarifa: '+MATRIZ_QUERETARO[k].km+' * '+obtenerClaveEstadoPorId(origen)+'},\n';});
+
+        // Tarifas de subparadas por municipio, en orden
+        todosIds.forEach(function(id){
+            if(porMunicipio[id]){
+                txt+='\n    // --- '+ (localidadesObj[id]||'Municipio '+id) +' ---\n';
+                porMunicipio[id].sort(function(a,b){ return a.id - b.id; }).forEach(function(s){
+                    txt+='    "'+id+'-'+s.id+'":{km:0, tarifa: 0 * '+bKmVar+'},  // '+s.nombre+'\n';
+                });
+            }
+        });
+
+        txt+='};\n';
+    } else {
+        // Versión parcial
+        txt+='// ===== '+estadoActivo.nombre.toUpperCase()+' =====\nconst '+bKmVar+' = '+bKmValor+';\n\n';
+        txt+='// --- Agregar en localidadesObj ---\n';
+
+        todosIds.forEach(function(id){
+            if(porMunicipio[id]){
+                porMunicipio[id].sort(function(a,b){ return a.id - b.id; }).forEach(function(s){
+                    txt+=s.id+': "'+s.nombre+'",\n';
+                });
+            }
+        });
+
+        txt+='\n// --- Agregar en coordenadasLocalidades ---\n';
+        todosIds.forEach(function(id){
+            if(porMunicipio[id]){
+                porMunicipio[id].sort(function(a,b){ return a.id - b.id; }).forEach(function(s){
+                    txt+=s.id+': { lat: '+s.lat+', lng: '+s.lng+' },\n';
+                });
+            }
+        });
+
+        txt+='\n// --- Agregar en MATRIZ_QUERETARO ---\n';
+        todosIds.forEach(function(id){
+            if(porMunicipio[id]){
+                txt+='\n    // --- '+ (localidadesObj[id]||'Municipio '+id) +' ---\n';
+                porMunicipio[id].sort(function(a,b){ return a.id - b.id; }).forEach(function(s){
+                    txt+='"'+id+'-'+s.id+'":{km:0, tarifa: 0 * '+bKmVar+'},  // '+s.nombre+'\n';
+                });
+            }
+        });
+    }
+
+    document.getElementById('codigoOutput').textContent=txt;
+    document.getElementById('outputCard').style.display='block';
+    document.getElementById('outputCard').scrollIntoView({behavior:'smooth'});
+    mostrarToast('✅ Generado');
+}
     function descargarArchivo(){var txt=document.getElementById('codigoOutput').textContent;if(!txt)return;var n=tipoGeneracion==='completa'?'matriz_queretaro.js':'subparadas.txt';var b=new Blob([txt],{type:'text/plain'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);mostrarToast('💾 '+n);}
     function copiarTXT(){navigator.clipboard.writeText(document.getElementById('codigoOutput').textContent).then(function(){mostrarToast('✅ Copiado');}).catch(function(){mostrarToast('⚠️ Copia manual',true);});}
     function mostrarToast(msg,warn){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(warn?' warn':'');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show','warn');},2500);}

@@ -198,7 +198,79 @@
         });
         idBaseActual=(Math.floor(ids[ids.length-1]/1000)+1)*1000;
     }
+function respaldarMatriz(){
+    var txt = '// ============================================================\n';
+    txt += '// MATRIZ DE TARIFAS — RESPALDO\n';
+    txt += '// Fecha: ' + new Date().toLocaleDateString('es-MX') + '\n';
+    txt += '// ============================================================\n\n';
+    
+    estadosDetectados.forEach(function(e){
+        txt += 'const bKm_' + e.clave + ' = ' + e.bKm + ';\n';
+    });
+    txt += '\n';
+    
+    txt += 'const localidadesObj = {\n';
+    Object.keys(localidadesObj).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(id){
+        txt += '    ' + id + ': "' + localidadesObj[id] + '",\n';
+    });
+    txt += '};\n\n';
+    
+    txt += 'const coordenadasLocalidades = {\n';
+    Object.keys(coordenadasLocalidades).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(id){
+        var c = coordenadasLocalidades[id];
+        txt += '    ' + id + ': { lat: ' + c.lat + ', lng: ' + c.lng + ' },\n';
+    });
+    txt += '};\n\n';
+    
+    txt += 'const MATRIZ_QUERETARO = {\n';
+    Object.keys(MATRIZ_QUERETARO).sort().forEach(function(k){
+        var origen = parseInt(k.split('-')[0]);
+        var clave = obtenerClaveEstadoPorId(origen);
+        txt += '    "' + k + '":{km:' + MATRIZ_QUERETARO[k].km + ', tarifa: ' + MATRIZ_QUERETARO[k].km + ' * ' + clave + '},\n';
+    });
+    txt += '};\n';
+    
+    var blob = new Blob([txt], {type: 'text/javascript'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'matriz_queretaro.js';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    mostrarToast('💾 Matriz respaldada: matriz_queretaro.js');
+}
+    
+    function cargarRespaldo(event){
+        var file = event.target.files[0];
+        if(!file){ return; }
+        var reader = new FileReader();
+        reader.onload = function(e){
+            try {
+                var contenido = e.target.result;
+                var blob = new Blob([contenido], {type: 'text/javascript'});
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'matriz_queretaro.js';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                eval(contenido);
+                verificarMatriz();
+                mostrarToast('✅ Matriz restaurada correctamente');
+            } catch(err){
+                mostrarToast('❌ Error al cargar el archivo', true);
+            }
+        };
+        reader.readAsText(file);
+    }
 
+    verificarMatriz();
+</script>
+function verificarMatriz() {
     function verificarMatriz() {
         var bar=document.getElementById('statusBar');
         if(typeof localidadesObj!=='undefined'&&typeof coordenadasLocalidades!=='undefined'&&typeof MATRIZ_QUERETARO!=='undefined'){

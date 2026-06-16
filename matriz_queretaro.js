@@ -10,6 +10,15 @@ const localidadesObj = {
     101: "Parque Bernardo Quintana",
     2:   "El Pueblito (Corregidora)",
     3:   "La Cañada (El Marqués)",
+    
+301: "Galeras",
+
+
+
+    
+    
+    
+    
     4:   "San Juan del Río",
     5:   "Huimilpan",
     6:   "Pedro Escobedo",
@@ -32,6 +41,9 @@ const coordenadasLocalidades = {
     101: { lat: 20.5711, lng: -100.2814 },
     2:   { lat: 20.5403, lng: -100.4415 },
     3:   { lat: 20.5833, lng: -100.2417 },
+  
+    301: { lat: 20.614217, lng: -100.1555927 },
+
     4:   { lat: 20.3879, lng: -99.9962  },
     5:   { lat: 20.3667, lng: -100.2833 },
     6:   { lat: 20.5000, lng: -100.1333 },
@@ -68,3 +80,4 @@ const MATRIZ_QUERETARO = {
     "1-17": { km: 155, tarifa: 155 * bKm_QRO },
     "1-18": { km: 145, tarifa: 145 * bKm_QRO }
 };
+"3-301":{km:0, tarifa: 0 * bKm_EST1},  // Galeras

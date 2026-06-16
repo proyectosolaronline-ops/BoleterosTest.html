@@ -187,7 +187,11 @@ var localidadesArr = [];
 
 Object.keys(obj).forEach(function(id){
     var idn = parseInt(id);
-    var km  = MATRIZ_QUERETARO['1-'+idn] ? MATRIZ_QUERETARO['1-'+idn].km : 0;
+    var km = 0;
+Object.keys(MATRIZ_QUERETARO).forEach(function(k){
+    var partes = k.split('-');
+    if(parseInt(partes[1]) === idn){ km = MATRIZ_QUERETARO[k].km; }
+});
     localidadesArr.push({
         id: idn, nombre: obj[idn], km: km,
         lat: coords[idn] ? coords[idn].lat : 0,

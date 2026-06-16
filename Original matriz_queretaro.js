@@ -10,16 +10,8 @@ const localidadesObj = {
     101: "Parque Bernardo Quintana",
     2:   "El Pueblito (Corregidora)",
     3:   "La Cañada (El Marqués)",
-    
-301: "Galeras",
-
-
-
-    
-    
-    
-    
-    4:   "San Juan del Río",
+    301: "Galeras",
+   4:   "San Juan del Río",
     5:   "Huimilpan",
     6:   "Pedro Escobedo",
     7:   "Tequisquiapan",

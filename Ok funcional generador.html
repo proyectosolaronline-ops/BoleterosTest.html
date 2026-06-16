@@ -218,17 +218,76 @@
     }
 
     function cargarRespaldo(event){
-        var file = event.target.files[0];
-        if(!file){ return; }
-        var reader = new FileReader();
-        reader.onload = function(e){
-            try { eval(e.target.result); verificarMatriz(); mostrarToast('✅ Matriz restaurada correctamente'); }
-            catch(err){ mostrarToast('❌ Error al cargar el archivo', true); }
-        };
-        reader.readAsText(file);
-    }
+    var file = event.target.files[0];
+    if(!file){ return; }
+    var reader = new FileReader();
+    reader.onload = function(e){
+        try { eval(e.target.result); verificarMatriz(); mostrarToast('✅ Matriz restaurada correctamente'); }
+        catch(err){ mostrarToast('❌ Error al cargar el archivo', true); }
+    };
+    reader.readAsText(file);
+}
 
-    function verificarMatriz() {
+// ========== PROCESAR LOCALIDADES PENDIENTES ==========
+function verificarPendientes(){
+    var pendientes = JSON.parse(localStorage.getItem('nuevasLocalidadesPendientes') || '[]');
+    if(pendientes.length === 0) { mostrarToast('📭 No hay localidades pendientes'); return; }
+    var procesar = confirm('🆕 Hay ' + pendientes.length + ' localidades nuevas.\n\n✅ Aceptar = Procesarlas\n❌ Cancelar = Ignorar');
+    if(!procesar){ localStorage.removeItem('nuevasLocalidadesPendientes'); return; }
+    if(estadosDetectados.length > 0){ estadoActivo = estadosDetectados[0]; }
+    else { mostrarToast('⚠️ No hay estados', true); return; }
+    pendientes.forEach(function(loc, index){
+        var mun = detectarMunicipioPorCoordsGlobal(loc.lat, loc.lng);
+        if(mun){ var conf = confirm('📍 ['+(index+1)+'/'+pendientes.length+'] '+loc.nombre+'\n¿Es '+mun.nombre+'? ('+mun.dist.toFixed(1)+' km)');
+            if(conf){ agregarPendiente(loc.nombre, loc.lat, loc.lng, mun.id); }
+            else { mostrarSelectorPendientes(loc, index, pendientes.length); }
+        } else { mostrarSelectorPendientes(loc, index, pendientes.length); }
+    });
+    localStorage.removeItem('nuevasLocalidadesPendientes');
+    verificarMatriz();
+    setTimeout(function(){ if(confirm('✅ Procesadas. ¿Descargar nueva matriz?')){ respaldarMatriz(); } }, 500);
+}
+
+function detectarMunicipioPorCoordsGlobal(lat, lng){
+    var mejor = null, minDist = Infinity;
+    Object.keys(coordenadasLocalidades).forEach(function(k){ var idn = parseInt(k);
+        if(idn >= 1 && idn <= 18){ var c = coordenadasLocalidades[idn];
+            if(c && c.lat !== 0){ var d = haversine(lat, lng, c.lat, c.lng);
+                if(d < minDist){ minDist = d; mejor = {id:idn, nombre:localidadesObj[idn], dist:d}; } } } });
+    return mejor;
+}
+
+function calcularSiguienteIdGlobal(munId){
+    var base = munId * 100;
+    var usados = [];
+    Object.keys(localidadesObj).map(Number).forEach(function(id){ if(id >= base && id < base+100) usados.push(id); });
+    return usados.length > 0 ? Math.max.apply(null, usados) + 1 : base + 1;
+}
+
+function agregarPendiente(nombre, lat, lng, munId){
+    var idNuevo = calcularSiguienteIdGlobal(munId);
+    localidadesObj[idNuevo] = nombre;
+    coordenadasLocalidades[idNuevo] = { lat: lat, lng: lng };
+    MATRIZ_QUERETARO[munId+'-'+idNuevo] = {km:0, tarifa: 0 * (estadoActivo?estadoActivo.bKm:1.50)};
+    mostrarToast('✅ '+nombre+' → ID '+idNuevo+' (mun. '+munId+')');
+}
+
+function mostrarSelectorPendientes(loc, index, total){
+    var ids = Object.keys(localidadesObj).map(Number).filter(function(id){ return id>=1 && id<=18; }).sort(function(a,b){ return a-b; });
+    var lista = ids.map(function(id){ var c=coordenadasLocalidades[id]; var d=c&&c.lat?haversine(loc.lat,loc.lng,c.lat,c.lng):999; return {id:id, nombre:localidadesObj[id], dist:d}; });
+    lista.sort(function(a,b){ return a.dist-b.dist; });
+    var modal = document.createElement('div'); modal.className='modal-overlay active'; modal.id='modalPendientes';
+    var html = '<div class="modal-box"><h3>🏙️ ['+(index+1)+'/'+total+'] '+loc.nombre+'</h3><div style="max-height:300px;overflow-y:auto;">';
+    lista.slice(0,20).forEach(function(mun){ html+='<button class="btn btn-amber" style="margin-bottom:4px;font-size:11px;" onclick="seleccionarPendiente('+mun.id+','+loc.lat+','+loc.lng+',\''+loc.nombre.replace(/'/g,"\\'")+'\')">📍 '+mun.nombre+' ('+mun.dist.toFixed(1)+' km)</button>'; });
+    html+='</div><button class="btn btn-red" style="margin-top:6px;" onclick="document.getElementById(\'modalPendientes\').remove();">❌ CANCELAR</button></div>';
+    modal.innerHTML=html; document.body.appendChild(modal);
+}
+
+function seleccionarPendiente(munId, lat, lng, nombre){ var modal = document.getElementById('modalPendientes'); if(modal) modal.remove(); agregarPendiente(nombre, lat, lng, munId); }
+
+setTimeout(function(){ verificarPendientes(); }, 1000);
+
+function verificarMatriz() {
         var bar=document.getElementById('statusBar');
         if(typeof localidadesObj!=='undefined'&&typeof coordenadasLocalidades!=='undefined'&&typeof MATRIZ_QUERETARO!=='undefined'){
             matrizCargada=true; detectarEstados();

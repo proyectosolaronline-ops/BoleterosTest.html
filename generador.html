@@ -79,9 +79,9 @@
             <button class="btn btn-teal" onclick="respaldarMatriz()" style="margin-top:4px;">💾 RESPALDAR MATRIZ (Descargar)</button>
             <button class="btn btn-amber" onclick="document.getElementById('inputCargarRespaldo').click()" style="margin-top:4px;">📂 CARGAR RESPALDO (Restaurar)</button>
             <input type="file" id="inputCargarRespaldo" accept=".js" style="display:none;" onchange="cargarRespaldo(event)">
-        </div>
-
-        <div class="card" id="cardNuevoEstado" style="display:none;">
+<button class="btn btn-purple" onclick="verificarPendientes()" style="margin-top:4px;">🆕 PROCESAR LOCALIDADES PENDIENTES</button>
+ </div>
+  <div class="card" id="cardNuevoEstado" style="display:none;">
             <h3>➕ Nuevo Estado</h3>
             <label>Nombre del estado</label>
             <input type="text" id="inputEstadoNombre" placeholder="Ej: Chihuahua">

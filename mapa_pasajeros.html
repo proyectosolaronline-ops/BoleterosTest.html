@@ -360,10 +360,53 @@ function refrescar() {
     actualizarPines();
 }
 
+
+function mostrarParadasRuta(){
+    // Limpiar pines anteriores de ruta
+    if(window._pinesRuta){
+        window._pinesRuta.forEach(function(m){ mapa.removeLayer(m); });
+    }
+    window._pinesRuta = [];
+    
+    // Obtener la ruta guardada
+    var rutaIndex = sesion ? sesion.rutaGuardadaIndex : undefined;
+    var rutas = JSON.parse(localStorage.getItem('rutasPredefinidas') || '[]');
+    if(rutaIndex === undefined || !rutas[rutaIndex]) return;
+    
+    var ruta = rutas[rutaIndex];
+    if(!ruta.paradasLat || ruta.paradasLat.length === 0) return;
+    
+    // Mostrar cada parada con un pin gris (vacía)
+    for(var i = 0; i < ruta.paradasLat.length; i++){
+        var lat = ruta.paradasLat[i];
+        var lng = ruta.paradasLng[i];
+        var nombre = ruta.paradasNombres[i];
+        var esOrigen = (i === 0);
+        var esDestino = (i === ruta.paradasLat.length - 1);
+        
+        var color = esOrigen ? '#22c55e' : (esDestino ? '#ef4444' : '#94a3b8');
+        var prefijo = esOrigen ? '🟢 ' : (esDestino ? '🔴 ' : '📍 ');
+        
+        var icon = L.divIcon({
+            className: '',
+            html: '<div class="pin-wrap">' +
+                  '<div class="pin-circulo" style="background:' + color + ';">' + (i+1) + '</div>' +
+                  '<div class="pin-etiqueta">' + prefijo + nombre + '</div>' +
+                  '</div>',
+            iconAnchor: [18, 18]
+        });
+        
+        var m = L.marker([lat, lng], {icon: icon}).addTo(mapa);
+        window._pinesRuta.push(m);
+    }
+}
+
+  
 // ── INIT ──────────────────────────────────────────────────────
 cargarDatos();
 iniciarMapa();
 iniciarGPS();
+mostrarParadasRuta();
 actualizarPines();
 setInterval(refrescar, 5000);
 </script>

@@ -111,6 +111,18 @@ input{outline:none;-webkit-user-select:text;user-select:text}
   opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 .leaflet-routing-container{display:none!important}
+
+.btn-fullscreen{
+  position:absolute;bottom:60px;right:10px;z-index:901;
+  width:40px;height:40px;border-radius:50%;
+  background:rgba(10,10,10,.92);border:1px solid var(--amber);
+  color:var(--amber2);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.mapa-fullscreen .panel{display:none}
+.mapa-fullscreen .topbar{display:none}
+.mapa-fullscreen .map-zone{height:100vh}
+.mapa-fullscreen .buscadores{bottom:60px}
 </style>
 </head>
 <body>
@@ -129,6 +141,8 @@ input{outline:none;-webkit-user-select:text;user-select:text}
       <div class="tit" id="mapaTitulo">🔍 Busca ORIGEN</div>
       <div class="sub" id="mapaSub">Escribe en los buscadores o toca el mapa</div>
     </div>
+
+    <button class="btn-fullscreen" id="btnFullscreen" onclick="toggleFullscreen()">⛶</button>
     <div class="buscadores">
       <div class="buscador-wrap">
         <input type="text" class="buscador-input" id="searchOrigen"
@@ -559,6 +573,16 @@ function toast(msg){
     var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
     clearTimeout(_tt); _tt=setTimeout(function(){ t.classList.remove('show'); }, 2800);
 }
+  var _fullscreen = false;
+function toggleFullscreen(){
+    _fullscreen = !_fullscreen;
+    document.querySelector('.layout').classList.toggle('mapa-fullscreen', _fullscreen);
+    document.getElementById('btnFullscreen').textContent = _fullscreen ? '✕' : '⛶';
+    setTimeout(function(){ mapa.invalidateSize(); }, 300);
+}
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && _fullscreen) toggleFullscreen();
+});
 iniciarMapa();
 </script>
 </body>

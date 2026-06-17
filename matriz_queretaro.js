@@ -9,15 +9,15 @@ const localidadesObj = {
     1: "Santiago de Querétaro (Centro)",
     2: "El Pueblito (Corregidora)",
     3: "La Cañada (El Marqués)",
+    302: "El colorado",
+    303: "El paraíso",
     4: "San Juan del Río",
     5: "Huimilpan",
     6: "Pedro Escobedo",
     7: "Tequisquiapan",
     8: "Ezequiel Montes",
-    801: "Crucero bernal",
     9: "Central Cadereyta",
     10: "Colón",
-    1001: "Crucero ajuchitlan",
     11: "Amealco de Bonfil",
     12: "Tolimán",
     13: "San Joaquín terminal",
@@ -28,21 +28,23 @@ const localidadesObj = {
     18: "Peñamiller",
     101: "Parque Bernardo Quintana",
     301: "Gsleras",
+    801: "Crucero bernal",
+    1001: "Crucero ajuchitlan",
 };
 
 const coordenadasLocalidades = {
     1: { lat: 20.5881, lng: -100.3899 },
     2: { lat: 20.5403, lng: -100.4415 },
     3: { lat: 20.5833, lng: -100.2417 },
+    302: { lat: 20.5649507, lng: -100.245162 },
+    303: { lat: 20.5628962, lng: -100.220773 },
     4: { lat: 20.3879, lng: -99.9962 },
     5: { lat: 20.3667, lng: -100.2833 },
     6: { lat: 20.5, lng: -100.1333 },
     7: { lat: 20.5217, lng: -99.8953 },
     8: { lat: 20.6667, lng: -99.9 },
-    801: { lat: 20.7067544, lng: -99.9845023 },
     9: { lat: 20.7003, lng: -99.8129 },
     10: { lat: 20.7833, lng: -100.05 },
-    1001: { lat: 20.6905551, lng: -100.0144176 },
     11: { lat: 20.1833, lng: -100.15 },
     12: { lat: 20.9167, lng: -99.9333 },
     13: { lat: 20.9139, lng: -99.5653 },
@@ -53,6 +55,8 @@ const coordenadasLocalidades = {
     18: { lat: 21.05, lng: -99.7833 },
     101: { lat: 20.5711, lng: -100.2814 },
     301: { lat: 20.614217, lng: -100.1555927 },
+    801: { lat: 20.7067544, lng: -99.9845023 },
+    1001: { lat: 20.6905551, lng: -100.0144176 },
 };
 
 const MATRIZ_QUERETARO = {
@@ -74,10 +78,10 @@ const MATRIZ_QUERETARO = {
     "1-17":{km:155, tarifa: 155 * bKm_EST1},
     "1-18":{km:145, tarifa: 145 * bKm_EST1},
     "3-301":{km:0, tarifa: 0 * bKm_EST1},
+    "8-801":{km:0, tarifa: 0 * bKm_EST1},
+    "10-1001":{km:0, tarifa: 0 * bKm_EST1},
 
-    // --- Ezequiel Montes ---
-    "8-801":{km:0, tarifa: 0 * bKm_EST1},  // Crucero bernal
-
-    // --- Colón ---
-    "10-1001":{km:0, tarifa: 0 * bKm_EST1},  // Crucero ajuchitlan
+    // --- La Cañada (El Marqués) ---
+    "3-302":{km:0, tarifa: 0 * bKm_EST1},  // El colorado
+    "3-303":{km:0, tarifa: 0 * bKm_EST1},  // El paraíso
 };

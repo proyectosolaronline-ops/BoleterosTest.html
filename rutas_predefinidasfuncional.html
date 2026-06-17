@@ -416,20 +416,26 @@ function procesarToque(loc){
         document.getElementById('btnGPS').disabled     = false;
         document.getElementById('subRow').style.display = 'flex';
         actualizarChips();
-        setTimeout(trazarRuta, 250);
+        if(navigator.onLine) { setTimeout(_trazarRutaOriginal, 250); }
     } else {
-        // En modo completo, toque en mapa agrega subparada
+        // Modo completo: agregar subparada SOLO si está entre origen y destino
+        if(!origenSel || !destinoSel) return;
+        
+        // Calcular distancias
+        var dOrigenNueva = haversine(origenSel.lat, origenSel.lng, loc.lat, loc.lng);
+        var dDestinoNueva = haversine(destinoSel.lat, destinoSel.lng, loc.lat, loc.lng);
+        var dOrigenDestino = haversine(origenSel.lat, origenSel.lng, destinoSel.lat, destinoSel.lng);
+        
+        // Verificar que la nueva parada esté ENTRE origen y destino
+        // (no puede estar más lejos del origen que el destino)
+        if(dOrigenNueva > dOrigenDestino * 1.1){
+            toast('⚠️ Esta parada está después del destino. No se puede agregar.');
+            return;
+        }
+        
         agregarSubparada(loc);
     }
 }
-document.addEventListener('click', function(e){
-    if(!e.target.closest('.buscador-wrap')){
-        document.getElementById('dropOrigen').classList.remove('open');
-        document.getElementById('dropDestino').classList.remove('open');
-    }
-    if(!e.target.closest('.sub-wrap'))
-        document.getElementById('dropSub').classList.remove('open');
-});
 
 // ── GPS ────────────────────────────────────────────────────────
 function agregarGPS(){

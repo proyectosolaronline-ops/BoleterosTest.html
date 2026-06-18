@@ -204,7 +204,8 @@ function cargarDatos() {
 // ── MAPA ──────────────────────────────────────────────────────
 function iniciarMapa() {
     mapa = L.map('mapa', {zoomControl:true, attributionControl:false}).setView([20.75,-99.9], 9);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:17}).addTo(mapa);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(mapa);
 }
 
 // ── PINES PARPADEANTES ────────────────────────────────────────

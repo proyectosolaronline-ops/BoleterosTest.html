@@ -15,6 +15,7 @@ const localidadesObj = {
     7: "Tequisquiapan",
     8: "Ezequiel Montes",
     802: "San Martin",
+    803: "Bernal",
     9: "Central Cadereyta",
     10: "ColÃ³n",
     1004: "Urecho crucero",
@@ -57,7 +58,8 @@ const coordenadasLocalidades = {
     7: { lat: 20.5217, lng: -99.8953 },
     8: { lat: 20.6667, lng: -99.9 },
     802: { lat: 20.7135139, lng: -99.9723958 },
-    9: { lat: 20.7003, lng: -99.8129 },
+   803: { lat: 20.7400271, lng: -99.9389999 },
+   9: { lat: 20.7003, lng: -99.8129 },
     10: { lat: 20.7833, lng: -100.05 },
     1004: { lat: 20.6662841, lng: -100.0736207 },
     1005: { lat: 20.8601418, lng: -100.0569407 },
@@ -118,7 +120,7 @@ const MATRIZ_QUERETARO = {
 
     // --- Ezequiel Montes ---
     "8-802":{km:0, tarifa: 0 * bKm_EST1},  // San Martin
-
+    "8-803":{km:0, tarifa: 0 * bKm_EST1},  // Bernal
     // --- ColÃ³n ---
     "10-1004":{km:0, tarifa: 0 * bKm_EST1},  // Urecho crucero
     "10-1005":{km:0, tarifa: 0 * bKm_EST1},  // Salitrera colon

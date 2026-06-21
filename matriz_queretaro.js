@@ -49,7 +49,7 @@ const localidadesObj = {
 };
 
 const coordenadasLocalidades = {
-    1: { lat: 20.5881, lng: -100.3899 },
+    1: { lat: 20.5760, lng: -100.3586 },
     2: { lat: 20.5403, lng: -100.4415 },
     3: { lat: 20.5833, lng: -100.2417 },
     4: { lat: 20.3879, lng: -99.9962 },

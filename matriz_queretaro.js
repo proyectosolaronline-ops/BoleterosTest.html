@@ -6,7 +6,7 @@
 const bKm_EST1 = 1.5;
 
 const localidadesObj = {
-    1: "Santiago de QuerÃ©taro (Centro)",
+    1: "Santiago de QuerÃ©taro (Central)",
     2: "El Pueblito (Corregidora)",
     3: "La CaÃ±ada (El MarquÃ©s)",
     4: "San Juan del RÃ­o",

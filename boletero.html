@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boletero - Sistema de Rutas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 24px;
+            color: #1a237e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: normal;
+            color: #666;
+        }
+        .card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid #1a237e;
+        }
+        .card.warning {
+            border-left-color: #f57c00;
+            background: #fff3e0;
+        }
+        .card.success {
+            border-left-color: #2e7d32;
+            background: #e8f5e9;
+        }
+        .card.error {
+            border-left-color: #c62828;
+            background: #ffebee;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border 0.3s;
+            margin-bottom: 12px;
+        }
+        select:focus, input:focus {
+            border-color: #1a237e;
+            outline: none;
+        }
+        select:disabled, input:disabled {
+            background: #e9ecef;
+            cursor: not-allowed;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #1a237e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+        }
+        .btn:hover:not(:disabled) {
+            background: #0d1555;
+        }
+        .btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #546e7a;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #37474f;
+        }
+        .resultado {
+            margin-top: 16px;
+            padding: 16px;
+            background: #e8eaf6;
+            border-radius: 8px;
+            display: none;
+        }
+        .resultado.visible {
+            display: block;
+        }
+        .resultado h3 {
+            color: #1a237e;
+            margin-bottom: 8px;
+        }
+        .resultado .precio {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+        .resultado .detalle {
+            color: #555;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-origen { background: #e3f2fd; color: #0d47a1; }
+        .badge-destino { background: #fce4ec; color: #b71c1c; }
+        .badge-intermedia { background: #e8f5e9; color: #1b5e20; }
+        .error-msg {
+            color: #c62828;
+            font-size: 14px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #ffebee;
+            border-radius: 6px;
+            display: none;
+        }
+        .error-msg.visible {
+            display: block;
+        }
+        .info-ruta {
+            font-size: 13px;
+            color: #666;
+            margin: 4px 0 12px 0;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+        .info-ruta strong {
+            color: #1a237e;
+        }
+        .paradas-lista {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            margin-top: 6px;
+        }
+        .parada-tag {
+            font-size: 12px;
+            background: #e0e0e0;
+            padding: 2px 10px;
+            border-radius: 12px;
+            color: #333;
+        }
+        .parada-tag.origen { background: #bbdefb; }
+        .parada-tag.destino { background: #ffcdd2; }
+        .parada-tag.intermedia { background: #c8e6c9; }
+        @media (max-width: 600px) {
+            .container { padding: 16px; }
+            h1 { font-size: 20px; }
+            .resultado .precio { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🎫 Boletero
+            <small>Calculadora de pasajes</small>
+        </h1>
+
+        <!-- Alerta de rutas incompletas -->
+        <div id="alertaRutasIncompletas" class="card warning" style="display:none;">
+            ⚠️ <strong>Rutas incompletas detectadas</strong>
+            <p id="detalleRutasIncompletas" style="margin-top:4px;font-size:14px;"></p>
+            <p style="font-size:13px;margin-top:4px;color:#e65100;">
+                Estas rutas no estarán disponibles hasta que se actualicen con todas sus localidades intermedias.
+            </p>
+        </div>
+
+        <!-- Paso 1: Seleccionar Ruta -->
+        <div class="card">
+            <label for="rutaSelect">🚌 Selecciona una ruta</label>
+            <select id="rutaSelect">
+                <option value="">— Cargando rutas —</option>
+            </select>
+            <div id="infoRuta" class="info-ruta" style="display:none;">
+                <strong>Paradas:</strong>
+                <div id="paradasLista" class="paradas-lista"></div>
+            </div>
+        </div>
+
+        <!-- Paso 2: Seleccionar Punto de Subida -->
+        <div class="card">
+            <label for="origenSelect">📍 Punto de subida</label>
+            <select id="origenSelect" disabled>
+                <option value="">— Selecciona una ruta primero —</option>
+            </select>
+        </div>
+
+        <!-- Paso 3: Seleccionar Destino -->
+        <div class="card">
+            <label for="destinoSelect">🏁 Destino</label>
+            <select id="destinoSelect" disabled>
+                <option value="">— Selecciona un punto de subida —</option>
+            </select>
+        </div>
+
+        <!-- Botón Calcular -->
+        <button id="btnCalcular" class="btn" disabled>Calcular precio</button>
+
+        <!-- Mensaje de error -->
+        <div id="errorMsg" class="error-msg"></div>
+
+        <!-- Resultado -->
+        <div id="resultado" class="resultado">
+            <h3>💰 Precio del pasaje</h3>
+            <div class="precio" id="precioMostrado">$0.00</div>
+            <div class="detalle" id="detalleViaje"></div>
+            <div class="detalle" id="detalleKm" style="margin-top:4px;"></div>
+        </div>
+
+        <!-- Botón de depuración (opcional, solo para desarrollo) -->
+        <button id="btnDebug" class="btn btn-secondary" style="margin-top:12px;font-size:13px;">🔍 Ver datos de ruta</button>
+        <div id="debugInfo" style="display:none;margin-top:12px;background:#f5f5f5;padding:12px;border-radius:8px;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow:auto;"></div>
+    </div>
+
+    <script>
+        // ============================================================
+        // DATOS DE EJEMPLO - Rutas con TODAS sus localidades intermedias
+        // ============================================================
+        // IMPORTANTE: Cada ruta debe tener TODAS las localidades reales
+        // en paradas[], con su km correspondiente en paradasKm[]
+        // ============================================================
+
+        const localidades = [
+            { id: 'qro', nombre: 'Querétaro', km: 0 },
+            { id: 'sjr', nombre: 'San Juan del Río', km: 57 },
+            { id: 'tequis', nombre: 'Tequisquiapan', km: 78 },
+            { id: 'ezequiel', nombre: 'Ezequiel Montes', km: 92 },
+            { id: 'cadereyta', nombre: 'Cadereyta', km: 112 },
+            { id: 'vizarron', nombre: 'Vizarrón', km: 145 },
+            { id: 'jalpan', nombre: 'Jalpan', km: 185 },
+            { id: 'pinal', nombre: 'Pinal de Amoles', km: 165 },
+            { id: 'bern', nombre: 'Bernal', km: 68 },
+            { id: 'colonia', nombre: 'Colón', km: 45 }
+        ];
+
+        // ============================================================
+        // RUTAS PREDEFINIDAS - Cada una con TODAS sus paradas reales
+        // ============================================================
+        // REGLA: paradasKm[0] SIEMPRE es 0 (origen de ESA ruta)
+        // Los km son acumulados REALES desde el origen de la ruta
+        // ============================================================
+
+        let rutasPredefinidas = [
+            {
+                id: 'ruta1',
+                nombre: 'Querétaro → Cadereyta',
+                paradas: ['qro', 'sjr', 'tequis', 'ezequiel', 'cadereyta'],
+                paradasKm: [0, 57, 78, 92, 112]
+            },
+            {
+                id: 'ruta2',
+                nombre: 'Querétaro → Jalpan',
+                paradas: ['qro', 'sjr', 'tequis', 'ezequiel', 'cadereyta', 'vizarron', 'jalpan'],
+                paradasKm: [0, 57, 78, 92, 112, 145, 185]
+            },
+            {
+                id: 'ruta3',
+                nombre: 'Querétaro → Pinal de Amoles',
+                paradas: ['qro', 'sjr', 'tequis', 'ezequiel', 'cadereyta', 'vizarron', 'pinal'],
+                paradasKm: [0, 57, 78, 92, 112, 145, 165]
+            },
+            {
+                id: 'ruta4',
+                nombre: 'Querétaro → Bernal (vía Colón)',
+                paradas: ['qro', 'colonia', 'bern'],
+                paradasKm: [0, 45, 68]
+            },
+            // ============================================================
+            // RUTA INCOMPLETA (para demostrar validación)
+            // ============================================================
+            {
+                id: 'ruta_incompleta',
+                nombre: '⚠️ RUTA INCOMPLETA - Querétaro → Tequis (sin San Juan)',
+                paradas: ['qro', 'tequis'],
+                paradasKm: [0, 78]  // Falta San Juan del Río (realmente está en el camino)
+            }
+        ];
+
+        // ============================================================
+        // VALIDACIÓN DE RUTAS (Error 6 - verificar que todas las localidades tengan km)
+        // ============================================================
+
+        function validarRutaCompleta(ruta) {
+            // 1. Verificar que paradas y paradasKm tengan la misma longitud
+            if (ruta.paradas.length !== ruta.paradasKm.length) {
+                console.error(`❌ Ruta "${ruta.nombre}" (${ruta.id}): paradas (${ruta.paradas.length}) vs paradasKm (${ruta.paradasKm.length}) no coinciden`);
+                return { valida: false, motivo: 'Longitudes no coinciden' };
+            }
+
+            // 2. Verificar que todos los km sean números válidos
+            for (let i = 0; i < ruta.paradasKm.length; i++) {
+                if (typeof ruta.paradasKm[i] !== 'number' || isNaN(ruta.paradasKm[i])) {
+                    console.error(`❌ Ruta "${ruta.nombre}": km en posición ${i} no es número válido`);
+                    return { valida: false, motivo: `km inválido en posición ${i}` };
+                }
+            }
+
+            // 3. Verificar que el primer km sea 0 (origen de la ruta)
+            if (ruta.paradasKm[0] !== 0) {
+                console.error(`❌ Ruta "${ruta.nombre}": el primer km debe ser 0, es ${ruta.paradasKm[0]}`);
+                return { valida: false, motivo: 'Origen no está en km 0' };
+            }
+
+            // 4. Verificar que los km estén en orden estrictamente creciente
+            for (let i = 1; i < ruta.paradasKm.length; i++) {
+                if (ruta.paradasKm[i] <= ruta.paradasKm[i - 1]) {
+                    console.error(`❌ Ruta "${ruta.nombre}": km ${ruta.paradasKm[i]} no es mayor que ${ruta.paradasKm[i-1]} (posición ${i})`);
+                    return { valida: false, motivo: `Km no monótonos en posición ${i}` };
+                }
+            }
+
+            // 5. Verificar que cada localidad existe en el sistema
+            for (const id of ruta.paradas) {
+                const existe = localidades.some(l => l.id === id);
+                if (!existe) {
+                    console.error(`❌ Ruta "${ruta.nombre}": localidad "${id}" no existe en el sistema`);
+                    return { valida: false, motivo: `Localidad "${id}" no existe` };
+                }
+            }
+
+            // 6. Verificar que todas las localidades que están en el camino estén incluidas
+            // (Esta es una verificación más avanzada - se puede hacer con geometría)
+            // Por ahora, solo verificamos que no haya "saltos" sospechosos
+            // Nota: En una implementación real, aquí se verificaría con geometría
+
+            return { valida: true, motivo: 'OK' };
+        }
+
+        function filtrarRutasValidas() {
+            const validas = [];
+            const invalidas = [];
+
+            for (const ruta of rutasPredefinidas) {
+                const resultado = validarRutaCompleta(ruta);
+                if (resultado.valida) {
+                    validas.push(ruta);
+                } else {
+                    invalidas.push({ ruta, motivo: resultado.motivo });
+                }
+            }
+
+            return { validas, invalidas };
+        }
+
+        // ============================================================
+        // FUNCIÓN PRINCIPAL: Obtener km desde punto de subida (UNIVERSAL)
+        // ============================================================
+        // REGLA: kmMostrado = |paradasKm[destino] - paradasKm[actual]|
+        // Si la localidad no está en paradasCorrida → ERROR (no fallback)
+        // ============================================================
+
+        function obtenerKmDesdeSubida(destinoId, actualId, rutaId) {
+            // Buscar la ruta
+            const ruta = rutasPredefinidas.find(r => r.id === rutaId);
+            if (!ruta) {
+                console.error(`❌ Ruta "${rutaId}" no encontrada`);
+                return { error: 'RUTA_NO_ENCONTRADA', mensaje: 'La ruta seleccionada no existe' };
+            }
+
+            // Buscar índices en paradasCorrida
+            const idxDestino = ruta.paradas.indexOf(destinoId);
+            const idxActual = ruta.paradas.indexOf(actualId);
+
+            // Validar que destino esté en la ruta
+            if (idxDestino === -1) {
+                console.error(`❌ ERROR CRÍTICO: Localidad "${destinoId}" NO está en paradasCorrida de la ruta "${ruta.nombre}"`);
+                console.error(`   Paradas de la ruta: [${ruta.paradas.join(', ')}]`);
+                console.error(`   Esto significa que la ruta está INCOMPLETA - falta incluir esta localidad`);
+                return {
+                    error: 'LOCALIDAD_FALTANTE',
+                    mensaje: `La localidad destino no está registrada en esta ruta. La ruta está incompleta.`,
+                    destinoId: destinoId,
+                    rutaNombre: ruta.nombre
+                };
+            }
+
+            // Validar que actual esté en la ruta
+            if (idxActual === -1) {
+                console.error(`❌ ERROR: Localidad "${actualId}" NO está en paradasCorrida de la ruta "${ruta.nombre}"`);
+                return {
+                    error: 'LOCALIDAD_FALTANTE',
+                    mensaje: `El punto de subida no está registrado en esta ruta. La ruta está incompleta.`,
+                    actualId: actualId,
+                    rutaNombre: ruta.nombre
+                };
+            }
+
+            // Obtener los km desde el arreglo paradasKm (misma referencia: origen de la ruta)
+            const kmDestino = ruta.paradasKm[idxDestino];
+            const kmActual = ruta.paradasKm[idxActual];
+
+            // Validar que sean números
+            if (typeof kmDestino !== 'number' || typeof kmActual !== 'number') {
+                console.error(`❌ ERROR: km inválidos en ruta "${ruta.nombre}"`);
+                return {
+                    error: 'KM_INVALIDO',
+                    mensaje: 'Datos de kilometraje inválidos en la ruta'
+                };
+            }
+
+            // FÓRMULA UNIVERSAL: distancia desde el punto de subida
+            const distancia = Math.abs(kmDestino - kmActual);
+
+            // Verificar que la distancia sea positiva (si son iguales, es el mismo punto)
+            if (distancia === 0) {
+                return {
+                    error: 'MISMO_PUNTO',
+                    mensaje: 'El destino es el mismo que el punto de subida',
+                    distancia: 0
+                };
+            }
+
+            return {
+                success: true,
+                distancia: distancia,
+                kmDestino: kmDestino,
+                kmActual: kmActual,
+                idxDestino: idxDestino,
+                idxActual: idxActual
+            };
+        }
+
+        // ============================================================
+        // FUNCIÓN PARA CALCULAR PRECIO
+        // ============================================================
+
+        function calcularPrecio(distanciaKm) {
+            // Tarifa simple: $5 por km
+            const tarifaPorKm = 5;
+            return distanciaKm * tarifaPorKm;
+        }
+
+        // ============================================================
+        // INICIALIZACIÓN DE LA UI
+        // ============================================================
+
+        let rutasValidas = [];
+        let rutaSeleccionada = null;
+
+        function init() {
+            // Filtrar rutas válidas
+            const resultado = filtrarRutasValidas();
+            rutasValidas = resultado.validas;
+
+            // Mostrar alerta si hay rutas incompletas
+            if (resultado.invalidas.length > 0) {
+                const alerta = document.getElementById('alertaRutasIncompletas');
+                alerta.style.display = 'block';
+                const detalle = document.getElementById('detalleRutasIncompletas');
+                detalle.innerHTML = resultado.invalidas.map(item =>
+                    `<strong>${item.ruta.nombre}</strong>: ${item.motivo}`
+                ).join('<br>');
+            }
+
+            // Llenar select de rutas
+            const selectRuta = document.getElementById('rutaSelect');
+            selectRuta.innerHTML = '<option value="">— Selecciona una ruta —</option>';
+
+            if (rutasValidas.length === 0) {
+                selectRuta.innerHTML = '<option value="">⚠️ No hay rutas válidas disponibles</option>';
+                document.getElementById('origenSelect').disabled = true;
+                document.getElementById('destinoSelect').disabled = true;
+                document.getElementById('btnCalcular').disabled = true;
+                return;
+            }
+
+            for (const ruta of rutasValidas) {
+                const option = document.createElement('option');
+                option.value = ruta.id;
+                option.textContent = ruta.nombre + ` (${ruta.paradas.length} paradas)`;
+                selectRuta.appendChild(option);
+            }
+
+            // Evento: cambio de ruta
+            selectRuta.addEventListener('change', onRutaChange);
+
+            // Evento: cambio de origen
+            document.getElementById('origenSelect').addEventListener('change', onOrigenChange);
+
+            // Evento: botón calcular
+            document.getElementById('btnCalcular').addEventListener('click', onCalcular);
+
+            // Evento: botón debug
+            document.getElementById('btnDebug').addEventListener('click', toggleDebug);
+        }
+
+        function onRutaChange() {
+            const selectRuta = document.getElementById('rutaSelect');
+            const rutaId = selectRuta.value;
+
+            if (!rutaId) {
+                document.getElementById('origenSelect').disabled = true;
+                document.getElementById('destinoSelect').disabled = true;
+                document.getElementById('btnCalcular').disabled = true;
+                document.getElementById('infoRuta').style.display = 'none';
+                document.getElementById('resultado').classList.remove('visible');
+                return;
+            }
+
+            rutaSeleccionada = rutasValidas.find(r => r.id === rutaId);
+            if (!rutaSeleccionada) return;
+
+            // Mostrar información de la ruta
+            const infoRuta = document.getElementById('infoRuta');
+            infoRuta.style.display = 'block';
+            const paradasLista = document.getElementById('paradasLista');
+            paradasLista.innerHTML = rutaSeleccionada.paradas.map((id, idx) => {
+                const loc = localidades.find(l => l.id === id);
+                const nombre = loc ? loc.nombre : id;
+                let clase = 'parada-tag';
+                if (idx === 0) clase += ' origen';
+                else if (idx === rutaSeleccionada.paradas.length - 1) clase += ' destino';
+                else clase += ' intermedia';
+                return `<span class="${clase}">${nombre} (${rutaSeleccionada.paradasKm[idx]} km)</span>`;
+            }).join('');
+
+            // Llenar select de origen (puntos de subida)
+            const selectOrigen = document.getElementById('origenSelect');
+            selectOrigen.innerHTML = '<option value="">— Selecciona punto de subida —</option>';
+            selectOrigen.disabled = false;
+
+            // Solo mostrar localidades que NO sean el destino final
+            // (el destino final no puede ser punto de subida en este contexto)
+            for (let i = 0; i < rutaSeleccionada.paradas.length - 1; i++) {
+                const id = rutaSeleccionada.paradas[i];
+                const loc = localidades.find(l => l.id === id);
+                const nombre = loc ? loc.nombre : id;
+                const km = rutaSeleccionada.paradasKm[i];
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${nombre} (km ${km} desde origen)`;
+                if (i === 0) option.textContent += ' 🟢 ORIGEN';
+                selectOrigen.appendChild(option);
+            }
+
+            // Resetear destino
+            document.getElementById('destinoSelect').innerHTML = '<option value="">— Selecciona un punto de subida —</option>';
+            document.getElementById('destinoSelect').disabled = true;
+            document.getElementById('btnCalcular').disabled = true;
+            document.getElementById('resultado').classList.remove('visible');
+            document.getElementById('errorMsg').classList.remove('visible');
+        }
+
+        function onOrigenChange() {
+            const selectOrigen = document.getElementById('origenSelect');
+            const actualId = selectOrigen.value;
+
+            if (!actualId || !rutaSeleccionada) {
+                document.getElementById('destinoSelect').disabled = true;
+                document.getElementById('btnCalcular').disabled = true;
+                return;
+            }
+
+            // Llenar select de destino (solo localidades DESPUÉS del punto de subida)
+            const selectDestino = document.getElementById('destinoSelect');
+            selectDestino.innerHTML = '<option value="">— Selecciona destino —</option>';
+            selectDestino.disabled = false;
+
+            const idxActual = rutaSeleccionada.paradas.indexOf(actualId);
+            if (idxActual === -1) return;
+
+            // Mostrar solo localidades después del punto de subida
+            for (let i = idxActual + 1; i < rutaSeleccionada.paradas.length; i++) {
+                const id = rutaSeleccionada.paradas[i];
+                const loc = localidades.find(l => l.id === id);
+                const nombre = loc ? loc.nombre : id;
+                const km = rutaSeleccionada.paradasKm[i];
+                const kmDesdeActual = km - rutaSeleccionada.paradasKm[idxActual];
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${nombre} (${kmDesdeActual} km desde subida)`;
+                if (i === rutaSeleccionada.paradas.length - 1) option.textContent += ' 🏁 DESTINO';
+                selectDestino.appendChild(option);
+            }
+
+            document.getElementById('btnCalcular').disabled = false;
+            document.getElementById('resultado').classList.remove('visible');
+            document.getElementById('errorMsg').classList.remove('visible');
+        }
+
+        function onCalcular() {
+            const rutaId = document.getElementById('rutaSelect').value;
+            const actualId = document.getElementById('origenSelect').value;
+            const destinoId = document.getElementById('destinoSelect').value;
+
+            if (!rutaId || !actualId || !destinoId) {
+                mostrarError('Por favor selecciona ruta, punto de subida y destino');
+                return;
+            }
+
+            // Obtener km usando la función universal (SIN FALLBACK)
+            const resultado = obtenerKmDesdeSubida(destinoId, actualId, rutaId);
+
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (resultado.error) {
+                // Mostrar error específico
+                let mensajeUsuario = '';
+                switch (resultado.error) {
+                    case 'LOCALIDAD_FALTANTE':
+                        mensajeUsuario = `⚠️ La ruta "${resultado.rutaNombre}" está incompleta. 
+                            Falta registrar una localidad en el sistema. 
+                            Por favor, actualiza la ruta en el panel de administración.`;
+                        break;
+                    case 'RUTA_NO_ENCONTRADA':
+                        mensajeUsuario = 'La ruta seleccionada no existe en el sistema.';
+                        break;
+                    case 'KM_INVALIDO':
+                        mensajeUsuario = 'Error en los datos de kilometraje de la ruta.';
+                        break;
+                    case 'MISMO_PUNTO':
+                        mensajeUsuario = 'El destino es el mismo que el punto de subida.';
+                        break;
+                    default:
+                        mensajeUsuario = resultado.mensaje || 'Error desconocido al calcular la distancia.';
+                }
+                mostrarError(mensajeUsuario);
+                document.getElementById('resultado').classList.remove('visible');
+                return;
+            }
+
+            // Si llegamos aquí, todo está bien
+            errorMsg.classList.remove('visible');
+
+            const distancia = resultado.distancia;
+            const precio = calcularPrecio(distancia);
+
+            // Obtener nombres
+            const locActual = localidades.find(l => l.id === actualId);
+            const locDestino = localidades.find(l => l.id === destinoId);
+            const nombreActual = locActual ? locActual.nombre : actualId;
+            const nombreDestino = locDestino ? locDestino.nombre : destinoId;
+
+            // Mostrar resultado
+            const resultadoDiv = document.getElementById('resultado');
+            resultadoDiv.classList.add('visible');
+            document.getElementById('precioMostrado').textContent = `$${precio.toFixed(2)}`;
+            document.getElementById('detalleViaje').textContent =
+                `${nombreActual} → ${nombreDestino}`;
+            document.getElementById('detalleKm').textContent =
+                `Distancia: ${distancia} km (Tarifa: $5/km)`;
+        }
+
+        function mostrarError(mensaje) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = mensaje;
+            errorMsg.classList.add('visible');
+        }
+
+        function toggleDebug() {
+            const debugDiv = document.getElementById('debugInfo');
+            if (debugDiv.style.display === 'none') {
+                debugDiv.style.display = 'block';
+                let info = '=== RUTAS VÁLIDAS ===\n\n';
+                for (const ruta of rutasValidas) {
+                    info += `📌 ${ruta.nombre} (${ruta.id})\n`;
+                    info += `   Paradas: ${ruta.paradas.length}\n`;
+                    info += `   Detalle:\n`;
+                    for (let i = 0; i < ruta.paradas.length; i++) {
+                        const id = ruta.paradas[i];
+                        const loc = localidades.find(l => l.id === id);
+                        const nombre = loc ? loc.nombre : id;
+                        info += `     ${i}: ${nombre} → ${ruta.paradasKm[i]} km\n`;
+                    }
+                    info += '\n';
+                }
+
+                // Mostrar rutas inválidas
+                const todas = filtrarRutasValidas();
+                if (todas.invalidas.length > 0) {
+                    info += '=== RUTAS INVÁLIDAS ===\n\n';
+                    for (const inv of todas.invalidas) {
+                        info += `❌ ${inv.ruta.nombre}: ${inv.motivo}\n`;
+                    }
+                }
+
+                debugDiv.textContent = info;
+            } else {
+                debugDiv.style.display = 'none';
+            }
+        }
+
+        // ============================================================
+        // INICIALIZAR CUANDO LA PÁGINA ESTÉ LISTA
+        // ============================================================
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

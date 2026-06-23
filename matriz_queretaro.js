@@ -3,7 +3,7 @@
 // ============================================================
 
 // ===== TARIFAS POR ESTADO =====
-const bKm_EST1 = 1.23;
+const bKm_EST1 = .63;
 
 const localidadesObj = {
     1: "Santiago de Queretaro (Central)",

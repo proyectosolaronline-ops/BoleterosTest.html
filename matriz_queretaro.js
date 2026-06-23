@@ -14,23 +14,13 @@ const localidadesObj = {
     6: "Pedro Escobedo",
     7: "Tequisquiapan",
     8: "Ezequiel Montes",
-    802: "San Martin",
-    803: "Bernal",
+    804: "Tunas blancas crucero",
+    805: "Lib. Ezequiel montes",
     9: "Central Cadereyta",
+    901: "Zituni crucero",
     10: "Colon",
-    1004: "Urecho crucero",
-    1005: "Salitrera colon",
-    1006: "Poleo colon",
     11: "Amealco de Bonfil",
     12: "Toliman",
-    1201: "Gudiño colon",
-    1202: "La puerta, nogales",
-    1203: "Panales",
-    1204: "Lindero san Miguel",
-    1205: "Diez meros peña blanca",
-    1206: "San Pablo Tolimán",
-    1207: "Crucero a sierra gorda",
-    1208: "San Antonio de la cal",
     13: "San Joaqui­n terminal",
     14: "Jalpan de Serra",
     15: "Landa de Matamoros",
@@ -43,37 +33,40 @@ const localidadesObj = {
     303: "El parai­so",
     304: "la esperanza ",
     801: "Crucero bernal",
+    802: "San Martin",
+    803: "Bernal",
     1001: "Crucero ajuchitlan",
     1002: "tierra dura ",
     1003: "el gallo",
+    1004: "Urecho crucero",
+    1005: "Salitrera colon",
+    1006: "Poleo colon",
+    1201: "Gudiño colon",
+    1202: "La puerta, nogales",
+    1203: "Panales",
+    1204: "Lindero san Miguel",
+    1205: "Diez meros peña blanca",
+    1206: "San Pablo Tolimán",
+    1207: "Crucero a sierra gorda",
+    1208: "San Antonio de la cal",
 };
 
 const coordenadasLocalidades = {
-    1: { lat: 20.5760, lng: -100.3586 },
+    1: { lat: 20.576, lng: -100.3586 },
     2: { lat: 20.5403, lng: -100.4415 },
     3: { lat: 20.5833, lng: -100.2417 },
-    4: { lat: 20.3753, lng: -100.0020 },
+    4: { lat: 20.3753, lng: -100.002 },
     5: { lat: 20.3667, lng: -100.2833 },
     6: { lat: 20.5, lng: -100.1333 },
     7: { lat: 20.5217, lng: -99.8953 },
     8: { lat: 20.6667, lng: -99.9 },
-    802: { lat: 20.7135139, lng: -99.9723958 },
-   803: { lat: 20.7400271, lng: -99.9389999 },
-   9: { lat: 20.7003, lng: -99.8129 },
+    804: { lat: 20.7077354, lng: -99.8689722 },
+    805: { lat: 20.6963391, lng: -99.877227 },
+    9: { lat: 20.7003, lng: -99.8129 },
+    901: { lat: 20.7094822, lng: -99.8313998 },
     10: { lat: 20.7833, lng: -100.05 },
-    1004: { lat: 20.6662841, lng: -100.0736207 },
-    1005: { lat: 20.8601418, lng: -100.0569407 },
-    1006: { lat: 20.8667519, lng: -100.0500997 },
     11: { lat: 20.1833, lng: -100.15 },
     12: { lat: 20.9167, lng: -99.9333 },
-    1201: { lat: 20.8819624, lng: -100.0174914 },
-    1202: { lat: 20.8846379, lng: -100.011604 },
-    1203: { lat: 20.8771564, lng: -99.9969776 },
-    1204: { lat: 20.868729, lng: -99.9668077 },
-    1205: { lat: 20.8787446, lng: -99.94644 },
-    1206: { lat: 20.8621904, lng: -99.8960477 },
-    1207: { lat: 20.855022, lng: -99.8923121 },
-    1208: { lat: 20.7633453, lng: -99.9324144 },
     13: { lat: 20.9139, lng: -99.5653 },
     14: { lat: 21.2167, lng: -99.4736 },
     15: { lat: 21.1833, lng: -99.3167 },
@@ -86,9 +79,22 @@ const coordenadasLocalidades = {
     303: { lat: 20.5628962, lng: -100.220773 },
     304: { lat: 20.638607726216776, lng: -100.10910630226137 },
     801: { lat: 20.7067544, lng: -99.9845023 },
+    802: { lat: 20.7135139, lng: -99.9723958 },
+    803: { lat: 20.7400271, lng: -99.9389999 },
     1001: { lat: 20.6905551, lng: -100.0144176 },
     1002: { lat: 20.666169309866103, lng: -100.08732676506042 },
     1003: { lat: 20.672419437250404, lng: -100.04715800285341 },
+    1004: { lat: 20.6662841, lng: -100.0736207 },
+    1005: { lat: 20.8601418, lng: -100.0569407 },
+    1006: { lat: 20.8667519, lng: -100.0500997 },
+    1201: { lat: 20.8819624, lng: -100.0174914 },
+    1202: { lat: 20.8846379, lng: -100.011604 },
+    1203: { lat: 20.8771564, lng: -99.9969776 },
+    1204: { lat: 20.868729, lng: -99.9668077 },
+    1205: { lat: 20.8787446, lng: -99.94644 },
+    1206: { lat: 20.8621904, lng: -99.8960477 },
+    1207: { lat: 20.855022, lng: -99.8923121 },
+    1208: { lat: 20.7633453, lng: -99.9324144 },
 };
 
 const MATRIZ_QUERETARO = {
@@ -117,22 +123,24 @@ const MATRIZ_QUERETARO = {
     "3-303":{km:0, tarifa: 0 * bKm_EST1},
     "3-304":{km:0, tarifa: 0 * bKm_EST1},
     "8-801":{km:0, tarifa: 0 * bKm_EST1},
+    "8-802":{km:0, tarifa: 0 * bKm_EST1},
+    "8-803":{km:0, tarifa: 0 * bKm_EST1},
+    "10-1004":{km:0, tarifa: 0 * bKm_EST1},
+    "10-1005":{km:0, tarifa: 0 * bKm_EST1},
+    "10-1006":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1201":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1202":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1203":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1204":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1205":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1206":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1207":{km:0, tarifa: 0 * bKm_EST1},
+    "12-1208":{km:0, tarifa: 0 * bKm_EST1},
 
     // --- Ezequiel Montes ---
-    "8-802":{km:0, tarifa: 0 * bKm_EST1},  // San Martin
-    "8-803":{km:0, tarifa: 0 * bKm_EST1},  // Bernal
-    // --- ColÃ³n ---
-    "10-1004":{km:0, tarifa: 0 * bKm_EST1},  // Urecho crucero
-    "10-1005":{km:0, tarifa: 0 * bKm_EST1},  // Salitrera colon
-    "10-1006":{km:0, tarifa: 0 * bKm_EST1},  // Poleo colon
+    "8-804":{km:0, tarifa: 0 * bKm_EST1},  // Tunas blancas crucero
+    "8-805":{km:0, tarifa: 0 * bKm_EST1},  // Lib. Ezequiel montes
 
-    // --- TolimÃ¡n ---
-    "12-1201":{km:0, tarifa: 0 * bKm_EST1},  // Gudiño colon
-    "12-1202":{km:0, tarifa: 0 * bKm_EST1},  // La puerta, nogales
-    "12-1203":{km:0, tarifa: 0 * bKm_EST1},  // Panales
-    "12-1204":{km:0, tarifa: 0 * bKm_EST1},  // Lindero san Miguel
-    "12-1205":{km:0, tarifa: 0 * bKm_EST1},  // Diez meros peña blanca
-    "12-1206":{km:0, tarifa: 0 * bKm_EST1},  // San Pablo Tolimán
-    "12-1207":{km:0, tarifa: 0 * bKm_EST1},  // Crucero a sierra gorda
-    "12-1208":{km:0, tarifa: 0 * bKm_EST1},  // San Antonio de la cal
+    // --- Central Cadereyta ---
+    "9-901":{km:0, tarifa: 0 * bKm_EST1},  // Zituni crucero
 };

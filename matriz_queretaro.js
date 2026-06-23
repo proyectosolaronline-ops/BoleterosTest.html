@@ -8,7 +8,7 @@ const bKm_EST1 = .63;
 const localidadesObj = {
     1: "Santiago de Queretaro (Central)",
     2: "El Pueblito (Corregidora)",
-    3: "La CaÃ±ada (El Marques)",
+    3: "La Cañada (El Marques)",
     4: "San Juan del Rio (central)",
     5: "Huimilpan",
     6: "Pedro Escobedo",
@@ -28,7 +28,7 @@ const localidadesObj = {
     17: "Pinal de Amoles",
     18: "Peñamiller",
     101: "Parque Bernardo Quintana",
-    301: "Gsleras",
+    301: "Galeras",
     302: "El colorado",
     303: "El parai­so",
     304: "la esperanza ",

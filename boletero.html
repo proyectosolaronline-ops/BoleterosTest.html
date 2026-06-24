@@ -196,10 +196,14 @@
 <script src="matriz_queretaro.js"></script>
 <script>
 // ========== TARIFAS CONFIGURABLES ==========
-var TARIFA_POR_KM = parseFloat(localStorage.getItem('config_tarifaPorKm')) || 1.50;
-var TARIFA_MINIMA  = parseFloat(localStorage.getItem('config_tarifaMinima')) || 12.00;
+var TARIFA_POR_KM = parseFloat(localStorage.getItem('config_tarifaPorKm')) || 1.20;
+var TARIFA_MINIMA  = parseFloat(localStorage.getItem('config_tarifaMinima')) || 15.00;
+const COBRO_MINIMO = 15.00;        // ← Agrega esto
+const UMBRAL_KM_CORTO = 15;        // ← Agrega esto
 const DESCUENTOS = { normal:0, adulto:0.50, estudiante:0.50, maestro:0.50 };
 
+
+    
 // ========== DATOS ==========
 var localidades = [];
 (function() {
@@ -430,11 +434,32 @@ function invertirRutaBoletero(){
 
 // ========== TARIFA ==========
 function calcularTarifa(origenId, destinoId, kmReal){
-    if(typeof kmReal==='number'&&kmReal>0) return Math.max(Math.round(TARIFA_MINIMA+kmReal*TARIFA_POR_KM), TARIFA_MINIMA);
-    var mat=MATRIZ_QUERETARO||{}, a=Math.min(origenId,destinoId), b=Math.max(origenId,destinoId), clave=a+'-'+b;
-    if(mat[clave]){if(mat[clave].tarifa>0)return mat[clave].tarifa; return Math.max(Math.round(TARIFA_MINIMA+mat[clave].km*TARIFA_POR_KM),TARIFA_MINIMA);}
-    var lo=localidades.find(function(l){return l.id===origenId;}), ld=localidades.find(function(l){return l.id===destinoId;});
-    if(lo&&ld&&lo.km>0&&ld.km>0) return Math.max(Math.round(TARIFA_MINIMA+Math.abs(ld.km-lo.km)*TARIFA_POR_KM),TARIFA_MINIMA);
+    // Si el kilometraje es 12 km o menos, cobro fijo de $15
+    if(typeof kmReal === 'number' && kmReal > 0 && kmReal <= UMBRAL_KM_CORTO){
+        return COBRO_MINIMO;
+    }
+    
+    // Para distancias mayores a 12 km, fórmula normal
+    if(typeof kmReal === 'number' && kmReal > UMBRAL_KM_CORTO){
+        return Math.max(Math.round(TARIFA_MINIMA + kmReal * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    
+    // Fallback con matriz
+    var mat = MATRIZ_QUERETARO || {};
+    var a = Math.min(origenId, destinoId), b = Math.max(origenId, destinoId), clave = a + '-' + b;
+    if(mat[clave]){
+        if(mat[clave].tarifa > 0) return mat[clave].tarifa;
+        if(mat[clave].km <= UMBRAL_KM_CORTO) return COBRO_MINIMO;
+        return Math.max(Math.round(TARIFA_MINIMA + mat[clave].km * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    
+    var lo = localidades.find(function(l){return l.id === origenId;});
+    var ld = localidades.find(function(l){return l.id === destinoId;});
+    if(lo && ld && lo.km > 0 && ld.km > 0){
+        var km = Math.abs(ld.km - lo.km);
+        if(km <= UMBRAL_KM_CORTO) return COBRO_MINIMO;
+        return Math.max(Math.round(TARIFA_MINIMA + km * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
     return TARIFA_MINIMA;
 }
 function precioPorTipo(tipo){return Math.round(estado.tarifaBaseUnitaria*(1-(DESCUENTOS[tipo]||0)));}

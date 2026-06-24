@@ -180,7 +180,31 @@ function inicializarLocalidades() {
     });
     localidadesFiltradas.sort(function(a, b) { return a.km - b.km; });
 }
+function verificarCorridaEnProceso() {
+    if (!sesionActiva) return false;
+    var uid = sesionActiva.usuario_id || 'default';
+    try {
+        var estado = JSON.parse(localStorage.getItem('estadoPasajeros_' + uid));
+        if (estado && estado.pasajerosABordo && estado.pasajerosABordo.length > 0) {
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
 
+function actualizarBotonCorrida() {
+    var btn = document.querySelector('.btn-nueva-corrida');
+    if (!btn) return;
+    if (verificarCorridaEnProceso()) {
+        btn.textContent = '🔄 REGRESAR A CORRIDA EN PROCESO';
+        btn.style.background = 'var(--naranja)';
+        btn.onclick = function() { window.location.href = 'boletero.html'; };
+    } else {
+        btn.textContent = '➕ AGREGAR NUEVA CORRIDA';
+        btn.style.background = 'var(--verde)';
+        btn.onclick = abrirModalNuevaCorrida;
+    }
+    }
 function filtrarLocalidades(tipo) {
     var input = document.getElementById('search' + (tipo === 'origen' ? 'Origen' : 'Destino'));
     var resultsDiv = document.getElementById('results' + (tipo === 'origen' ? 'Origen' : 'Destino'));
@@ -243,6 +267,7 @@ function iniciarSesion() {
     document.getElementById('headerRol').style.display='block';
     document.getElementById('headerRol').textContent='🚌 Operador';
     renderPanelOperador();
+    actualizarBotonCorrida();
 }
 function cerrarSesion(){sesionActiva=null;localStorage.removeItem('sesionActiva');document.getElementById('loginCard').style.display='block';document.getElementById('panelOperador').style.display='none';document.getElementById('btnSalir').style.display='none';document.getElementById('headerRol').style.display='none';}
 function renderPanelOperador(){
@@ -354,6 +379,7 @@ if (sesionGuardada) {
     document.getElementById('headerRol').style.display = 'block';
     document.getElementById('headerRol').textContent = '🚌 Operador';
     renderPanelOperador();
+    ActualizarBotonCorrida();
 }
 </script>
 <a href="generador.html" style="position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:#f59e0b;color:#0a0a0a;font-size:24px;display:flex;align-items:center;justify-content:center;text-decoration:none;z-index:9999;box-shadow:0 4px 16px rgba(245,158,11,.5);transition:all .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">📍</a>

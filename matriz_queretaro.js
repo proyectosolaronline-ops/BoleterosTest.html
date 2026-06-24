@@ -16,7 +16,7 @@ const localidadesObj = {
     6: "Pedro Escobedo",
     7: "Tequisquiapan",
     701: "Bordo blanco",
-    702: "Cmla trinidad crucero",
+    702: "la trinidad crucero",
     703: "San nicolas",
     8: "Ezequiel Montes",
     9: "Central Cadereyta",

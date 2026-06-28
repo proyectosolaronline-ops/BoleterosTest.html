@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boletero Inteligente</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;--rojo:#ef4444;
+            --azul:#3b82f6;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:var(--negro);color:var(--blanco);
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;
+            user-select:none;-webkit-user-select:none;
+        }
+        .header{
+            background:var(--gris);padding:1vh 3vw;height:7vh;
+            display:flex;align-items:center;justify-content:space-between;
+            border-bottom:0.3vh solid var(--amarillo);flex-shrink:0;
+        }
+        .header-info{display:flex;flex-direction:column;flex:1;min-width:0}
+        .header-ruta{font-size:4vw;font-weight:700;color:var(--amarillo)}
+        .header-operador{font-size:2.5vw;color:var(--gris-texto)}
+        .btn-invertir-header{
+            background:var(--naranja);color:var(--blanco);border:none;
+            padding:1vh 2vw;border-radius:1vh;font-size:3vw;font-weight:700;cursor:pointer;
+        }
+        .btn-volver{
+            background:transparent;border:0.2vh solid var(--amarillo);color:var(--amarillo);
+            padding:1vh 2vw;border-radius:1vh;font-size:3vw;cursor:pointer;text-decoration:none;
+        }
+        .panel-superior{
+            flex-shrink:0;background:rgba(10,10,10,.97);border-bottom:1px solid var(--amarillo);
+            padding:1.5vh 3vw;z-index:800;
+        }
+        .localidad-actual{text-align:center;margin-bottom:1vh;}
+        .localidad-actual .nombre{font-size:5vw;font-weight:900;color:var(--amarillo-texto);}
+        .localidad-actual .prec{font-size:2.5vw;color:var(--verde);}
+        .btn-row{display:flex;gap:2vw;margin-bottom:1vh;}
+        .btn-row .btn-pasajero{flex:2;}
+        .btn-row .btn-corte{flex:1;}
+        .btn-pasajero{
+            padding:2.5vh;background:var(--amarillo);color:var(--negro);border:none;border-radius:2vh;
+            font-size:5vw;font-weight:800;cursor:pointer;text-align:center;
+            box-shadow:0 1vh 3vh rgba(245,158,11,0.35);
+        }
+        .btn-pasajero .sube-en{font-size:2.8vw;font-weight:400;color:var(--negro);opacity:0.7;}
+        .btn-corte{
+            padding:2.5vh;background:var(--rojo);color:var(--blanco);border:none;
+            border-radius:2vh;font-size:4.5vw;font-weight:800;cursor:pointer;text-align:center;
+        }
+        .btn-manual{
+            padding:1vh;background:transparent;color:var(--amarillo-texto);
+            border:0.2vh dashed var(--amarillo);border-radius:1.5vh;
+            font-size:2.8vw;font-weight:600;cursor:pointer;width:100%;margin-bottom:1vh;
+        }
+        .btn-config-tarifa{
+            padding:1vh;background:rgba(59,130,246,0.1);color:var(--azul);
+            border:0.2vh dashed var(--azul);border-radius:1.5vh;
+            font-size:2.8vw;font-weight:600;cursor:pointer;width:100%;margin-bottom:1vh;
+        }
+        .indicadores{
+            display:flex;gap:1.5vw;
+        }
+        .indicador{flex:1;background:var(--gris);border-radius:1vh;padding:0.8vh 2vw;text-align:center;border:0.3vh solid var(--gris2);}
+        .indicador .num{font-size:5vw;font-weight:900}
+        .indicador .etq{font-size:2.2vw;color:var(--gris-texto);text-transform:uppercase}
+        .indicador.verde .num{color:var(--verde)}
+        .indicador.naranja .num{color:var(--naranja)}
+        .indicador.amarillo .num{color:var(--amarillo-texto)}
+        /* VELOCÍMETRO - NUEVO */
+        .velocimetro-container{
+            display:flex;align-items:center;justify-content:center;
+            background:var(--gris);border-radius:1vh;padding:0.5vh 2vw;
+            border:0.3vh solid var(--gris2);margin-bottom:0.8vh;gap:2vw;
+        }
+        .velocimetro-valor{
+            font-size:6vw;font-weight:900;min-width:15vw;text-align:center;
+        }
+        .velocimetro-valor.verde{color:var(--verde)}
+        .velocimetro-valor.naranja{color:var(--naranja)}
+        .velocimetro-valor.rojo{color:var(--rojo)}
+        .velocimetro-etq{
+            font-size:2.5vw;color:var(--gris-texto);
+        }
+        .velocimetro-barra{
+            flex:1;height:1.2vh;background:var(--gris2);border-radius:1vh;overflow:hidden;
+            min-width:20vw;
+        }
+        .velocimetro-barra-interna{
+            height:100%;width:0%;background:var(--verde);border-radius:1vh;
+            transition:width 0.3s ease, background 0.3s ease;
+        }
+        .mapa-contenedor{flex:1;position:relative;min-height:0;background:#111;}
+        #mapaPrincipal{width:100%;height:100%;}
+        .modal-overlay{
+            position:fixed;top:0;left:0;width:100vw;height:100vh;
+            background:rgba(10,10,10,0.98);z-index:3000;display:none;flex-direction:column;padding:3vh 4vw;
+        }
+        .modal-overlay.active{display:flex}
+        .modal-title{font-size:7vw;font-weight:700;color:var(--amarillo-texto);text-align:center;margin-bottom:2vh}
+        .modal-subtitle{font-size:3.5vw;color:var(--gris-texto);text-align:center;margin-bottom:2vh}
+        .modal-cerrar{
+            width:100%;padding:2.5vh;background:transparent;color:var(--rojo);
+            border:0.2vh solid var(--rojo);border-radius:1.5vh;font-size:4.5vw;font-weight:700;cursor:pointer;margin-top:1.5vh;flex-shrink:0;
+        }
+        .destino-lista{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:1.5vh}
+        .destino-item{
+            background:var(--gris);padding:2.5vh 4vw;border-radius:1.5vh;
+            display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+        }
+        .destino-nombre{font-size:4.5vw;font-weight:600;flex:1}
+        .destino-tarifa{font-size:6vw;font-weight:800;color:var(--amarillo-texto);flex-shrink:0}
+        .cobro-contenido{display:flex;flex-direction:column;height:100%;gap:1.5vh;overflow-y:auto}
+        .cobro-header{text-align:center;font-size:4.5vw;color:var(--gris-texto)}
+        .tipos-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5vw}
+        .tipo-card{background:var(--gris);border-radius:2vh;padding:1.5vh 2vw;display:flex;flex-direction:column;gap:1vh;border:0.25vh solid var(--gris2);}
+        .tipo-card-top{display:flex;align-items:center;gap:2vw}
+        .tipo-icono{font-size:6vw}
+        .tipo-nombre{font-size:3.5vw;font-weight:700}
+        .tipo-precio{font-size:3vw;font-weight:600}
+        .tipo-controles{display:flex;align-items:center;justify-content:space-between;gap:1vw}
+        .btn-menos,.btn-mas{width:9vw;height:9vw;border-radius:50%;border:none;font-size:5.5vw;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+        .btn-menos{background:var(--gris2);color:var(--blanco)}.btn-menos:disabled{opacity:0.3}
+        .btn-mas{background:var(--amarillo);color:var(--negro)}
+        .tipo-cantidad{font-size:7vw;font-weight:900;min-width:8vw;text-align:center}
+        .tipo-subtotal{font-size:3vw;font-weight:700;color:var(--verde);text-align:right}
+        .cobro-total-bar{background:var(--gris);border-radius:1.5vh;padding:1.5vh 4vw;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+        .cobro-total-monto{font-size:10vw;font-weight:900;color:var(--verde)}
+        .cobro-vuelto{background:var(--negro);border-radius:1.5vh;padding:1.5vh 4vw;display:flex;justify-content:space-between;align-items:center;gap:2vw;flex-shrink:0;flex-wrap:wrap;}
+        .billete-btn{padding:1vh 3vw;border-radius:1vh;border:none;font-size:3.5vw;font-weight:700;cursor:pointer;background:var(--gris2);color:var(--blanco);}
+        .vuelto-resultado{font-size:5vw;font-weight:800;color:var(--azul)}
+        .btn-cobrar-final{width:100%;padding:3vh;background:var(--verde);color:var(--blanco);border:none;border-radius:2vh;font-size:6.5vw;font-weight:800;cursor:pointer;flex-shrink:0;}
+        .btn-cobrar-final:disabled{background:var(--gris2);color:#555}
+        .btn-modo-cobro{padding:1.5vh;background:var(--azul);color:#fff;border:none;border-radius:1vh;font-size:3.5vw;font-weight:700;cursor:pointer;width:100%;margin-bottom:1vh;}
+        #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:8px 16px;border-radius:999px;font-size:3vw;opacity:0;transition:opacity .2s;z-index:5000;pointer-events:none;}
+        #toast.show{opacity:1}
+        @keyframes parpadeo{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.15)}}
+        .pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
+        .pin-circulo{color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);animation:parpadeo 1.2s ease-in-out infinite;}
+        .pin-etiqueta{background:rgba(10,10,10,.85);color:var(--amarillo-texto);font-size:8px;font-weight:700;padding:2px 5px;border-radius:4px;margin-top:2px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+        .pin-gps{background:var(--verde);width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-info">
+        <div class="header-ruta" id="headerRuta">🎫 Boletero</div>
+        <div class="header-operador" id="headerOperador">Sin sesión</div>
+    </div>
+    <button class="btn-invertir-header" onclick="invertirRutaBoletero()">🔄</button>
+    <a class="btn-volver" href="index.html">📋</a>
+</div>
+
+<div class="panel-superior">
+    <div class="localidad-actual">
+        <div class="nombre" id="nombreLocalidad">Buscando…</div>
+        <div class="prec" id="precisionGPS">Precisión: —</div>
+    </div>
+    <!-- VELOCÍMETRO INTEGRADO -->
+    <div class="velocimetro-container">
+        <div class="velocimetro-valor verde" id="velocidadActual">0</div>
+        <div class="velocimetro-etq">km/h</div>
+        <div class="velocimetro-barra">
+            <div class="velocimetro-barra-interna" id="velocidadBarra" style="width:0%;"></div>
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn-pasajero" onclick="abrirModalDestino()">🚌 PASAJERO A BORDO<div class="sube-en">Sube en: <span id="subeEn">—</span></div></button>
+        <button class="btn-corte" onclick="confirmarCorte()">🏁<br>CORTE</button>
+    </div>
+    <button class="btn-manual" onclick="abrirSelectorOrigenManual()">📍 Sin GPS · elegir localidad manual</button>
+    <button class="btn-config-tarifa" onclick="abrirConfigTarifa()">🧪 Tarifa de prueba: $<span id="tarifaActualTxt">—</span>/km</button>
+    <div class="indicadores">
+        <div class="indicador verde"><div class="num" id="numABordo">0</div><div class="etq">👥 A bordo</div></div>
+        <div class="indicador naranja"><div class="num" id="numBajan">0</div><div class="etq">🔻 Por bajar</div></div>
+        <div class="indicador amarillo"><div class="num" id="totalCorrida">$0</div><div class="etq">💰 Total</div></div>
+    </div>
+</div>
+
+<div class="mapa-contenedor"><div id="mapaPrincipal"></div></div>
+
+<div class="modal-overlay" id="modalDestino">
+    <div class="modal-title">¿A dónde va?</div>
+    <div class="modal-subtitle">Sube en: <span id="origenModal">—</span></div>
+    <div class="destino-lista" id="listaDestinos"></div>
+    <button class="modal-cerrar" onclick="cerrarModalDestino()">❌ CANCELAR</button>
+</div>
+<div class="modal-overlay" id="modalOrigenManual">
+    <div class="modal-title">📍 ¿Dónde subió?</div>
+    <div class="modal-subtitle" id="subtituloOrigenManual">—</div>
+    <div class="destino-lista" id="listaOrigenManual"></div>
+    <div style="background:var(--gris);border-radius:1.5vh;padding:2vh 4vw;margin-top:1.5vh;flex-shrink:0;">
+        <div style="font-size:3.2vw;color:var(--gris-texto);margin-bottom:1vh;text-align:center;">📏 O ingresa el kilometraje exacto</div>
+        <div style="display:flex;gap:2vw;">
+            <input type="number" id="inputKmManual" placeholder="Ej. 30" step="0.1" style="flex:1;padding:1.5vh;border-radius:1vh;border:0.2vh solid var(--amarillo);background:var(--negro);color:var(--blanco);font-size:4.5vw;text-align:center;">
+            <button onclick="confirmarKmManual()" style="background:var(--verde);color:#fff;border:none;border-radius:1vh;padding:1.5vh 4vw;font-size:3.8vw;font-weight:700;cursor:pointer;">✅ Usar</button>
+        </div>
+    </div>
+    <button class="modal-cerrar" onclick="cerrarModalOrigenManual()" style="margin-top:1vh;">❌ CANCELAR</button>
+</div>
+<div class="modal-overlay" id="modalCobro">
+    <div class="cobro-contenido">
+        <div class="modal-title">COBRAR</div>
+        <div class="cobro-header" id="cobroRuta">—</div>
+        <button class="btn-modo-cobro" onclick="toggleModoCobro()">💰 Alternar: Sistema / Manual</button>
+        <div class="tipos-grid">
+            <div class="tipo-card"><div class="tipo-card-top"><div class="tipo-icono">👤</div><div><div class="tipo-nombre">Normal</div><div class="tipo-precio" id="precio-normal">$0</div></div></div><div class="tipo-controles"><button class="btn-menos" onclick="cambiarCantidad('normal',-1)" disabled>−</button><div class="tipo-cantidad" id="cant-normal">0</div><button class="btn-mas" onclick="cambiarCantidad('normal',1)">+</button></div><div class="tipo-subtotal" id="sub-normal"></div></div>
+            <div class="tipo-card"><div class="tipo-card-top"><div class="tipo-icono">🧓</div><div><div class="tipo-nombre">Adulto M.</div><div class="tipo-precio" id="precio-adulto">$0</div></div></div><div class="tipo-controles"><button class="btn-menos" onclick="cambiarCantidad('adulto',-1)" disabled>−</button><div class="tipo-cantidad" id="cant-adulto">0</div><button class="btn-mas" onclick="cambiarCantidad('adulto',1)">+</button></div><div class="tipo-subtotal" id="sub-adulto"></div></div>
+            <div class="tipo-card"><div class="tipo-card-top"><div class="tipo-icono">🎓</div><div><div class="tipo-nombre">Estudiante</div><div class="tipo-precio" id="precio-estudiante">$0</div></div></div><div class="tipo-controles"><button class="btn-menos" onclick="cambiarCantidad('estudiante',-1)" disabled>−</button><div class="tipo-cantidad" id="cant-estudiante">0</div><button class="btn-mas" onclick="cambiarCantidad('estudiante',1)">+</button></div><div class="tipo-subtotal" id="sub-estudiante"></div></div>
+            <div class="tipo-card"><div class="tipo-card-top"><div class="tipo-icono">📚</div><div><div class="tipo-nombre">Maestro</div><div class="tipo-precio" id="precio-maestro">$0</div></div></div><div class="tipo-controles"><button class="btn-menos" onclick="cambiarCantidad('maestro',-1)" disabled>−</button><div class="tipo-cantidad" id="cant-maestro">0</div><button class="btn-mas" onclick="cambiarCantidad('maestro',1)">+</button></div><div class="tipo-subtotal" id="sub-maestro"></div></div>
+        </div>
+        <div class="cobro-total-bar"><span>TOTAL</span><div class="cobro-total-monto" id="cobroTotalMonto">$0</div></div>
+        <div class="cobro-vuelto"><span style="font-size:3vw;color:var(--gris-texto)">Vuelto:</span><div class="vuelto-billetes"><button class="billete-btn" onclick="calcularVuelto(20)">$20</button><button class="billete-btn" onclick="calcularVuelto(50)">$50</button><button class="billete-btn" onclick="calcularVuelto(100)">$100</button><button class="billete-btn" onclick="calcularVuelto(200)">$200</button><button class="billete-btn" onclick="calcularVuelto(500)">$500</button></div><div class="vuelto-resultado" id="vueltoResultado"></div></div>
+        <button class="btn-cobrar-final" id="btnCobrarFinal" onclick="confirmarCobro()" disabled>✅ COBRAR</button>
+        <button class="modal-cerrar" onclick="cerrarModalCobro()">❌ CANCELAR</button>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="matriz_queretaro.js"></script>
+<script>
+// ========== TARIFAS CONFIGURABLES ==========
+var TARIFA_POR_KM = parseFloat(localStorage.getItem('config_tarifaPorKm')) || 1.20;
+var TARIFA_MINIMA  = parseFloat(localStorage.getItem('config_tarifaMinima')) || 15.00;
+const COBRO_MINIMO = 15.00;
+// CORRECCIÓN: umbral de 12 km como se acordó
+const UMBRAL_KM_CORTO = 12;
+const DESCUENTOS = { normal:0, adulto:0.50, estudiante:0.50, maestro:0.50 };
+
+// ========== DATOS ==========
+var localidades = [];
+(function() {
+    var obj = localidadesObj || {}, mat = MATRIZ_QUERETARO || {}, crd = coordenadasLocalidades || {};
+    localidades = Object.keys(obj).map(function(id) {
+        var idn = parseInt(id), km = mat['1-'+idn] ? mat['1-'+idn].km : 0, c = crd[idn] || null;
+        return { id:idn, nombre:obj[idn], km:km, lat:c?c.lat:null, lng:c?c.lng:null };
+    });
+})();
+
+// ========== SESIÓN ==========
+var sesion = null;
+try { sesion = JSON.parse(localStorage.getItem('sesionActiva')); } catch(e) {}
+if (sesion && !sesion.hora_inicio) {
+    sesion.hora_inicio = new Date().toLocaleTimeString('es-MX');
+    localStorage.setItem('sesionActiva', JSON.stringify(sesion));
+}
+var paradasCorrida = [], idOrigenCorrida = null, idDestinoCorrida = null;
+var localidadesVisitadas = {};
+
+function distKm(lat1,lng1,lat2,lng2){
+    var R=6371,dL=(lat2-lat1)*Math.PI/180,dO=(lng2-lng1)*Math.PI/180,
+        a=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function calcularKmAcumulados(lista) {
+    if (!lista || lista.length === 0) return;
+    lista[0].km = 0;
+    var acum = 0;
+    for (var i = 1; i < lista.length; i++) {
+        var a = lista[i-1], b = lista[i];
+        if (a && b && a.lat && b.lat && a.lng && b.lng) {
+            acum += distKm(a.lat, a.lng, b.lat, b.lng);
+        }
+        lista[i].km = acum;
+    }
+}
+
+function cargarParadas() {
+    if(!sesion) return;
+    document.getElementById('headerOperador').textContent = '👤 '+sesion.nombre+' · 🚛 '+sesion.camion;
+    document.getElementById('headerRuta').textContent = '🎫 '+(sesion.origen||'?')+' → '+(sesion.destino||'?');
+    var lo = localidades.find(function(l){return l.nombre===sesion.origen;});
+    var ld = localidades.find(function(l){return l.nombre===sesion.destino;});
+    if(lo) idOrigenCorrida = lo.id;
+    if(ld) idDestinoCorrida = ld.id;
+    if(lo && ld){
+        var ri = sesion.rutaGuardadaIndex;
+        // Validación de seguridad
+        if(ri !== undefined && ri !== null) {
+            var rutas = JSON.parse(localStorage.getItem('rutasPredefinidas')||'[]');
+            if(rutas[ri] && rutas[ri].paradas && rutas[ri].paradas.length>0){
+                var r = rutas[ri];
+                paradasCorrida = r.paradas.map(function(id){
+                    var b = localidades.find(function(l){return l.id===id;});
+                    return b ? Object.assign({},b) : null;
+                }).filter(function(l){return l;});
+            } else {
+                paradasCorrida = [lo, ld];
+            }
+        } else {
+            paradasCorrida = [lo, ld];
+        }
+        calcularKmAcumulados(paradasCorrida);
+    }
+}
+cargarParadas();
+
+// ========== MAPA ==========
+var mapa = null, marcadorGPS = null, pinesPasajeros = {}, pinesRuta = [], gpsWatch = null;
+
+function destruirMapa() {
+    if (marcadorGPS) { mapa.removeLayer(marcadorGPS); marcadorGPS = null; }
+    Object.keys(pinesPasajeros).forEach(function(id) { mapa.removeLayer(pinesPasajeros[id]); });
+    pinesPasajeros = {};
+    pinesRuta.forEach(function(m) { mapa.removeLayer(m); });
+    pinesRuta = [];
+    if (gpsWatch) { navigator.geolocation.clearWatch(gpsWatch); gpsWatch = null; }
+    if (mapa) { mapa.remove(); mapa = null; }
+}
+function iniciarMapa() {
+    if (mapa) { destruirMapa(); }
+    mapa = L.map('mapaPrincipal', { zoomControl: false, attributionControl: false }).setView([20.75, -99.9], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17 }).addTo(mapa);
+    mostrarRutaEnMapa();
+}
+function mostrarRutaEnMapa(){
+    pinesRuta.forEach(function(m){ mapa.removeLayer(m); });
+    pinesRuta = [];
+    if(!paradasCorrida.length) return;
+    paradasCorrida.forEach(function(loc, i){
+        if(!loc || !loc.lat) return;
+        var esO = (i===0), esD = (i===paradasCorrida.length-1);
+        var color = esO ? '#22c55e' : (esD ? '#ef4444' : '#94a3b8');
+        var icon = L.divIcon({className:'', html:'<div class="pin-wrap"><div class="pin-circulo" style="background:'+color+';">'+(i+1)+'</div><div class="pin-etiqueta">'+loc.nombre+'</div></div>', iconAnchor:[15,15]});
+        var m = L.marker([loc.lat, loc.lng], {icon:icon}).addTo(mapa);
+        pinesRuta.push(m);
+    });
+    if(pinesRuta.length>0) mapa.fitBounds(pinesRuta.map(function(m){return m.getLatLng();}), {padding:[30,30]});
+}
+function actualizarPinesPasajeros(){
+    Object.keys(pinesPasajeros).forEach(function(id){ mapa.removeLayer(pinesPasajeros[id]); delete pinesPasajeros[id]; });
+    if(!estado.pasajerosABordo.length) return;
+    var porDestino = {};
+    estado.pasajerosABordo.forEach(function(g){
+        if(!porDestino[g.destinoId]) porDestino[g.destinoId] = [];
+        porDestino[g.destinoId].push(g);
+    });
+    Object.keys(porDestino).forEach(function(id){
+        var grupos = porDestino[id];
+        var total = grupos.reduce(function(s,g){return s+Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);},0);
+        var loc = localidades.find(function(l){return l.id===parseInt(id);});
+        if(!loc || !loc.lat) return;
+        var icon = L.divIcon({className:'', html:'<div class="pin-wrap"><div class="pin-circulo" style="background:#ef4444;">'+total+'</div><div class="pin-etiqueta">'+loc.nombre+'</div></div>', iconAnchor:[15,15]});
+        pinesPasajeros[id] = L.marker([loc.lat, loc.lng], {icon:icon}).addTo(mapa);
+    });
+}
+
+// ========== GPS + VELOCÍMETRO ==========
+var ultimaPosicionGPS = null;
+var ultimoTiempoGPS = null;
+
+function iniciarGPS(){
+    if(!navigator.geolocation) return;
+    if(gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
+    gpsWatch = navigator.geolocation.watchPosition(function(pos){
+        var lat = pos.coords.latitude, lng = pos.coords.longitude;
+        var velocidad = pos.coords.speed !== null && pos.coords.speed !== undefined ? pos.coords.speed * 3.6 : 0;
+        actualizarVelocimetro(velocidad);
+        
+        document.getElementById('precisionGPS').textContent = 'Precisión: ±'+Math.round(pos.coords.accuracy)+'m';
+        if(marcadorGPS) mapa.removeLayer(marcadorGPS);
+        marcadorGPS = L.marker([lat,lng], {icon:L.divIcon({className:'', html:'<div class="pin-gps"></div>', iconAnchor:[7,7]})}).addTo(mapa);
+        var res = localidadMasCercana(lat, lng);
+        if(res && res.loc){
+            if(res.dist <= 1.5){
+                estado.localidadActual = res.loc; estado.ultimaLocalidadConfirmada = res.loc;
+                estado.timestampUltimaConfirmada = Date.now();
+                document.getElementById('nombreLocalidad').textContent = res.loc.nombre;
+                document.getElementById('subeEn').textContent = res.loc.nombre;
+                var grupos = estado.pasajerosABordo.filter(function(g){return g.destinoId===res.loc.id;});
+                var total = grupos.reduce(function(s,g){return s+Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);},0);
+                if(total > 0 && !localidadesVisitadas[res.loc.id]){
+                    localidadesVisitadas[res.loc.id] = true;
+                    alert('📍 HAS LLEGADO A: ' + res.loc.nombre + '\n\n👥 Pasajeros con este destino: ' + total + '\n\nPregúntales quién baja aquí.');
+                }
+            } else if(res.dist <= 6){
+                estado.localidadActual = res.loc;
+                document.getElementById('nombreLocalidad').textContent = 'Cerca: '+res.loc.nombre;
+            } else {
+                document.getElementById('nombreLocalidad').textContent = 'Sin localidad cercana';
+                if(estado.ultimaLocalidadConfirmada && localidadesVisitadas[estado.ultimaLocalidadConfirmada.id]){
+                    var loc = estado.ultimaLocalidadConfirmada;
+                    var grupos = estado.pasajerosABordo.filter(function(g){return g.destinoId===loc.id;});
+                    var total = grupos.reduce(function(s,g){return s+Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);},0);
+                    if(total > 0){
+                        var ahora = Date.now();
+                        if(!estado._ultimaPreguntaBajada || (ahora - estado._ultimaPreguntaBajada) > 60000){
+                            estado._ultimaPreguntaBajada = ahora;
+                            var bajaronTodos = confirm('🚌 SALISTE DE: ' + loc.nombre + '\n\n👥 Pasajeros pendientes: ' + total + '\n\n¿Ya bajaron TODOS?');
+                            if(bajaronTodos){
+                                estado.pasajerosABordo = estado.pasajerosABordo.filter(function(g){return g.destinoId!==loc.id;});
+                                guardarEstado(); actualizarIndicadores(); actualizarPinesPasajeros();
+                                delete localidadesVisitadas[loc.id];
+                            }
+                        }
+                    } else { delete localidadesVisitadas[loc.id]; }
+                }
+                usarUltimaParadaComoReferencia();
+            }
+        } else { usarUltimaParadaComoReferencia(); }
+        actualizarIndicadores();
+    }, function(){ usarUltimaParadaComoReferencia(); }, {enableHighAccuracy:true, maximumAge:3000, timeout:15000});
+}
+
+function actualizarVelocimetro(velocidad) {
+    var elValor = document.getElementById('velocidadActual');
+    var elBarra = document.getElementById('velocidadBarra');
+    var vel = Math.round(velocidad);
+    elValor.textContent = vel;
+    
+    // Color según velocidad
+    elValor.className = 'velocimetro-valor';
+    if (vel < 10) {
+        elValor.classList.add('verde');
+    } else if (vel < 30) {
+        elValor.classList.add('naranja');
+    } else {
+        elValor.classList.add('rojo');
+    }
+    
+    // Barra (máximo 60 km/h para escala)
+    var porcentaje = Math.min(vel / 60 * 100, 100);
+    elBarra.style.width = porcentaje + '%';
+    if (vel < 10) {
+        elBarra.style.background = 'var(--verde)';
+    } else if (vel < 30) {
+        elBarra.style.background = 'var(--naranja)';
+    } else {
+        elBarra.style.background = 'var(--rojo)';
+    }
+}
+
+function usarUltimaParadaComoReferencia(){
+    if(estado.ultimaLocalidadConfirmada){
+        estado.localidadActual = estado.ultimaLocalidadConfirmada;
+        var minutos = estado.timestampUltimaConfirmada ? Math.round((Date.now()-estado.timestampUltimaConfirmada)/60000) : 0;
+        var tiempoTxt = minutos > 0 ? ' (hace '+minutos+' min)' : '';
+        document.getElementById('nombreLocalidad').textContent = '📡 '+estado.ultimaLocalidadConfirmada.nombre+tiempoTxt;
+        document.getElementById('subeEn').textContent = estado.ultimaLocalidadConfirmada.nombre+tiempoTxt+' (última)';
+        document.getElementById('precisionGPS').textContent = 'Sin señal GPS';
+    } else {
+        document.getElementById('nombreLocalidad').textContent = 'Sin localidad cercana';
+        document.getElementById('subeEn').textContent = 'Por definir';
+    }
+}
+function localidadMasCercana(lat,lng){
+    var lista=paradasCorrida.filter(function(l){return l&&l.lat;});
+    if(!lista.length) lista=localidades.filter(function(l){return l&&l.lat;});
+    var mejor=null,min=Infinity;
+    lista.forEach(function(l){var d=distKm(lat,lng,l.lat,l.lng);if(d<min){min=d;mejor=l;}});
+    return {loc:mejor, dist:min};
+}
+
+// ========== ESTADO ==========
+var estado = {
+    localidadActual:null, ultimaLocalidadConfirmada:null, timestampUltimaConfirmada:null,
+    destinoSeleccionado:null, tarifaBaseUnitaria:0,
+    cantidades:{normal:0,adulto:0,estudiante:0,maestro:0},
+    pasajerosABordo:[], totalRecaudado:0, billeteSeleccionado:null,
+    _ultimaVerificacionId:null, _modoCobro:'sistema', _tarifaSistema:0,
+    _ultimaPreguntaBajada:null
+};
+function cargarEstadoGuardado(){
+    var uid = sesion ? sesion.usuario_id : 'default';
+    try {
+        var g = JSON.parse(localStorage.getItem('estadoPasajeros_'+uid));
+        if(g){ estado.pasajerosABordo=g.pasajerosABordo||[]; estado.totalRecaudado=g.totalRecaudado||0; document.getElementById('totalCorrida').textContent='$'+estado.totalRecaudado; actualizarIndicadores(); actualizarPinesPasajeros(); }
+    } catch(e) {}
+}
+cargarEstadoGuardado();
+function actualizarIndicadores(){
+    var aBordo=estado.pasajerosABordo.reduce(function(s,g){return s+Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);},0);
+    document.getElementById('numABordo').textContent=aBordo;
+    var bajan=estado.localidadActual?estado.pasajerosABordo.filter(function(g){return g.destinoId===estado.localidadActual.id;}).reduce(function(s,g){return s+Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);},0):0;
+    document.getElementById('numBajan').textContent=bajan;
+}
+function guardarEstado(){
+    var uid=sesion?sesion.usuario_id:'default';
+    localStorage.setItem('estadoPasajeros_'+uid,JSON.stringify({pasajerosABordo:estado.pasajerosABordo,totalRecaudado:estado.totalRecaudado,localidadActualId:estado.localidadActual?estado.localidadActual.id:null}));
+}
+function invertirRutaBoletero(){
+    if(!sesion){alert('⚠ No hay sesión');return;}
+    var t=sesion.origen; sesion.origen=sesion.destino; sesion.destino=t;
+    sesion.rutaGuardadaIndex=undefined;
+    localStorage.setItem('sesionActiva',JSON.stringify(sesion));
+    paradasCorrida=[]; cargarParadas();
+    document.getElementById('numABordo').textContent='0'; document.getElementById('numBajan').textContent='0'; document.getElementById('totalCorrida').textContent='$0';
+    var uid=sesion?sesion.usuario_id:'default'; localStorage.removeItem('estadoPasajeros_'+uid);
+    estado.pasajerosABordo=[]; estado.totalRecaudado=0;
+    estado.ultimaLocalidadConfirmada=null; estado.timestampUltimaConfirmada=null; estado._ultimaPreguntaBajada=null;
+    localidadesVisitadas={};
+    destruirMapa(); iniciarMapa(); iniciarGPS();
+}
+
+// ========== TARIFA ==========
+function calcularTarifa(origenId, destinoId, kmReal){
+    if(typeof kmReal === 'number' && kmReal > 0 && kmReal <= UMBRAL_KM_CORTO){
+        return COBRO_MINIMO;
+    }
+    if(typeof kmReal === 'number' && kmReal > UMBRAL_KM_CORTO){
+        return Math.max(Math.round(TARIFA_MINIMA + kmReal * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    var mat = MATRIZ_QUERETARO || {};
+    var a = Math.min(origenId, destinoId), b = Math.max(origenId, destinoId), clave = a + '-' + b;
+    if(mat[clave]){
+        if(mat[clave].tarifa > 0) return mat[clave].tarifa;
+        if(mat[clave].km <= UMBRAL_KM_CORTO) return COBRO_MINIMO;
+        return Math.max(Math.round(TARIFA_MINIMA + mat[clave].km * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    var lo = localidades.find(function(l){return l.id === origenId;});
+    var ld = localidades.find(function(l){return l.id === destinoId;});
+    if(lo && ld && lo.km > 0 && ld.km > 0){
+        var km = Math.abs(ld.km - lo.km);
+        if(km <= UMBRAL_KM_CORTO) return COBRO_MINIMO;
+        return Math.max(Math.round(TARIFA_MINIMA + km * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    return TARIFA_MINIMA;
+}
+function precioPorTipo(tipo){return Math.round(estado.tarifaBaseUnitaria*(1-(DESCUENTOS[tipo]||0)));}
+function totalGeneral(){return Object.keys(estado.cantidades).reduce(function(t,tipo){return t+estado.cantidades[tipo]*precioPorTipo(tipo);},0);}
+function totalPasajerosGrupo(){return Object.values(estado.cantidades).reduce(function(a,b){return a+b;},0);}
+function cambiarCantidad(tipo,delta){if(estado.cantidades[tipo]+delta<0||totalPasajerosGrupo()+delta>10)return;estado.cantidades[tipo]+=delta;document.getElementById('cant-'+tipo).textContent=estado.cantidades[tipo];document.getElementById('sub-'+tipo).textContent=estado.cantidades[tipo]>0?'$'+(estado.cantidades[tipo]*precioPorTipo(tipo)):'';var total=totalGeneral();document.getElementById('cobroTotalMonto').textContent='$'+total;document.getElementById('btnCobrarFinal').disabled=total===0;document.querySelectorAll('.btn-menos')[{normal:0,adulto:1,estudiante:2,maestro:3}[tipo]].disabled=estado.cantidades[tipo]===0;}
+function calcularVuelto(billete){var total=totalGeneral();if(!total)return;if(estado.billeteSeleccionado===billete){estado.billeteSeleccionado=null;document.getElementById('vueltoResultado').textContent='';return;}estado.billeteSeleccionado=billete;document.getElementById('vueltoResultado').textContent=(billete-total)<0?'⚠ Insuf.':'$'+(billete-total);}
+
+// ========== CONFIGURACIÓN DE TARIFA EN VIVO ==========
+function abrirConfigTarifa(){
+    var nuevaTarifa = prompt('🧪 TARIFA POR KM (prueba)\n\nValor actual: $'+TARIFA_POR_KM+'/km\nTarifa mínima actual: $'+TARIFA_MINIMA, TARIFA_POR_KM);
+    if(nuevaTarifa===null||nuevaTarifa==='') return;
+    var valor = parseFloat(nuevaTarifa);
+    if(isNaN(valor)||valor<=0){alert('⚠ Valor inválido');return;}
+    var nuevaMinima = prompt('💵 TARIFA MÍNIMA (prueba)\n\nDeja igual si no quieres cambiarla', TARIFA_MINIMA);
+    var valorMinima = parseFloat(nuevaMinima);
+    TARIFA_POR_KM = valor;
+    localStorage.setItem('config_tarifaPorKm', valor);
+    if(!isNaN(valorMinima)&&valorMinima>0){TARIFA_MINIMA=valorMinima;localStorage.setItem('config_tarifaMinima',valorMinima);}
+    actualizarEtiquetaTarifa();
+    toast('🧪 Tarifa actualizada: $'+TARIFA_POR_KM+'/km · mín. $'+TARIFA_MINIMA);
+}
+function actualizarEtiquetaTarifa(){var el=document.getElementById('tarifaActualTxt');if(el)el.textContent=TARIFA_POR_KM;}
+
+// ========== MODALES ==========
+function abrirModalDestino(){
+    if(!estado.localidadActual&&estado.ultimaLocalidadConfirmada){estado.localidadActual=estado.ultimaLocalidadConfirmada;}
+    if(!estado.localidadActual){abrirSelectorOrigenManual();return;}
+    document.getElementById('origenModal').textContent=estado.localidadActual.nombre;
+    var lista=document.getElementById('listaDestinos');lista.innerHTML='';
+    var actual=estado.localidadActual,destinos=[];
+    if(idDestinoCorrida&&actual.id===idDestinoCorrida){
+        lista.innerHTML='<div style="text-align:center;color:var(--amarillo-texto);padding:3vh;font-size:4vw;">🏁 DESTINO FINAL<br><small style="color:#888;">Realiza el corte para finalizar</small></div>';
+        document.getElementById('modalDestino').classList.add('active');return;
+    }
+    if(paradasCorrida.length>0){
+        var idxActual=paradasCorrida.findIndex(function(p){return p&&p.id===actual.id;});
+        if(idxActual>=0){
+            destinos=paradasCorrida.slice(idxActual+1);
+        } else {
+            var kmActual = typeof actual.km === 'number' ? actual.km : 0;
+            for(var i=0;i<paradasCorrida.length;i++){
+                if(paradasCorrida[i]&&typeof paradasCorrida[i].km==='number'&&paradasCorrida[i].km>=kmActual){
+                    destinos=paradasCorrida.slice(i);break;
+                }
+            }
+        }
+        if(!destinos.length){
+            lista.innerHTML='<div style="text-align:center;color:#888;padding:3vh;font-size:4vw;">🏁 Has llegado al destino final</div>';
+            document.getElementById('modalDestino').classList.add('active');return;
+        }
+    } else {
+        destinos=localidades.filter(function(l){return l.id!==actual.id&&l.km>0;});
+        destinos.sort(function(a,b){return Math.abs(a.km-actual.km)-Math.abs(b.km-actual.km);});
+        if(!destinos.length){
+            lista.innerHTML='<div style="text-align:center;color:#888;padding:3vh;font-size:4vw;">🏁 Has llegado al destino final</div>';
+            document.getElementById('modalDestino').classList.add('active');return;
+        }
+    }
+    destinos.forEach(function(d){
+        if(!d)return;
+        if(paradasCorrida.length>0){
+            var idxD=paradasCorrida.findIndex(function(p){return p&&p.id===d.id;});
+            var idxA=paradasCorrida.findIndex(function(p){return p&&p.id===actual.id;});
+            if(idxA>=0&&idxD>=0&&idxD<=idxA)return;
+        }
+        var kmT=(typeof d.km==='number'&&typeof actual.km==='number')?Math.abs(d.km-actual.km):null;
+        var tarifa=calcularTarifa(actual.id,d.id,kmT);
+        var item=document.createElement('div');item.className='destino-item';
+        item.innerHTML='<span class="destino-nombre">'+(d.id===idDestinoCorrida?'🏁 ':'📍 ')+d.nombre+(kmT!==null?' <small style="color:#666">('+kmT.toFixed(1)+' km desde aquí)</small>':'')+'</span><span class="destino-tarifa">$'+tarifa+'</span>';
+        item.onclick=function(){abrirModalCobro(d,tarifa);};
+        lista.appendChild(item);
+    });
+    document.getElementById('modalDestino').classList.add('active');
+}
+function cerrarModalDestino(){document.getElementById('modalDestino').classList.remove('active');}
+function abrirSelectorOrigenManual(){
+    var base=estado.ultimaLocalidadConfirmada,candidatos=[];
+    if(base&&paradasCorrida.length){var idx=paradasCorrida.findIndex(function(p){return p&&p.id===base.id;});if(idx>=0){for(var i=Math.max(0,idx-1);i<=Math.min(paradasCorrida.length-1,idx+3);i++){if(paradasCorrida[i])candidatos.push(paradasCorrida[i]);}}}
+    if(!candidatos.length)candidatos=paradasCorrida.length?paradasCorrida.slice(0,6):localidades.filter(function(l){return l.km>0;}).slice(0,6);
+    document.getElementById('subtituloOrigenManual').textContent=base?('Última: '+base.nombre+' · elige localidad actual'):'Elige dónde subió';
+    var lista=document.getElementById('listaOrigenManual');lista.innerHTML='';
+    candidatos.forEach(function(loc){if(!loc)return;var item=document.createElement('div');item.className='destino-item';item.innerHTML='<span class="destino-nombre">'+(base&&loc.id===base.id?'📍 ':'▫️ ')+loc.nombre+(loc.km>0?' <small style="color:#666">(km '+loc.km+')</small>':'')+'</span>';item.onclick=function(){estado.localidadActual=loc;estado.ultimaLocalidadConfirmada=loc;estado.timestampUltimaConfirmada=Date.now();document.getElementById('nombreLocalidad').textContent=loc.nombre+' (manual)';document.getElementById('subeEn').textContent=loc.nombre;cerrarModalOrigenManual();abrirModalDestino();};lista.appendChild(item);});
+    document.getElementById('modalOrigenManual').classList.add('active');
+}
+function confirmarKmManual(){
+    var val=parseFloat(document.getElementById('inputKmManual').value);if(isNaN(val)||val<0){alert('⚠ Ingresa un kilometraje válido');return;}
+    var conKm=paradasCorrida.filter(function(p){return p&&typeof p.km==='number';}).sort(function(a,b){return a.km-b.km;});
+    var anterior=null,siguiente=null;for(var i=0;i<conKm.length;i++){if(conKm[i].km<=val)anterior=conKm[i];if(conKm[i].km>=val&&!siguiente)siguiente=conKm[i];}
+    var refTexto=anterior&&siguiente&&anterior.id!==siguiente.id?('entre '+anterior.nombre+' y '+siguiente.nombre):(anterior?'cerca de '+anterior.nombre:(siguiente?'cerca de '+siguiente.nombre:''));
+    var puntoVirtual={id:'km_'+val+'_'+Date.now(),nombre:'Km '+val+(refTexto?' ('+refTexto+')':''),km:val,lat:null,lng:null};
+    estado.localidadActual=puntoVirtual;estado.ultimaLocalidadConfirmada=puntoVirtual;estado.timestampUltimaConfirmada=Date.now();
+    document.getElementById('nombreLocalidad').textContent=puntoVirtual.nombre+' (manual)';document.getElementById('subeEn').textContent=puntoVirtual.nombre;
+    document.getElementById('inputKmManual').value='';cerrarModalOrigenManual();abrirModalDestino();
+}
+function cerrarModalOrigenManual(){document.getElementById('modalOrigenManual').classList.remove('active');}
+function abrirModalCobro(destino,tarifaSistema){
+    estado.destinoSeleccionado=destino;estado._tarifaSistema=tarifaSistema;estado._modoCobro='sistema';estado.tarifaBaseUnitaria=tarifaSistema;
+    estado.cantidades={normal:0,adulto:0,estudiante:0,maestro:0};estado.billeteSeleccionado=null;
+    document.getElementById('cobroRuta').textContent=estado.localidadActual.nombre+' → '+destino.nombre+' [SISTEMA $'+tarifaSistema+']';
+    ['normal','adulto','estudiante','maestro'].forEach(function(t){document.getElementById('precio-'+t).textContent='$'+precioPorTipo(t);document.getElementById('cant-'+t).textContent='0';document.getElementById('sub-'+t).textContent='';});
+    document.getElementById('cobroTotalMonto').textContent='$0';document.getElementById('btnCobrarFinal').disabled=true;document.getElementById('vueltoResultado').textContent='';
+    document.querySelectorAll('.btn-menos').forEach(function(b){b.disabled=true;});
+    document.getElementById('modalDestino').classList.remove('active');document.getElementById('modalCobro').classList.add('active');
+}
+function cerrarModalCobro(){document.getElementById('modalCobro').classList.remove('active');}
+function toggleModoCobro(){
+    if(estado._modoCobro==='sistema'){
+        var manual=prompt('💰 Ingresa el precio MANUAL:\n\n'+estado.localidadActual.nombre+' → '+estado.destinoSeleccionado.nombre+'\n\nSugerido sistema: $'+estado._tarifaSistema,estado._tarifaSistema);
+        if(manual===null||manual==='')return;var precioManual=parseFloat(manual);if(isNaN(precioManual)||precioManual<=0)return;
+        estado._modoCobro='manual';estado.tarifaBaseUnitaria=precioManual;
+        ['normal','adulto','estudiante','maestro'].forEach(function(t){document.getElementById('precio-'+t).textContent='$'+precioPorTipo(t);});
+        document.getElementById('cobroRuta').textContent=estado.localidadActual.nombre+' → '+estado.destinoSeleccionado.nombre+' [MANUAL $'+precioManual+']';toast('💰 Modo MANUAL: $'+precioManual);
+    }else{
+        estado._modoCobro='sistema';estado.tarifaBaseUnitaria=estado._tarifaSistema;
+        ['normal','adulto','estudiante','maestro'].forEach(function(t){document.getElementById('precio-'+t).textContent='$'+precioPorTipo(t);});
+        document.getElementById('cobroRuta').textContent=estado.localidadActual.nombre+' → '+estado.destinoSeleccionado.nombre+' [SISTEMA $'+estado._tarifaSistema+']';toast('💰 Modo SISTEMA: $'+estado._tarifaSistema);
+    }
+}
+function confirmarCobro(){
+    if(!totalPasajerosGrupo())return;
+    var tarifaCobrada=estado._modoCobro==='manual'?estado.tarifaBaseUnitaria:estado._tarifaSistema;var totalCobrado=totalGeneral();
+    var grupo={destinoId:estado.destinoSeleccionado.id,destinoNombre:estado.destinoSeleccionado.nombre,origenNombre:estado.localidadActual.nombre,cantidades:Object.assign({},estado.cantidades),total:totalCobrado,tarifaSistema:estado._tarifaSistema,tarifaCobrada:tarifaCobrada,modoCobro:estado._modoCobro,diferencia:totalCobrado-(estado._tarifaSistema*totalPasajerosGrupo())};
+    estado.pasajerosABordo.push(grupo);estado.totalRecaudado+=grupo.total;document.getElementById('totalCorrida').textContent='$'+estado.totalRecaudado;
+    guardarEstado();actualizarIndicadores();actualizarPinesPasajeros();
+    var kmTrayecto=0;var locOrigen=paradasCorrida.find(function(l){return l&&l.id===estado.localidadActual.id;})||localidades.find(function(l){return l.id===estado.localidadActual.id;});var locDestino=paradasCorrida.find(function(l){return l&&l.id===estado.destinoSeleccionado.id;})||localidades.find(function(l){return l.id===estado.destinoSeleccionado.id;});if(locOrigen&&locDestino&&typeof locOrigen.km==='number'&&typeof locDestino.km==='number'){kmTrayecto=Math.abs(locDestino.km-locOrigen.km);}
+    var diferencias=JSON.parse(localStorage.getItem('diferenciasTarifas_'+(sesion?sesion.usuario_id:'default'))||'[]');
+    diferencias.push({origen:grupo.origenNombre,destino:grupo.destinoNombre,kmTrayecto:kmTrayecto,tarifaSistema:estado._tarifaSistema,tarifaCobrada:tarifaCobrada,costoPorKm:kmTrayecto>0?(tarifaCobrada/kmTrayecto).toFixed(2):0,pasajeros:totalPasajerosGrupo(),totalCobrado:totalCobrado,modoCobro:estado._modoCobro,diferencia:grupo.diferencia,hora:new Date().toLocaleTimeString('es-MX')});
+    localStorage.setItem('diferenciasTarifas_'+(sesion?sesion.usuario_id:'default'),JSON.stringify(diferencias));
+    alert('✅ COBRO EXITOSO\n\n'+grupo.origenNombre+' → '+grupo.destinoNombre+'\nModo: '+(estado._modoCobro==='sistema'?'SISTEMA':'MANUAL')+'\nTotal: $'+totalCobrado+(grupo.diferencia!==0?'\n⚠️ Diferencia: $'+grupo.diferencia.toFixed(2):''));
+    cerrarModalCobro();
+}
+function confirmarCorte(){
+    var enDestino=false;if(estado.localidadActual&&idDestinoCorrida){enDestino=(estado.localidadActual.id===idDestinoCorrida);}
+    var aBordo=estado.pasajerosABordo.reduce(function(s,g){return s+Object.values(g.cantidades).reduce(function(a,b){return a+b;},0);},0);
+    if(!enDestino){var contingencia=confirm('⚠️ No estás en el destino final.\n\n¿Es una contingencia?\n\n✅ Aceptar = Sí\n❌ Cancelar = No');if(!contingencia)return;var codigo=prompt('🔐 Código de administrador:');if(codigo!=='1'){alert('❌ Código incorrecto.');return;}if(aBordo>0){var bajaronTodos=confirm('⚠️ Hay '+aBordo+' pasajero(s) a bordo.\n\n¿Bajaron todos?');if(!bajaronTodos){alert('⚠️ Primero deben bajar todos.');return;}}}
+    else{if(aBordo>0){var bajaron=confirm('⚠️ ESTÁS EN EL DESTINO FINAL\n\n👥 Hay '+aBordo+' pasajero(s) a bordo.\n\n¿Ya bajaron todos?');if(!bajaron){alert('⚠️ Corte cancelado.');return;}}}
+    var diferencias=JSON.parse(localStorage.getItem('diferenciasTarifas_'+(sesion?sesion.usuario_id:'default'))||'[]');
+    if(diferencias.length>0){var reporte='📊 REPORTE DE COBROS\n\nOrigen → Destino | km | Sistema | Cobrado | $/km | Modo\n──────────────────────────────────────────\n';diferencias.forEach(function(d){reporte+=d.origen+' → '+d.destino+' | '+d.kmTrayecto+'km | $'+d.tarifaSistema+' | $'+d.tarifaCobrada+' | $'+d.costoPorKm+'/km | '+d.modoCobro+'\n';});alert(reporte);}
+    var origen=sesion?sesion.origen:'Sin ruta',destino=sesion?sesion.destino:'Sin ruta';
+    if(confirm('🏁 FINALIZAR CORRIDA\n\n📍 '+origen+' → '+destino+'\n👥 Pasajeros totales: '+aBordo+'\n💰 Total recaudado: $'+estado.totalRecaudado+'\n\n¿Estás seguro?')){
+        var corrida={corrida_id:'CORR-'+Date.now(),usuario_id:sesion?sesion.usuario_id:'USR000',fecha:new Date().toLocaleDateString('es-MX'),hora_inicio:sesion?(sesion.hora_inicio||''):'',hora_corte:new Date().toLocaleTimeString('es-MX'),origen:origen,destino:destino,camion:sesion?sesion.camion:'',total:estado.totalRecaudado,pasajeros:estado.pasajerosABordo,contingencia:!enDestino};
+        var historial=JSON.parse(localStorage.getItem('corridas')||'[]');historial.push(corrida);localStorage.setItem('corridas',JSON.stringify(historial));
+        var uid=sesion?sesion.usuario_id:'default';localStorage.removeItem('estadoPasajeros_'+uid);localStorage.removeItem('diferenciasTarifas_'+uid);
+        alert('✅ CORRIDA FINALIZADA\n\nTotal: $'+estado.totalRecaudado+'\nGuardado en historial.');window.location.href='index.html';
+    }
+}
+function toast(msg){var t=document.getElementById('toast');if(t){t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show');},2600);}}
+
+// ========== INIT ==========
+actualizarEtiquetaTarifa();
+iniciarMapa(); iniciarGPS();
+</script>
+</body>
+</html>

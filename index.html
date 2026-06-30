@@ -594,6 +594,157 @@
                 grid-template-columns: repeat(3, 1fr);
             }
         }
+        /* BOTÓN FLOTANTE COMPARTIR (izquierda) */
+.btn-flotante-compartir {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 4000;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--azul);
+    color: #fff;
+    border: 3px solid #fff;
+    box-shadow: 0 6px 24px rgba(59,130,246,0.5);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+    text-align: center;
+    transition: all 0.25s;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+}
+.btn-flotante-compartir:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 30px rgba(59,130,246,0.65);
+    background: #2563eb;
+}
+.btn-flotante-compartir:active {
+    transform: scale(0.95);
+}
+.btn-flotante-compartir .icono-compartir {
+    font-size: 24px;
+    margin-bottom: 1px;
+}
+.btn-flotante-compartir .texto-compartir {
+    font-size: 10px;
+}
+.btn-flotante-compartir::after {
+    content: "Compartir este sistema · Escanear QR";
+    position: absolute;
+    left: 74px;
+    background: var(--gris);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.btn-flotante-compartir:hover::after {
+    opacity: 1;
+}
+
+/* MODAL COMPARTIR */
+.modal-compartir-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10,10,10,0.92);
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-compartir {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.modal-compartir h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--negro);
+}
+.modal-compartir .compartir-desc {
+    font-size: 13px;
+    color: var(--gris-texto);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+.modal-compartir .compartir-qr {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 16px;
+    background: #fff;
+    border: 3px solid #e2e8f0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+.modal-compartir .compartir-qr canvas,
+.modal-compartir .compartir-qr img {
+    width: 100%;
+    height: 100%;
+}
+.modal-compartir .compartir-url {
+    background: #f8fafc;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    word-break: break-all;
+    color: var(--azul);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+.modal-compartir .btn-copiar {
+    width: 100%;
+    padding: 12px;
+    background: var(--azul);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.modal-compartir .btn-copiar:hover {
+    background: #2563eb;
+}
+.modal-compartir .btn-cerrar-compartir {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: var(--gris-texto);
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+            }
     </style>
 </head>
 <body>
@@ -1204,6 +1355,26 @@ console.log('📅 Con selector de fecha y horario');
 console.log('📲 WhatsApp: el usuario elige el destinatario');
 console.log('🔗 Botón flotante → abordo.html');
 </script>
+<!-- BOTÓN FLOTANTE COMPARTIR (izquierda) -->
+<button class="btn-flotante-compartir" onclick="mostrarModalCompartir()" title="Compartir este sistema · Escanear QR">
+    <span class="icono-compartir">🔗</span>
+    <span class="texto-compartir">COMPARTIR</span>
+</button>
 
+<!-- MODAL COMPARTIR -->
+<div class="modal-compartir-overlay hidden" id="modalCompartirOverlay">
+    <div class="modal-compartir">
+        <h3>📱 Escanea y prueba el demo</h3>
+        <div class="compartir-desc">
+            Escanea este código QR con tu celular para abrir el sistema de <strong>Venta de Boletos Online</strong> y probarlo en tiempo real.
+        </div>
+        <div class="compartir-qr" id="compartirQR"></div>
+        <div class="compartir-url" id="compartirURL"></div>
+        <button class="btn-copiar" onclick="copiarEnlace()">
+            📋 Copiar enlace
+        </button>
+        <button class="btn-cerrar-compartir" onclick="cerrarModalCompartir()">❌ Cerrar</button>
+    </div>
+</div>
 </body>
 </html>

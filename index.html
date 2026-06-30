@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venta Online · Boletos Autobuses</title>
+    <style>
+        :root {
+            --negro:#0a0a0a;--amarillo:#f59e0b;--amarillo-texto:#fbbf24;--naranja:#e85d04;
+            --blanco:#f8fafc;--gris:#1e293b;--gris2:#334155;--verde:#22c55e;
+            --rojo:#ef4444;--azul:#3b82f6;--gris-texto:#94a3b8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:#e2e8f0;color:var(--gris);
+            font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+            min-height:100vh;display:flex;flex-direction:column;align-items:center;
+        }
+        .web-header{
+            width:100%;background:var(--negro);color:var(--blanco);padding:14px 0;
+            border-bottom:4px solid var(--amarillo);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+        }
+        .web-header .sistema-nombre{font-size:13px;color:var(--amarillo-texto);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px}
+        .web-header h1{font-size:28px;font-weight:800;margin:0}
+        .web-header .subtitulo{font-size:13px;color:var(--gris-texto);margin-top:3px}
+        .main-container{width:100%;max-width:700px;padding:20px;display:flex;flex-direction:column;gap:16px;padding-bottom:110px}
+        .card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+        .card-title{font-size:18px;font-weight:700;color:var(--negro);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+        .card-title .icono{font-size:22px}
+        .card-subtitle{font-size:13px;color:var(--gris-texto);margin-bottom:14px;margin-top:-8px}
+        .select-group{display:flex;gap:12px;flex-wrap:wrap}
+        .select-group .field{flex:1;min-width:160px}
+        .field label{display:block;font-size:12px;font-weight:700;text-transform:uppercase;color:var(--gris-texto);margin-bottom:5px;letter-spacing:1px}
+        .field select,.field input{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;font-weight:500;background:#fff;transition:border-color .2s;font-family:inherit;color:var(--gris)}
+        .field select:focus,.field input:focus{outline:none;border-color:var(--amarillo)}
+        .field select:disabled,.field input:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed}
+        .btn-buscar{width:100%;padding:14px;background:var(--amarillo);color:var(--negro);border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .2s;margin-top:8px;box-shadow:0 4px 14px rgba(245,158,11,.35)}
+        .btn-buscar:hover{background:#fbbf24;transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,.45)}
+        .btn-buscar:active{transform:scale(.98)}
+        .btn-buscar:disabled{background:#cbd5e1;color:#94a3b8;cursor:not-allowed;box-shadow:none;transform:none}
+        .btn-pagar{width:100%;padding:16px;background:var(--verde);color:#fff;border:none;border-radius:12px;font-size:19px;font-weight:800;cursor:pointer;letter-spacing:.5px;transition:all .2s;margin-top:8px;box-shadow:0 4px 14px rgba(34,197,94,.3)}
+        .btn-pagar:hover{background:#16a34a;transform:translateY(-1px);box-shadow:0 6px 20px rgba(34,197,94,.4)}
+        .btn-pagar:active{transform:scale(.98)}
+        .btn-pagar:disabled{background:#cbd5e1;color:#94a3b8;cursor:not-allowed;box-shadow:none;transform:none}
+        .tipo-pasajero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        @media(min-width:500px){.tipo-pasajero-grid{grid-template-columns:repeat(4,1fr)}}
+        .tipo-pasajero-btn{background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;user-select:none}
+        .tipo-pasajero-btn:hover{border-color:var(--amarillo);box-shadow:0 4px 14px rgba(245,158,11,.2);transform:translateY(-2px)}
+        .tipo-pasajero-btn:active{transform:scale(.97)}
+        .tipo-pasajero-btn.seleccionado{border-color:var(--amarillo);background:#fffbeb;box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+        .tipo-pasajero-btn .tipo-icono{font-size:30px;display:block;margin-bottom:4px}
+        .tipo-pasajero-btn .tipo-nombre{font-size:14px;font-weight:700;color:var(--gris);display:block}
+        .tipo-pasajero-btn .tipo-desc{font-size:10px;color:var(--gris-texto);display:block;margin-top:2px}
+        .tipo-pasajero-btn .tipo-precio{font-size:18px;font-weight:800;color:var(--verde);display:block;margin-top:4px}
+        .resumen-compra{background:#f8fafc;border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.7;margin-bottom:4px}
+        .resumen-compra strong{color:var(--negro)}
+        .resumen-precio{text-align:center;font-size:32px;font-weight:900;color:var(--verde);margin:8px 0}
+        .boleto-modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,10,10,.92);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px}
+        .boleto-modal{background:#fff;border-radius:20px;padding:24px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4);max-height:90vh;overflow-y:auto}
+        .boleto-modal .boleto-icono{font-size:50px;margin-bottom:8px}
+        .boleto-modal h2{font-size:22px;color:var(--verde);margin-bottom:4px}
+        .boleto-modal .boleto-ref{font-size:13px;color:var(--gris-texto);margin-bottom:8px}
+        .boleto-modal .boleto-folio{font-size:22px;font-weight:900;color:var(--negro);letter-spacing:1px;margin-bottom:12px;background:#f8fafc;padding:10px;border-radius:8px;border:2px dashed var(--amarillo)}
+        .boleto-modal .boleto-qr{width:160px;height:160px;margin:0 auto 12px;background:#fff;border:3px solid #e2e8f0;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:8px}
+        .boleto-modal .boleto-qr canvas,.boleto-modal .boleto-qr img{width:100%;height:100%}
+        .boleto-modal .boleto-detalle{background:#f8fafc;border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;line-height:1.7;margin-bottom:12px}
+        .boleto-modal .boleto-detalle strong{color:var(--negro)}
+        .boleto-modal .boleto-detalle .boleto-ruta{font-size:16px;font-weight:700;color:var(--negro);text-align:center;margin-bottom:8px}
+        .boleto-modal .boleto-detalle .boleto-fecha-hora{text-align:center;font-weight:700;color:var(--naranja);margin-bottom:8px;font-size:14px}
+        .boleto-modal .boleto-detalle .boleto-aviso{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:12px;color:#856404;text-align:center;font-weight:600}
+        .boleto-modal .btn-whatsapp-boleto{width:100%;padding:14px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+        .boleto-modal .btn-whatsapp-boleto:hover{background:#1ebe5b}
+        .boleto-modal .btn-cerrar-boleto{width:100%;padding:10px;background:transparent;color:var(--gris-texto);border:2px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px}
+        .btn-flotante-compartir{
+            position:fixed;bottom:105px;right:24px;z-index:4000;
+            width:60px;height:60px;border-radius:50%;background:var(--azul);color:#fff;
+            border:3px solid #fff;box-shadow:0 6px 24px rgba(59,130,246,.5);
+            font-size:12px;font-weight:800;cursor:pointer;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            line-height:1.1;text-align:center;transition:all .25s;text-decoration:none;
+        }
+        .btn-flotante-compartir:hover{transform:scale(1.1);box-shadow:0 8px 30px rgba(59,130,246,.65);background:#2563eb}
+        .btn-flotante-compartir:active{transform:scale(.95)}
+        .btn-flotante-compartir .icono-compartir{font-size:22px}
+        .btn-flotante-compartir .texto-compartir{font-size:9px}
+        .btn-flotante-compartir::after{
+            content:"Compartir sistema · QR";position:absolute;right:70px;
+            background:var(--gris);color:#fff;padding:8px 14px;border-radius:8px;
+            font-size:11px;font-weight:500;white-space:nowrap;opacity:0;
+            pointer-events:none;transition:opacity .2s;
+        }
+        .btn-flotante-compartir:hover::after{opacity:1}
+        .btn-flotante-abordo{
+            position:fixed;bottom:24px;right:24px;z-index:4000;
+            width:60px;height:60px;border-radius:50%;background:var(--naranja);color:#fff;
+            border:3px solid #fff;box-shadow:0 6px 24px rgba(232,93,4,.5);
+            font-size:12px;font-weight:800;cursor:pointer;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            line-height:1.1;text-align:center;transition:all .25s;text-decoration:none;
+        }
+        .btn-flotante-abordo:hover{transform:scale(1.1);box-shadow:0 8px 30px rgba(232,93,4,.65);background:#f97316}
+        .btn-flotante-abordo:active{transform:scale(.95)}
+        .btn-flotante-abordo .icono-abordo{font-size:22px}
+        .btn-flotante-abordo .texto-abordo{font-size:10px}
+        .btn-flotante-abordo::after{
+            content:"Ir al Boletero · Venta a Bordo";position:absolute;right:70px;
+            background:var(--gris);color:#fff;padding:8px 14px;border-radius:8px;
+            font-size:11px;font-weight:500;white-space:nowrap;opacity:0;
+            pointer-events:none;transition:opacity .2s;
+        }
+        .btn-flotante-abordo:hover::after{opacity:1}
+        .modal-compartir-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,10,10,.92);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px}
+        .modal-compartir{background:#fff;border-radius:20px;padding:24px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+        .modal-compartir h3{font-size:20px;margin-bottom:8px;color:var(--negro)}
+        .modal-compartir .compartir-desc{font-size:13px;color:var(--gris-texto);margin-bottom:16px;line-height:1.5}
+        .modal-compartir .compartir-qr{width:200px;height:200px;margin:0 auto 16px;background:#fff;border:3px solid #e2e8f0;border-radius:16px;display:flex;align-items:center;justify-content:center;padding:10px}
+        .modal-compartir .compartir-qr canvas,.modal-compartir .compartir-qr img{width:100%;height:100%}
+        .modal-compartir .compartir-url{background:#f8fafc;padding:10px;border-radius:8px;font-size:13px;word-break:break-all;color:var(--azul);margin-bottom:12px;font-weight:600}
+        .modal-compartir .btn-copiar{width:100%;padding:12px;background:var(--azul);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+        .modal-compartir .btn-copiar:hover{background:#2563eb}
+        .modal-compartir .btn-cerrar-compartir{width:100%;padding:10px;background:transparent;color:var(--gris-texto);border:2px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+        .btn-admin{background:transparent;border:2px dashed var(--gris-texto);color:var(--gris-texto);padding:10px;border-radius:10px;font-size:13px;cursor:pointer;width:100%;margin-top:4px;transition:all .2s}
+        .btn-admin:hover{border-color:var(--azul);color:var(--azul);background:rgba(59,130,246,.04)}
+        .historial-item{background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px}
+        .historial-item .hist-header{display:flex;justify-content:space-between;font-weight:700;margin-bottom:4px;align-items:center}
+        .historial-item .hist-body{color:#64748b;font-size:12px}
+        #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gris);color:#fff;padding:10px 20px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;z-index:6000;pointer-events:none;white-space:nowrap}
+        #toast.show{opacity:1}
+        .hidden{display:none!important}
+        .text-center{text-align:center}
+        .mt-8{margin-top:8px}
+        .mt-12{margin-top:12px}
+        @media(max-width:400px){
+            .boleto-modal{padding:16px}
+            .boleto-modal .boleto-qr{width:130px;height:130px}
+            .tipo-pasajero-grid{grid-template-columns:1fr 1fr}
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    const SISTEMA_DEMO = "Creador: ___________ · Sistema Demo de Venta Online para Boletos de Autobuses de Pasajeros";
+</script>
+
+<div class="web-header">
+    <div class="sistema-nombre" id="sistemaNombre"></div>
+    <h1>🚌 Venta de Boletos Online</h1>
+    <div class="subtitulo">Servicio de Autobuses de Pasajeros · Compra tu boleto con QR</div>
+</div>
+
+<div class="main-container">
+    <div class="card" id="cardRuta">
+        <div class="card-title"><span class="icono">📍</span> Paso 1: Elige tu ruta</div>
+        <div class="select-group">
+            <div class="field">
+                <label>Origen</label>
+                <select id="selectOrigen"><option value="">— Elegir —</option></select>
+            </div>
+            <div class="field">
+                <label>Destino</label>
+                <select id="selectDestino" disabled><option value="">— Primero elige origen —</option></select>
+            </div>
+        </div>
+    </div>
+    <div class="card hidden" id="cardTipoPasajero">
+        <div class="card-title"><span class="icono">👤</span> Paso 2: Tipo de pasajero</div>
+        <div class="card-subtitle">Selecciona uno. Se genera <strong>1 boleto individual</strong>.</div>
+        <div class="tipo-pasajero-grid" id="tipoPasajeroGrid"></div>
+    </div>
+    <div class="card hidden" id="cardTarifa">
+        <div class="card-title"><span class="icono">💰</span> Paso 3: Tarifa calculada</div>
+        <div class="resumen-compra" id="resumenTarifa"></div>
+        <div class="resumen-precio" id="precioFinal">$0</div>
+        <button class="btn-buscar" onclick="avanzarAFecha()">✅ Continuar → Fecha y horario</button>
+    </div>
+    <div class="card hidden" id="cardFechaHorario">
+        <div class="card-title"><span class="icono">📅</span> Paso 4: Fecha y horario</div>
+        <div class="field">
+            <label>Fecha de viaje</label>
+            <input type="date" id="inputFecha" min="" onchange="actualizarHorarios()">
+        </div>
+        <div class="field mt-8">
+            <label>Horario de salida (5:30 AM - 10:00 PM)</label>
+            <select id="selectHorario" disabled><option value="">— Primero elige fecha —</option></select>
+        </div>
+        <button class="btn-pagar" id="btnPagar" disabled onclick="generarBoleto()">💳 PAGAR BOLETO</button>
+    </div>
+    <button class="btn-admin" onclick="mostrarAdmin()">⚙️ Administración · Tarifas · Historial</button>
+    <div class="card hidden" id="cardAdmin">
+        <div class="card-title"><span class="icono">⚙️</span> Panel de Administración</div>
+        <div class="field mt-8">
+            <label>Tarifa por km (actual: $<span id="adminTarifaKm">—</span>)</label>
+            <input type="number" id="inputTarifaKm" placeholder="Ej. 1.20" step="0.01" min="0.1">
+        </div>
+        <button class="btn-buscar mt-8" onclick="guardarConfigAdmin()">💾 Guardar configuración</button>
+        <button class="btn-admin mt-8" onclick="exportarHistorial()">📋 Ver historial de ventas</button>
+        <div id="historialContainer" class="hidden mt-12"></div>
+    </div>
+</div>
+
+<div class="boleto-modal-overlay hidden" id="boletoOverlay">
+    <div class="boleto-modal">
+        <div class="boleto-icono">🎫</div>
+        <h2>¡Boleto Pagado!</h2>
+        <div class="boleto-folio" id="boletoFolio"></div>
+        <div class="boleto-ref" id="boletoRef"></div>
+        <div class="boleto-qr" id="boletoQR"></div>
+        <div class="boleto-detalle" id="boletoDetalle"></div>
+        <button class="btn-whatsapp-boleto" onclick="enviarWhatsAppDesdeModal()">📲 Enviar por WhatsApp</button>
+        <button class="btn-cerrar-boleto" onclick="cerrarBoletoYReiniciar()">✅ CERRAR Y NUEVA COMPRA</button>
+    </div>
+</div>
+
+<div class="modal-compartir-overlay hidden" id="modalCompartirOverlay">
+    <div class="modal-compartir">
+        <h3>📱 Escanea y prueba el demo</h3>
+        <div class="compartir-desc">Escanea este código QR con tu celular para probar el sistema de <strong>Venta de Boletos Online</strong> en tiempo real.</div>
+        <div class="compartir-qr" id="compartirQR"></div>
+        <div class="compartir-url" id="compartirURL"></div>
+        <button class="btn-copiar" onclick="copiarEnlace()">📋 Copiar enlace</button>
+        <button class="btn-cerrar-compartir" onclick="cerrarModalCompartir()">❌ Cerrar</button>
+    </div>
+</div>
+
+<button class="btn-flotante-compartir" onclick="mostrarModalCompartir()" title="Compartir sistema · QR">
+    <span class="icono-compartir">🔗</span>
+    <span class="texto-compartir">COMPARTIR</span>
+</button>
+<a href="abordo.html" class="btn-flotante-abordo" title="Ir al Boletero · Venta a Bordo">
+    <span class="icono-abordo">🚌</span>
+    <span class="texto-abordo">A BORDO</span>
+</a>
+
+<div id="toast"></div>
+
+<script src="matriz_queretaro.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<script>
+document.getElementById('sistemaNombre').textContent = SISTEMA_DEMO;
+
+// Leer tarifa de la matriz
+var TARIFA_POR_KM = (typeof bKm_EST1 !== 'undefined') ? bKm_EST1 : parseFloat(localStorage.getItem('ventaonline_tarifaPorKm')) || 1.20;
+const DESCUENTOS = { normal: 0, adulto: 0.50, estudiante: 0.50, maestro: 0.50 };
+var ultimoBoletoGenerado = null;
+
+// Cargar localidades
+var localidades = [];
+(function() {
+    var obj = localidadesObj || {};
+    localidades = Object.keys(obj).map(function(id) {
+        var idn = parseInt(id);
+        return { id: idn, nombre: obj[idn] };
+    });
+    localidades.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
+})();
+
+var compraActual = {
+    origen: null, destino: null, tipoSeleccionado: null,
+    tarifaBase: 0, kmCalculados: 0, precioFinal: 0,
+    fecha: null, horario: null
+};
+
+// ========== FÓRMULA HAVERSINE ==========
+function calcularDistanciaGPS(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+// ========== CÁLCULO DE TARIFA: GPS origen → GPS destino × TARIFA_POR_KM ==========
+function calcularTarifa(origenId, destinoId) {
+    var coords = typeof coordenadasLocalidades !== 'undefined' ? coordenadasLocalidades : {};
+    var origen = coords[origenId];
+    var destino = coords[destinoId];
+    
+    // PRIORIDAD 1: Distancia GPS real entre origen y destino
+    if (origen && destino && origen.lat && destino.lat && origen.lng && destino.lng) {
+        var km = calcularDistanciaGPS(origen.lat, origen.lng, destino.lat, destino.lng);
+        return Math.round(km * TARIFA_POR_KM);
+    }
+    
+    // PRIORIDAD 2: Matriz Querétaro como respaldo
+    var mat = MATRIZ_QUERETARO || {};
+    var a = Math.min(origenId, destinoId);
+    var b = Math.max(origenId, destinoId);
+    var clave = a + '-' + b;
+    if (mat[clave] && mat[clave].km > 0) {
+        return Math.round(mat[clave].km * TARIFA_POR_KM);
+    }
+    
+    // PRIORIDAD 3: Fallback
+    return Math.round(10 * TARIFA_POR_KM);
+}
+
+function calcularPrecio() {
+    if (!compraActual.origen || !compraActual.destino) return;
+    
+    var coords = typeof coordenadasLocalidades !== 'undefined' ? coordenadasLocalidades : {};
+    var origen = coords[compraActual.origen.id];
+    var destino = coords[compraActual.destino.id];
+    
+    var kmCalc = 0;
+    if (origen && destino && origen.lat && destino.lat && origen.lng && destino.lng) {
+        kmCalc = calcularDistanciaGPS(origen.lat, origen.lng, destino.lat, destino.lng);
+    }
+    
+    compraActual.kmCalculados = kmCalc;
+    compraActual.tarifaBase = calcularTarifa(compraActual.origen.id, compraActual.destino.id);
+    compraActual.precioFinal = Math.round(compraActual.tarifaBase * (1 - (compraActual.tipoSeleccionado ? compraActual.tipoSeleccionado.descuento : 0)));
+}
+
+function generarHorarios(fechaStr) {
+    var horarios = [];
+    var hoy = new Date();
+    var hoyStr = hoy.toISOString().split('T')[0];
+    var ahoraMin = hoy.getHours() * 60 + hoy.getMinutes();
+    for (var minutos = 330; minutos <= 1320; minutos += 30) {
+        var h = Math.floor(minutos / 60);
+        var m = minutos % 60;
+        var hh = ('0' + h).slice(-2);
+        var mm = ('0' + m).slice(-2);
+        if (fechaStr === hoyStr && minutos <= ahoraMin) continue;
+        horarios.push(hh + ':' + mm);
+    }
+    return horarios;
+}
+
+function llenarSelects() {
+    var selOrigen = document.getElementById('selectOrigen');
+    var selDestino = document.getElementById('selectDestino');
+    selOrigen.innerHTML = '<option value="">— Elegir origen —</option>';
+    localidades.forEach(function(loc) {
+        if (!loc || !loc.nombre) return;
+        var opt = document.createElement('option');
+        opt.value = loc.id; opt.textContent = loc.nombre;
+        selOrigen.appendChild(opt);
+    });
+    selOrigen.addEventListener('change', function() {
+        var id = parseInt(this.value);
+        compraActual.origen = localidades.find(function(l) { return l.id === id; }) || null;
+        compraActual.destino = null; compraActual.tipoSeleccionado = null;
+        selDestino.innerHTML = '<option value="">— Elegir destino —</option>';
+        selDestino.disabled = !compraActual.origen;
+        if (compraActual.origen) {
+            localidades.forEach(function(loc) {
+                if (!loc || !loc.nombre || loc.id === id) return;
+                var opt = document.createElement('option');
+                opt.value = loc.id; opt.textContent = loc.nombre;
+                selDestino.appendChild(opt);
+            });
+        }
+        ocultarTodo();
+    });
+    selDestino.addEventListener('change', function() {
+        var id = parseInt(this.value);
+        compraActual.destino = localidades.find(function(l) { return l.id === id; }) || null;
+        if (compraActual.destino) { mostrarTipoPasajero(); } else { ocultarTodo(); }
+    });
+}
+
+function ocultarTodo() {
+    document.getElementById('cardTipoPasajero').classList.add('hidden');
+    document.getElementById('cardTarifa').classList.add('hidden');
+    document.getElementById('cardFechaHorario').classList.add('hidden');
+}
+
+function mostrarTipoPasajero() {
+    ocultarTodo();
+    var card = document.getElementById('cardTipoPasajero');
+    var grid = document.getElementById('tipoPasajeroGrid');
+    card.classList.remove('hidden');
+    var tipos = [
+        { id: 'normal', icono: '👤', nombre: 'Normal', desc: 'Precio completo', descuento: 0 },
+        { id: 'adulto', icono: '🧓', nombre: 'Adulto Mayor', desc: '50% descuento', descuento: 0.50 },
+        { id: 'estudiante', icono: '🎓', nombre: 'Estudiante', desc: '50% descuento', descuento: 0.50 },
+        { id: 'maestro', icono: '📚', nombre: 'Maestro', desc: '50% descuento', descuento: 0.50 }
+    ];
+    grid.innerHTML = '';
+    tipos.forEach(function(tipo) {
+        var btn = document.createElement('div');
+        btn.className = 'tipo-pasajero-btn';
+        btn.id = 'tipo-btn-' + tipo.id;
+        btn.innerHTML = '<span class="tipo-icono">' + tipo.icono + '</span>' +
+            '<span class="tipo-nombre">' + tipo.nombre + '</span>' +
+            '<span class="tipo-desc">' + tipo.desc + '</span>' +
+            '<span class="tipo-precio">—</span>';
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tipo-pasajero-btn').forEach(function(b) { b.classList.remove('seleccionado'); });
+            btn.classList.add('seleccionado');
+            compraActual.tipoSeleccionado = tipo;
+            calcularPrecio();
+            mostrarTarifa();
+        });
+        grid.appendChild(btn);
+    });
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function mostrarTarifa() {
+    var card = document.getElementById('cardTarifa');
+    card.classList.remove('hidden');
+    document.getElementById('cardFechaHorario').classList.add('hidden');
+    
+    var tipos = ['normal','adulto','estudiante','maestro'];
+    tipos.forEach(function(tid) {
+        var desc = DESCUENTOS[tid] || 0;
+        var precio = Math.round(compraActual.tarifaBase * (1 - desc));
+        var el = document.getElementById('tipo-btn-' + tid);
+        if (el) { var ps = el.querySelector('.tipo-precio'); if (ps) ps.textContent = '$' + precio; }
+    });
+    
+    var kmTexto = compraActual.kmCalculados > 0 ? compraActual.kmCalculados.toFixed(1) + ' km (GPS)' : 'Matriz Querétaro';
+    document.getElementById('resumenTarifa').innerHTML = 
+        '<strong>📍 Ruta:</strong> ' + compraActual.origen.nombre + ' → ' + compraActual.destino.nombre + '<br>' +
+        '<strong>📏 Distancia GPS:</strong> ' + kmTexto + '<br>' +
+        '<strong>👤 Tipo:</strong> ' + compraActual.tipoSeleccionado.nombre + ' (' + (compraActual.tipoSeleccionado.descuento > 0 ? '50% desc.' : 'Precio completo') + ')<br>' +
+        '<strong>💰 Tarifa base:</strong> $' + compraActual.tarifaBase + ' (' + TARIFA_POR_KM + '/km)';
+    document.getElementById('precioFinal').textContent = '$' + compraActual.precioFinal;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function avanzarAFecha() {
+    document.getElementById('cardTarifa').classList.add('hidden');
+    var card = document.getElementById('cardFechaHorario');
+    card.classList.remove('hidden');
+    var hoy = new Date();
+    document.getElementById('inputFecha').min = hoy.toISOString().split('T')[0];
+    document.getElementById('inputFecha').value = '';
+    document.getElementById('selectHorario').innerHTML = '<option value="">— Primero elige fecha —</option>';
+    document.getElementById('selectHorario').disabled = true;
+    document.getElementById('btnPagar').disabled = true;
+    compraActual.fecha = null; compraActual.horario = null;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function actualizarHorarios() {
+    var fechaVal = document.getElementById('inputFecha').value;
+    compraActual.fecha = fechaVal || null;
+    compraActual.horario = null;
+    var sel = document.getElementById('selectHorario');
+    if (!fechaVal) {
+        sel.innerHTML = '<option value="">— Primero elige fecha —</option>';
+        sel.disabled = true; document.getElementById('btnPagar').disabled = true; return;
+    }
+    var horarios = generarHorarios(fechaVal);
+    sel.innerHTML = '<option value="">— Elegir horario —</option>';
+    horarios.forEach(function(h) {
+        var opt = document.createElement('option'); opt.value = h;
+        var partes = h.split(':'); var h24 = parseInt(partes[0]); var min = partes[1];
+        var ampm = h24 >= 12 ? 'PM' : 'AM';
+        var h12 = h24 > 12 ? h24 - 12 : (h24 === 0 ? 12 : h24);
+        opt.textContent = h12 + ':' + min + ' ' + ampm;
+        sel.appendChild(opt);
+    });
+    sel.disabled = false; document.getElementById('btnPagar').disabled = true;
+    sel.onchange = function() { compraActual.horario = this.value || null; document.getElementById('btnPagar').disabled = !compraActual.horario; };
+}
+
+function generarBoleto() {
+    if (!compraActual.origen || !compraActual.destino || !compraActual.tipoSeleccionado || !compraActual.fecha || !compraActual.horario) return;
+    var folio = generarFolio();
+    var fechaEmision = new Date().toLocaleString('es-MX');
+    var fechaViaje = formatearFecha(compraActual.fecha);
+    var partesH = compraActual.horario.split(':');
+    var h24 = parseInt(partesH[0]); var ampm = h24 >= 12 ? 'PM' : 'AM';
+    var h12 = h24 > 12 ? h24 - 12 : (h24 === 0 ? 12 : h24);
+    var horarioMostrar = h12 + ':' + partesH[1] + ' ' + ampm;
+    
+    var boleto = {
+        folio: folio, fechaEmision: fechaEmision, fechaViaje: fechaViaje,
+        horario: compraActual.horario, horarioMostrar: horarioMostrar,
+        tipo: compraActual.tipoSeleccionado.id, tipoNombre: compraActual.tipoSeleccionado.nombre,
+        origen: compraActual.origen.nombre, destino: compraActual.destino.nombre,
+        origenId: compraActual.origen.id, destinoId: compraActual.destino.id,
+        km: compraActual.kmCalculados, tarifaBase: compraActual.tarifaBase,
+        precio: compraActual.precioFinal, descuento: compraActual.tipoSeleccionado.descuento
+    };
+    
+    var historial = JSON.parse(localStorage.getItem('ventaonline_historial') || '[]');
+    historial.unshift(boleto);
+    if (historial.length > 100) historial = historial.slice(0, 100);
+    localStorage.setItem('ventaonline_historial', JSON.stringify(historial));
+    ultimoBoletoGenerado = boleto;
+    mostrarModalBoleto(boleto);
+    reiniciarSistema();
+}
+
+function formatearFecha(fechaStr) {
+    var partes = fechaStr.split('-');
+    var fecha = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+    var dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return dias[fecha.getDay()] + ' ' + parseInt(partes[2]) + ' de ' + meses[parseInt(partes[1]) - 1] + ' de ' + parseInt(partes[0]);
+}
+
+function generarFolio() {
+    var ahora = new Date();
+    var a = ahora.getFullYear().toString().slice(-2);
+    var m = ('0' + (ahora.getMonth() + 1)).slice(-2);
+    var d = ('0' + ahora.getDate()).slice(-2);
+    var h = ('0' + ahora.getHours()).slice(-2);
+    var min = ('0' + ahora.getMinutes()).slice(-2);
+    var s = ('0' + ahora.getSeconds()).slice(-2);
+    var r = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return 'BOL-' + a + m + d + '-' + h + min + s + '-' + r;
+}
+
+function reiniciarSistema() {
+    compraActual = {
+        origen: compraActual.origen, destino: compraActual.destino,
+        tipoSeleccionado: null, tarifaBase: 0, kmCalculados: 0, precioFinal: 0,
+        fecha: null, horario: null
+    };
+    ocultarTodo();
+    document.getElementById('selectOrigen').value = compraActual.origen ? compraActual.origen.id : '';
+    document.getElementById('selectDestino').value = '';
+    document.getElementById('selectDestino').disabled = true;
+    document.getElementById('inputFecha').value = '';
+    document.getElementById('selectHorario').innerHTML = '<option value="">— Primero elige fecha —</option>';
+    document.getElementById('selectHorario').disabled = true;
+    document.getElementById('btnPagar').disabled = true;
+}
+
+function mostrarModalBoleto(boleto) {
+    document.getElementById('boletoOverlay').classList.remove('hidden');
+    document.getElementById('boletoFolio').textContent = boleto.folio;
+    document.getElementById('boletoRef').textContent = 'Emitido: ' + boleto.fechaEmision;
+    var qrContainer = document.getElementById('boletoQR'); qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+        text: JSON.stringify({ folio: boleto.folio, tipo: boleto.tipo, origen: boleto.origen, destino: boleto.destino, fecha: boleto.fechaViaje, horario: boleto.horarioMostrar, km: boleto.km, tarifa: boleto.precio, valido: true }),
+        width: 150, height: 150, colorDark: '#0a0a0a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M
+    });
+    var kmTexto = boleto.km > 0 ? boleto.km.toFixed(1) + ' km' : 'Matriz Querétaro';
+    document.getElementById('boletoDetalle').innerHTML = 
+        '<div class="boleto-ruta">🚌 ' + boleto.origen + ' → ' + boleto.destino + '</div>' +
+        '<div class="boleto-fecha-hora">📅 ' + boleto.fechaViaje + ' · 🕐 ' + boleto.horarioMostrar + '</div>' +
+        '<strong>👤 Pasajero:</strong> ' + boleto.tipoNombre + '<br>' +
+        '<strong>📏 Tu destino queda a:</strong> ' + kmTexto + '<br>' +
+        '<strong>💰 Precio:</strong> $' + boleto.precio + ' MXN' + (boleto.descuento > 0 ? ' <span style="color:var(--verde);font-size:11px;">(50% desc.)</span>' : '') + '<br>' +
+        '<strong>🎫 Folio:</strong> ' + boleto.folio + '<br>' +
+        '<div class="boleto-aviso">⚠️ Asiento sujeto a disponibilidad</div><br>' +
+        '<em>📱 Muestra este QR al operador al abordar.</em>';
+}
+
+function cerrarBoletoYReiniciar() { document.getElementById('boletoOverlay').classList.add('hidden'); toast('✅ Sistema listo para nueva compra'); }
+function enviarWhatsAppDesdeModal() { if (ultimoBoletoGenerado) { enviarBoletoWhatsApp(ultimoBoletoGenerado); toast('📲 Abriendo WhatsApp...'); } }
+
+function enviarBoletoWhatsApp(boleto) {
+    var kmTexto = boleto.km > 0 ? boleto.km.toFixed(1) + ' km' : 'Matriz Querétaro';
+    var mensaje = encodeURIComponent(
+        '🎫 *BOLETO DE AUTOBÚS*\n\n🎫 *Folio:* ' + boleto.folio + '\n📍 *Ruta:* ' + boleto.origen + ' → ' + boleto.destino +
+        '\n📅 *Fecha:* ' + boleto.fechaViaje + '\n🕐 *Horario:* ' + boleto.horarioMostrar +
+        '\n📏 *Tu destino queda a:* ' + kmTexto + '\n👤 *Pasajero:* ' + boleto.tipoNombre +
+        '\n💰 *Precio:* $' + boleto.precio + ' MXN\n📅 *Emitido:* ' + boleto.fechaEmision +
+        '\n\n⚠️ *Asiento sujeto a disponibilidad*\n\n📱 *Muestra el QR al abordar*\nGracias por tu compra. ¡Buen viaje! 🚌'
+    );
+    window.open('https://api.whatsapp.com/send?text=' + mensaje, '_blank');
+}
+
+function mostrarModalCompartir() {
+    document.getElementById('modalCompartirOverlay').classList.remove('hidden');
+    var url = window.location.href; document.getElementById('compartirURL').textContent = url;
+    var qrContainer = document.getElementById('compartirQR'); qrContainer.innerHTML = '';
+    new QRCode(qrContainer, { text: url, width: 180, height: 180, colorDark: '#0a0a0a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+}
+function cerrarModalCompartir() { document.getElementById('modalCompartirOverlay').classList.add('hidden'); }
+function copiarEnlace() {
+    var url = window.location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function() { toast('✅ Enlace copiado'); }).catch(function() { copiarFallback(url); });
+    } else { copiarFallback(url); }
+}
+function copiarFallback(url) { var ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast('✅ Enlace copiado'); }
+function mostrarAdmin() {
+    var card = document.getElementById('cardAdmin'); card.classList.toggle('hidden');
+    document.getElementById('adminTarifaKm').textContent = TARIFA_POR_KM;
+    document.getElementById('inputTarifaKm').value = TARIFA_POR_KM;
+    document.getElementById('historialContainer').classList.add('hidden');
+}
+function guardarConfigAdmin() {
+    var val = parseFloat(document.getElementById('inputTarifaKm').value);
+    if (isNaN(val) || val <= 0) { toast('⚠ Valor inválido'); return; }
+    TARIFA_POR_KM = val; localStorage.setItem('ventaonline_tarifaPorKm', val);
+    document.getElementById('adminTarifaKm').textContent = TARIFA_POR_KM;
+    toast('✅ Tarifa: $' + TARIFA_POR_KM + '/km');
+}
+function exportarHistorial() {
+    var hist = JSON.parse(localStorage.getItem('ventaonline_historial') || '[]');
+    var container = document.getElementById('historialContainer'); container.classList.remove('hidden');
+    if (!hist.length) { container.innerHTML = '<p class="text-center" style="color:#94a3b8;padding:12px;">Sin ventas.</p>'; return; }
+    var total = hist.reduce(function(s,b){return s+b.precio;},0);
+    var html = '<div class="card-title mt-8"><span class="icono">📋</span> ' + hist.length + ' boletos · Total: <span style="color:var(--verde);">$' + total + '</span></div>';
+    var iconos = {normal:'👤',adulto:'🧓',estudiante:'🎓',maestro:'📚'};
+    hist.forEach(function(b){ html += '<div class="historial-item"><div class="hist-header"><span>' + (iconos[b.tipo]||'🎫') + ' ' + b.origen + ' → ' + b.destino + '</span><span style="color:var(--verde);">$' + b.precio + '</span></div><div class="hist-body">' + b.folio + ' · ' + b.fechaViaje + ' · ' + (b.horarioMostrar||b.horario) + ' · ' + b.tipoNombre + (b.km>0?' · '+b.km.toFixed(1)+' km GPS':'') + '</div></div>'; });
+    container.innerHTML = html;
+}
+function toast(msg) { var t = document.getElementById('toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); clearTimeout(window._tt); window._tt = setTimeout(function() { t.classList.remove('show'); }, 2600); }
+
+llenarSelects();
+console.log('🚌 ' + SISTEMA_DEMO);
+console.log('📏 Cálculo: Distancia GPS (Haversine) × $' + TARIFA_POR_KM + '/km');
+console.log('✅ Sistema definitivo listo');
+</script>
+</body>
+</html>

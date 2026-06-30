@@ -237,8 +237,8 @@
 <script>
 document.getElementById('sistemaNombre').textContent = SISTEMA_DEMO;
 
-var TARIFA_POR_KM = (typeof bKm_EST1 !== 'undefined') ? bKm_EST1 : parseFloat(localStorage.getItem('ventaonline_tarifaPorKm')) || 1.20;
-const DESCUENTOS = { normal: 0, adulto: 0.50, estudiante: 0.50, maestro: 0.50 };
+var TARIFA_POR_KM = (typeof bKm_EST1 !== 'undefined') ? bKm_EST1 : 2.20;
+    const DESCUENTOS = { normal: 0, adulto: 0.50, estudiante: 0.50, maestro: 0.50 };
 var ultimoBoletoGenerado = null;
 
 // Cargar localidades en el MISMO ORDEN que localidadesObj
@@ -271,14 +271,20 @@ function calcularDistanciaGPS(lat1, lng1, lat2, lng2) {
 function calcularTarifa(origenId, destinoId) {
     var coords = typeof coordenadasLocalidades !== 'undefined' ? coordenadasLocalidades : {};
     var o = coords[origenId], d = coords[destinoId];
+    
     if (o && d && o.lat && d.lat && o.lng && d.lng) {
-        return Math.round(calcularDistanciaGPS(o.lat, o.lng, d.lat, d.lng) * TARIFA_POR_KM);
+        var km = calcularDistanciaGPS(o.lat, o.lng, d.lat, d.lng);
+        return Math.round(km * TARIFA_POR_KM);
     }
+    
     var mat = MATRIZ_QUERETARO || {};
     var a = Math.min(origenId, destinoId), b = Math.max(origenId, destinoId), clave = a + '-' + b;
-    if (mat[clave] && mat[clave].km > 0) return Math.round(mat[clave].km * TARIFA_POR_KM);
-    return Math.round(10 * TARIFA_POR_KM);
-}
+    if (mat[clave] && mat[clave].km > 0) {
+        return Math.round(mat[clave].km * TARIFA_POR_KM);
+    }
+    
+    return 0;
+    }
 
 function calcularPrecio() {
     if (!compraActual.origen || !compraActual.destino) return;

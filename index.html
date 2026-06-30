@@ -183,8 +183,7 @@ function calcularPrecio(){if(!compraActual.origen||!compraActual.destino)return;
 function filtrarLocalidades(tipo){var input=document.getElementById('buscador'+(tipo==='origen'?'Origen':'Destino')),lista=document.getElementById('lista'+(tipo==='origen'?'Origen':'Destino')),btnLimpiar=document.getElementById('limpiar'+(tipo==='origen'?'Origen':'Destino')),filtro=input.value.toLowerCase().trim();btnLimpiar.classList.toggle('hidden',filtro==='');var filtradas=localidades.filter(function(loc){return loc.nombre.toLowerCase().includes(filtro);});lista.innerHTML='';if(filtradas.length===0){lista.innerHTML='<div class="sin-resultados">Sin resultados</div>';return;}filtradas.forEach(function(loc){var item=document.createElement('div');item.className='localidad-item';var selId=tipo==='origen'?compraActual.origen?.id:compraActual.destino?.id;if(loc.id===selId)item.classList.add('seleccionada');var num=localidades.findIndex(function(l){return l.id===loc.id;})+1;item.innerHTML='<span class="item-numero">'+num+'.</span><span class="item-nombre">'+loc.nombre+'</span>';item.addEventListener('click',function(){seleccionarLocalidad(tipo,loc);});lista.appendChild(item);});}
 function seleccionarLocalidad(tipo,loc){if(tipo==='origen'){compraActual.origen=loc;compraActual.destino=null;compraActual.tipoSeleccionado=null;document.getElementById('origenSeleccionadoId').value=loc.id;document.getElementById('origenSeleccionadoTexto').textContent='✅ '+loc.nombre;document.getElementById('buscadorOrigen').value='';document.getElementById('limpiarOrigen').classList.add('hidden');document.getElementById('listaOrigen').innerHTML='';document.getElementById('buscadorDestino').disabled=false;document.getElementById('destinoSeleccionadoId').value='';document.getElementById('destinoSeleccionadoTexto').textContent='';document.getElementById('listaDestino').innerHTML='';ocultarTodo();filtrarLocalidades('destino');}else{compraActual.destino=loc;document.getElementById('destinoSeleccionadoId').value=loc.id;document.getElementById('destinoSeleccionadoTexto').textContent='✅ '+loc.nombre;document.getElementById('buscadorDestino').value='';document.getElementById('limpiarDestino').classList.add('hidden');document.getElementById('listaDestino').innerHTML='';mostrarTipoPasajero();}}
 function limpiarBusqueda(tipo){var input=document.getElementById('buscador'+(tipo==='origen'?'Origen':'Destino'));input.value='';document.getElementById('limpiar'+(tipo==='origen'?'Origen':'Destino')).classList.add('hidden');filtrarLocalidades(tipo);input.focus();}
-function inicializarBuscadores(){filtrarLocalidades('origen');document.getElementById('buscadorDestino').disabled=true;}
-function generarHorarios(fechaStr){var horarios=[],hoy=new Date(),hoyStr=hoy.toISOString().split('T')[0],ahoraMin=hoy.getHours()*60+hoy.getMinutes();for(var m=330;m<=1320;m+=30){var h=Math.floor(m/60),min=m%60;if(fechaStr===hoyStr&&m<=ahoraMin)continue;horarios.push(('0'+h).slice(-2)+':'+('0'+min).slice(-2));}return horarios;}
+function inicializarBuscadores(){filtrarLocalidades('origen');document.getElementById('buscadorDestino').disabled=true;}function generarHorarios(fechaStr){var horarios=[],hoy=new Date(),hoyStr=hoy.toISOString().split('T')[0],ahoraMin=hoy.getHours()*60+hoy.getMinutes();for(var m=330;m<=1320;m+=30){var h=Math.floor(m/60),min=m%60;if(fechaStr===hoyStr&&m<=ahoraMin)continue;horarios.push(('0'+h).slice(-2)+':'+('0'+min).slice(-2));}return horarios;}
 function ocultarTodo(){document.getElementById('cardTipoPasajero').classList.add('hidden');document.getElementById('cardTarifa').classList.add('hidden');document.getElementById('cardFechaHorario').classList.add('hidden');}
 function mostrarTipoPasajero(){ocultarTodo();var grid=document.getElementById('tipoPasajeroGrid');document.getElementById('cardTipoPasajero').classList.remove('hidden');var tipos=[{id:'normal',icono:'👤',nombre:'Normal',desc:'Precio completo',descuento:0},{id:'adulto',icono:'🧓',nombre:'Adulto Mayor',desc:'50% descuento',descuento:0.50},{id:'estudiante',icono:'🎓',nombre:'Estudiante',desc:'50% descuento',descuento:0.50},{id:'maestro',icono:'📚',nombre:'Maestro',desc:'50% descuento',descuento:0.50}];grid.innerHTML='';tipos.forEach(function(tipo){var btn=document.createElement('div');btn.className='tipo-pasajero-btn';btn.id='tipo-btn-'+tipo.id;btn.innerHTML='<span class="tipo-icono">'+tipo.icono+'</span><span class="tipo-nombre">'+tipo.nombre+'</span><span class="tipo-desc">'+tipo.desc+'</span><span class="tipo-precio">—</span>';btn.addEventListener('click',function(){document.querySelectorAll('.tipo-pasajero-btn').forEach(function(b){b.classList.remove('seleccionado');});btn.classList.add('seleccionado');compraActual.tipoSeleccionado=tipo;calcularPrecio();mostrarTarifa();});grid.appendChild(btn);});document.getElementById('cardTipoPasajero').scrollIntoView({behavior:'smooth',block:'center'});}
 function mostrarTarifa(){document.getElementById('cardTarifa').classList.remove('hidden');document.getElementById('cardFechaHorario').classList.add('hidden');['normal','adulto','estudiante','maestro'].forEach(function(tid){var precio=Math.round(compraActual.tarifaBase*(1-(DESCUENTOS[tid]||0)));var el=document.getElementById('tipo-btn-'+tid);if(el){var ps=el.querySelector('.tipo-precio');if(ps)ps.textContent='$'+precio;}});document.getElementById('resumenTarifa').innerHTML='<strong>📍 Ruta:</strong> '+compraActual.origen.nombre+' → '+compraActual.destino.nombre+'<br><strong>📏 Distancia GPS:</strong> '+(compraActual.kmCalculados>0?compraActual.kmCalculados.toFixed(1)+' km':'Matriz Querétaro')+'<br><strong>👤 Tipo:</strong> '+compraActual.tipoSeleccionado.nombre+'<br><strong>💰 Tarifa:</strong> $'+compraActual.precioFinal+' ($'+TARIFA_POR_KM+'/km)';document.getElementById('precioFinal').textContent='$'+compraActual.precioFinal;document.getElementById('cardTarifa').scrollIntoView({behavior:'smooth',block:'center'});}
@@ -255,8 +254,36 @@ function copiarEnlace(){var u=window.location.href;if(navigator.clipboard&&navig
 function mostrarAdmin(){document.getElementById('cardAdmin').classList.toggle('hidden');document.getElementById('adminTarifaKm').textContent=TARIFA_POR_KM;document.getElementById('inputTarifaKm').value=TARIFA_POR_KM;document.getElementById('historialContainer').classList.add('hidden');}
 function guardarConfigAdmin(){var v=parseFloat(document.getElementById('inputTarifaKm').value);if(isNaN(v)||v<=0){toast('⚠ Valor inválido');return;}TARIFA_POR_KM=v;localStorage.setItem('ventaonline_tarifaPorKm',v);document.getElementById('adminTarifaKm').textContent=TARIFA_POR_KM;toast('✅ Tarifa: $'+TARIFA_POR_KM+'/km');}
 function exportarHistorial(){var h=JSON.parse(localStorage.getItem('ventaonline_historial')||'[]'),c=document.getElementById('historialContainer');c.classList.remove('hidden');if(!h.length){c.innerHTML='<p class="text-center" style="color:#94a3b8;padding:12px;">Sin ventas.</p>';return;}var t=h.reduce(function(s,b){return s+b.precio;},0),html='<div class="card-title mt-8"><span class="icono">📋</span> '+h.length+' boletos · Total: <span style="color:var(--verde);">$'+t+'</span></div>',ico={normal:'👤',adulto:'🧓',estudiante:'🎓',maestro:'📚'};h.forEach(function(b){html+='<div class="historial-item"><div class="hist-header"><span>'+(ico[b.tipo]||'🎫')+' '+b.origen+' → '+b.destino+'</span><span style="color:var(--verde);">$'+b.precio+'</span></div><div class="hist-body">'+b.folio+' · '+b.fechaViaje+' · '+(b.horarioMostrar||b.horario)+' · '+b.tipoNombre+(b.km>0?' · '+b.km.toFixed(1)+' km GPS':'')+'</div></div>';});c.innerHTML=html;}
-function toast(msg){var t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show');},2600);}
+
+    function descargarReporteCSV(){
+    var hist=JSON.parse(localStorage.getItem('ventaonline_historial')||'[]');
+    if(!hist.length){toast('⚠ No hay boletos para exportar');return;}
+    var csv='Folio,Fecha Emision,Fecha Viaje,Horario,Origen,Destino,Tipo Pasajero,Descuento,Km,Tarifa Base,Precio Final\n';
+    hist.forEach(function(b){
+        csv+='"'+b.folio+'","'+b.fechaEmision+'","'+b.fechaViaje+'","'+(b.horarioMostrar||b.horario)+'","'+b.origen+'","'+b.destino+'","'+b.tipoNombre+'","'+(b.descuento>0?'50%':'0%')+'","'+(b.km>0?b.km.toFixed(1):'0')+'","'+b.tarifaBase+'","'+b.precio+'"\n';
+    });
+    var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+    var link=document.createElement('a');
+    link.download='Reporte_Boletos_'+new Date().toISOString().split('T')[0]+'.csv';
+    link.href=URL.createObjectURL(blob);
+    document.body.appendChild(link);link.click();document.body.removeChild(link);
+    toast('📥 Reporte CSV descargado');
+    }
+    function toast(msg){var t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove('show');},2600);}
 inicializarBuscadores();
+
+// ========== PEGA AQUÍ EL TAP-TAP-TAP ==========
+var tapCount=0,tapTimer=null;
+document.querySelector('.web-header h1').addEventListener('click',function(){
+    tapCount++;
+    if(tapCount===1){tapTimer=setTimeout(function(){tapCount=0;},800);}
+    if(tapCount===3){clearTimeout(tapTimer);tapCount=0;descargarReporteCSV();}
+});
+// =============================================
+
+console.log('🚌 '+SISTEMA_DEMO);
+console.log('📊 Código de barras Code-128 activo');
+    
 console.log('🚌 '+SISTEMA_DEMO);
 console.log('📊 Código de barras Code-128 activo');
 </script>

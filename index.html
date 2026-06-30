@@ -485,6 +485,68 @@
         .mt-12 {
             margin-top: 12px;
         }
+
+/* BOTÓN FLOTANTE A BORDO */
+.btn-flotante-abordo {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 4000;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--naranja);
+    color: #fff;
+    border: 3px solid #fff;
+    box-shadow: 0 6px 24px rgba(232,93,4,0.5);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+    text-align: center;
+    transition: all 0.25s;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+}
+.btn-flotante-abordo:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 30px rgba(232,93,4,0.65);
+    background: #f97316;
+}
+.btn-flotante-abordo:active {
+    transform: scale(0.95);
+}
+.btn-flotante-abordo .icono-abordo {
+    font-size: 22px;
+    margin-bottom: 1px;
+}
+.btn-flotante-abordo .texto-abordo {
+    font-size: 11px;
+}
+/* Tooltip */
+.btn-flotante-abordo::after {
+    content: "Ir al Boletero · Venta a Bordo";
+    position: absolute;
+    right: 74px;
+    background: var(--gris);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+.btn-flotante-abordo:hover::after {
+    opacity: 1;
+}
+        
     </style>
 </head>
 <body>
@@ -567,7 +629,11 @@
         <button class="btn-cerrar-boleto" onclick="cerrarBoleto()">✅ ENTENDIDO</button>
     </div>
 </div>
-
+<!-- BOTÓN FLOTANTE: IR AL BOLETERO DE VENTA A BORDO -->
+<a href="abordo.html" class="btn-flotante-abordo" title="Ir al Boletero · Venta a Bordo">
+    <span class="icono-abordo">🚌</span>
+    <span class="texto-abordo">A BORDO</span>
+</a>
 <!-- TOAST -->
 <div id="toast"></div>
 

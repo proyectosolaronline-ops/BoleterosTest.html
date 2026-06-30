@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venta Online · Boletos Autobuses</title>
+    <style>
+        :root {
+            --negro: #0a0a0a;
+            --amarillo: #f59e0b;
+            --amarillo-texto: #fbbf24;
+            --naranja: #e85d04;
+            --blanco: #f8fafc;
+            --gris: #1e293b;
+            --gris2: #334155;
+            --verde: #22c55e;
+            --rojo: #ef4444;
+            --azul: #3b82f6;
+            --gris-texto: #94a3b8;
+            --gris-fondo: #f1f5f9;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #e2e8f0;
+            color: var(--gris);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* HEADER */
+        .web-header {
+            width: 100%;
+            background: var(--negro);
+            color: var(--blanco);
+            padding: 12px 0;
+            border-bottom: 4px solid var(--amarillo);
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .web-header .sistema-nombre {
+            font-size: 14px;
+            color: var(--amarillo-texto);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        .web-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0;
+        }
+        .web-header .subtitulo {
+            font-size: 13px;
+            color: var(--gris-texto);
+            margin-top: 2px;
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        .main-container {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* TARJETAS */
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--negro);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icono {
+            font-size: 22px;
+        }
+
+        /* SELECTS */
+        .select-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .select-group .field {
+            flex: 1;
+            min-width: 180px;
+        }
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--gris-texto);
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .field select, .field input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            background: #fff;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .field select:focus, .field input:focus {
+            outline: none;
+            border-color: var(--amarillo);
+        }
+        .field select:disabled, .field input:disabled {
+            background: #f8fafc;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* BOTÓN BUSCAR */
+        .btn-buscar {
+            width: 100%;
+            padding: 14px;
+            background: var(--amarillo);
+            color: var(--negro);
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+        }
+        .btn-buscar:hover {
+            background: #fbbf24;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245,158,11,0.45);
+        }
+        .btn-buscar:active {
+            transform: scale(0.98);
+        }
+        .btn-buscar:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* INFO TARIFA */
+        .tarifa-display {
+            background: var(--gris);
+            color: var(--blanco);
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+        }
+        .tarifa-display .ruta-txt {
+            font-size: 13px;
+            color: var(--gris-texto);
+            margin-bottom: 4px;
+        }
+        .tarifa-display .ruta-nombres {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--amarillo-texto);
+        }
+        .tarifa-display .tarifa-monto {
+            font-size: 42px;
+            font-weight: 900;
+            color: var(--verde);
+            margin-top: 4px;
+        }
+        .tarifa-display .tarifa-detalle {
+            font-size: 12px;
+            color: var(--gris-texto);
+            margin-top: 2px;
+        }
+        .tarifa-display .sin-seleccion {
+            color: #64748b;
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        /* PASAJEROS */
+        .pasajeros-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        @media (min-width: 600px) {
+            .pasajeros-grid {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+            }
+        }
+        .pasajero-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .pasajero-card:hover {
+            border-color: var(--amarillo);
+            box-shadow: 0 4px 12px rgba(245,158,11,0.15);
+        }
+        .pasajero-card.seleccionado {
+            border-color: var(--amarillo);
+            background: #fffbeb;
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+        }
+        .pasajero-card .tipo-icono {
+            font-size: 28px;
+        }
+        .pasajero-card .tipo-nombre {
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 4px;
+            color: var(--gris);
+        }
+        .pasajero-card .tipo-desc {
+            font-size: 10px;
+            color: var(--gris-texto);
+            margin-top: 2px;
+        }
+        .pasajero-card .tipo-precio {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--verde);
+            margin-top: 4px;
+        }
+
+        /* CANTIDADES */
+        .cantidad-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .btn-cant {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+            background: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .btn-cant:hover {
+            background: var(--amarillo);
+            border-color: var(--amarillo);
+            color: #fff;
+        }
+        .btn-cant:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: #fff;
+            color: #999;
+            border-color: #e2e8f0;
+        }
+        .cant-num {
+            font-size: 22px;
+            font-weight: 800;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        /* RESUMEN */
+        .resumen-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 14px;
+        }
+        .resumen-item.total {
+            border-top: 2px solid #e2e8f0;
+            margin-top: 8px;
+            padding-top: 10px;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--negro);
+        }
+        .resumen-item.total .monto {
+            color: var(--verde);
+            font-size: 26px;
+        }
+
+        /* BOTÓN COMPRAR */
+        .btn-comprar {
+            width: 100%;
+            padding: 16px;
+            background: var(--verde);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 19px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 4px 14px rgba(34,197,94,0.3);
+        }
+        .btn-comprar:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(34,197,94,0.4);
+        }
+        .btn-comprar:active {
+            transform: scale(0.98);
+        }
+        .btn-comprar:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* BOLETO GENERADO */
+        .boleto-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10,10,10,0.92);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .boleto-modal {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .boleto-modal .boleto-icono {
+            font-size: 50px;
+            margin-bottom: 8px;
+        }
+        .boleto-modal h2 {
+            font-size: 22px;
+            color: var(--verde);
+            margin-bottom: 4px;
+        }
+        .boleto-modal .boleto-ref {
+            font-size: 14px;
+            color: var(--gris-texto);
+            margin-bottom: 12px;
+        }
+        .boleto-modal .boleto-detalle {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .boleto-modal .boleto-qr {
+            width: 120px;
+            height: 120px;
+            background: #e2e8f0;
+            margin: 0 auto 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+        .boleto-modal .btn-cerrar-boleto {
+            width: 100%;
+            padding: 12px;
+            background: var(--amarillo);
+            color: var(--negro);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* ADMIN */
+        .btn-admin {
+            background: transparent;
+            border: 2px dashed var(--gris-texto);
+            color: var(--gris-texto);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 4px;
+            transition: all 0.2s;
+        }
+        .btn-admin:hover {
+            border-color: var(--azul);
+            color: var(--azul);
+            background: rgba(59,130,246,0.04);
+        }
+
+        /* HISTORIAL */
+        .historial-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .historial-item .hist-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .historial-item .hist-body {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gris);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 6000;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #toast.show {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-12 {
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== CONSTANTE DEMO ========== -->
+<!-- CAMBIA ESTA VARIABLE POR TU NOMBRE O EL DE TU SISTEMA -->
+<script>
+    const SISTEMA_DEMO = "Creador: ___________ · Sistema Demo de Venta Online para Boletos de Autobuses de Pasajeros";
+</script>
+
+<!-- HEADER -->
+<div class="web-header">
+    <div class="sistema-nombre" id="sistemaNombre"></div>
+    <h1>🚌 Venta de Boletos Online</h1>
+    <div class="subtitulo">Servicio de Autobuses de Pasajeros</div>
+</div>
+
+<!-- MAIN -->
+<div class="main-container">
+
+    <!-- SELECCIÓN DE RUTA -->
+    <div class="card">
+        <div class="card-title"><span class="icono">📍</span> Selecciona tu viaje</div>
+        <div class="select-group">
+            <div class="field">
+                <label>Origen</label>
+                <select id="selectOrigen"><option value="">— Elegir —</option></select>
+            </div>
+            <div class="field">
+                <label>Destino</label>
+                <select id="selectDestino" disabled><option value="">— Primero elige origen —</option></select>
+            </div>
+        </div>
+        <button class="btn-buscar" id="btnBuscar" disabled onclick="buscarTarifa()">🔍 Buscar tarifa</button>
+    </div>
+
+    <!-- TARIFA ENCONTRADA -->
+    <div class="card hidden" id="cardTarifa">
+        <div class="tarifa-display" id="tarifaDisplay"></div>
+    </div>
+
+    <!-- PASAJEROS -->
+    <div class="card hidden" id="cardPasajeros">
+        <div class="card-title"><span class="icono">👥</span> Tipo de pasajeros</div>
+        <div class="pasajeros-grid" id="pasajerosGrid"></div>
+        <div class="resumen-item total hidden" id="resumenTotal">
+            <span>TOTAL A PAGAR</span>
+            <span class="monto" id="totalPagar">$0</span>
+        </div>
+        <button class="btn-comprar hidden" id="btnComprar" onclick="confirmarCompra()">💳 COMPRAR BOLETO(S)</button>
+    </div>
+
+    <!-- ADMIN -->
+    <button class="btn-admin" onclick="mostrarAdmin()">⚙️ Administración · Tarifas · Historial</button>
+    <div class="card hidden" id="cardAdmin">
+        <div class="card-title"><span class="icono">⚙️</span> Panel de Administración</div>
+        <div class="field mt-8">
+            <label>Tarifa por km (actual: $<span id="adminTarifaKm">—</span>)</label>
+            <input type="number" id="inputTarifaKm" placeholder="Ej. 1.20" step="0.01" min="0.1">
+        </div>
+        <div class="field mt-8">
+            <label>Tarifa mínima (actual: $<span id="adminTarifaMin">—</span>)</label>
+            <input type="number" id="inputTarifaMin" placeholder="Ej. 15" step="1" min="1">
+        </div>
+        <button class="btn-buscar mt-8" onclick="guardarConfigAdmin()">💾 Guardar configuración</button>
+        <button class="btn-admin mt-8" onclick="exportarHistorial()">📋 Ver historial de ventas</button>
+        <div id="historialContainer" class="hidden mt-12"></div>
+    </div>
+
+</div>
+
+<!-- BOLETO MODAL -->
+<div class="boleto-modal-overlay hidden" id="boletoOverlay">
+    <div class="boleto-modal">
+        <div class="boleto-icono">🎫</div>
+        <h2>¡Boleto Generado!</h2>
+        <div class="boleto-ref" id="boletoRef"></div>
+        <div class="boleto-qr">🎟️</div>
+        <div class="boleto-detalle" id="boletoDetalle"></div>
+        <button class="btn-cerrar-boleto" onclick="cerrarBoleto()">✅ ENTENDIDO</button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- DEPENDENCIAS LOCALES -->
+<script src="matriz_queretaro.js"></script>
+
+<script>
+// ========== CONSTANTE DEMO (se muestra en el header) ==========
+document.getElementById('sistemaNombre').textContent = SISTEMA_DEMO;
+
+// ========== TARIFAS CONFIGURABLES ==========
+var TARIFA_POR_KM = parseFloat(localStorage.getItem('ventaonline_tarifaPorKm')) || 1.20;
+var TARIFA_MINIMA  = parseFloat(localStorage.getItem('ventaonline_tarifaMinima')) || 15.00;
+const COBRO_MINIMO = 15.00;
+const UMBRAL_KM_CORTO = 12;
+const DESCUENTOS = { normal: 0, adulto: 0.50, estudiante: 0.50, maestro: 0.50 };
+
+// ========== DATOS DE LOCALIDADES ==========
+var localidades = [];
+(function() {
+    var obj = localidadesObj || {};
+    var mat = MATRIZ_QUERETARO || {};
+    var crd = coordenadasLocalidades || {};
+    localidades = Object.keys(obj).map(function(id) {
+        var idn = parseInt(id);
+        var km = mat['1-' + idn] ? mat['1-' + idn].km : 0;
+        var c = crd[idn] || null;
+        return { id: idn, nombre: obj[idn], km: km, lat: c ? c.lat : null, lng: c ? c.lng : null };
+    });
+    // Ordenar por km
+    localidades.sort(function(a, b) { return (a.km || 0) - (b.km || 0); });
+})();
+
+// ========== ESTADO DE COMPRA ==========
+var compraActual = {
+    origen: null,
+    destino: null,
+    tarifaBase: 0,
+    kmCalculados: 0,
+    cantidades: { normal: 0, adulto: 0, estudiante: 0, maestro: 0 }
+};
+
+// ========== INICIALIZAR SELECTS ==========
+function llenarSelects() {
+    var selOrigen = document.getElementById('selectOrigen');
+    var selDestino = document.getElementById('selectDestino');
+    
+    selOrigen.innerHTML = '<option value="">— Elegir origen —</option>';
+    localidades.forEach(function(loc) {
+        if (!loc || !loc.nombre) return;
+        var opt = document.createElement('option');
+        opt.value = loc.id;
+        opt.textContent = loc.nombre + (loc.km > 0 ? ' (km ' + loc.km + ')' : '');
+        selOrigen.appendChild(opt);
+    });
+
+    selOrigen.addEventListener('change', function() {
+        var origenId = parseInt(this.value);
+        compraActual.origen = localidades.find(function(l) { return l.id === origenId; }) || null;
+        compraActual.destino = null;
+        compraActual.tarifaBase = 0;
+        compraActual.cantidades = { normal: 0, adulto: 0, estudiante: 0, maestro: 0 };
+        
+        selDestino.innerHTML = '<option value="">— Elegir destino —</option>';
+        selDestino.disabled = !compraActual.origen;
+        document.getElementById('btnBuscar').disabled = true;
+        
+        if (compraActual.origen) {
+            localidades.forEach(function(loc) {
+                if (!loc || !loc.nombre || loc.id === origenId) return;
+                var opt = document.createElement('option');
+                opt.value = loc.id;
+                opt.textContent = loc.nombre + (loc.km > 0 ? ' (km ' + loc.km + ')' : '');
+                selDestino.appendChild(opt);
+            });
+        }
+        
+        ocultarTarjetaTarifa();
+        ocultarPasajeros();
+    });
+
+    selDestino.addEventListener('change', function() {
+        var destinoId = parseInt(this.value);
+        compraActual.destino = localidades.find(function(l) { return l.id === destinoId; }) || null;
+        document.getElementById('btnBuscar').disabled = !compraActual.destino;
+        ocultarTarjetaTarifa();
+        ocultarPasajeros();
+    });
+}
+
+// ========== CÁLCULO DE TARIFA ==========
+function calcularTarifa(origenId, destinoId, kmReal) {
+    if (typeof kmReal === 'number' && kmReal > 0 && kmReal <= UMBRAL_KM_CORTO) {
+        return COBRO_MINIMO;
+    }
+    if (typeof kmReal === 'number' && kmReal > UMBRAL_KM_CORTO) {
+        return Math.max(Math.round(TARIFA_MINIMA + kmReal * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    var mat = MATRIZ_QUERETARO || {};
+    var a = Math.min(origenId, destinoId);
+    var b = Math.max(origenId, destinoId);
+    var clave = a + '-' + b;
+    if (mat[clave]) {
+        if (mat[clave].tarifa > 0) return mat[clave].tarifa;
+        if (mat[clave].km <= UMBRAL_KM_CORTO) return COBRO_MINIMO;
+        return Math.max(Math.round(TARIFA_MINIMA + mat[clave].km * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    var lo = localidades.find(function(l) { return l.id === origenId; });
+    var ld = localidades.find(function(l) { return l.id === destinoId; });
+    if (lo && ld && lo.km > 0 && ld.km > 0) {
+        var km = Math.abs(ld.km - lo.km);
+        if (km <= UMBRAL_KM_CORTO) return COBRO_MINIMO;
+        return Math.max(Math.round(TARIFA_MINIMA + km * TARIFA_POR_KM), TARIFA_MINIMA);
+    }
+    return TARIFA_MINIMA;
+}
+
+function buscarTarifa() {
+    if (!compraActual.origen || !compraActual.destino) return;
+    
+    var kmCalc = 0;
+    if (typeof compraActual.origen.km === 'number' && typeof compraActual.destino.km === 'number') {
+        kmCalc = Math.abs(compraActual.destino.km - compraActual.origen.km);
+    }
+    compraActual.kmCalculados = kmCalc;
+    compraActual.tarifaBase = calcularTarifa(compraActual.origen.id, compraActual.destino.id, kmCalc);
+    compraActual.cantidades = { normal: 0, adulto: 0, estudiante: 0, maestro: 0 };
+    
+    mostrarTarjetaTarifa();
+    mostrarPasajeros();
+    actualizarResumen();
+}
+
+// ========== UI: MOSTRAR / OCULTAR ==========
+function mostrarTarjetaTarifa() {
+    var card = document.getElementById('cardTarifa');
+    var display = document.getElementById('tarifaDisplay');
+    card.classList.remove('hidden');
+    display.innerHTML = 
+        '<div class="ruta-txt">Ruta seleccionada</div>' +
+        '<div class="ruta-nombres">' + compraActual.origen.nombre + ' → ' + compraActual.destino.nombre + '</div>' +
+        '<div class="tarifa-monto">$' + compraActual.tarifaBase + '</div>' +
+        '<div class="tarifa-detalle">Tarifa base por pasajero normal · ' + (compraActual.kmCalculados > 0 ? compraActual.kmCalculados.toFixed(1) + ' km' : 'Matriz Querétaro') + '</div>';
+}
+
+function ocultarTarjetaTarifa() {
+    document.getElementById('cardTarifa').classList.add('hidden');
+}
+
+function mostrarPasajeros() {
+    var card = document.getElementById('cardPasajeros');
+    var grid = document.getElementById('pasajerosGrid');
+    card.classList.remove('hidden');
+    
+    var tipos = [
+        { id: 'normal', icono: '👤', nombre: 'Normal', desc: 'Sin descuento', descuento: 0 },
+        { id: 'adulto', icono: '🧓', nombre: 'Adulto M.', desc: '50% desc.', descuento: 0.50 },
+        { id: 'estudiante', icono: '🎓', nombre: 'Estudiante', desc: '50% desc.', descuento: 0.50 },
+        { id: 'maestro', icono: '📚', nombre: 'Maestro', desc: '50% desc.', descuento: 0.50 }
+    ];
+    
+    grid.innerHTML = '';
+    tipos.forEach(function(tipo) {
+        var precio = Math.round(compraActual.tarifaBase * (1 - tipo.descuento));
+        var cardEl = document.createElement('div');
+        cardEl.className = 'pasajero-card';
+        cardEl.id = 'pasajero-' + tipo.id;
+        cardEl.innerHTML = 
+            '<div class="tipo-icono">' + tipo.icono + '</div>' +
+            '<div class="tipo-nombre">' + tipo.nombre + '</div>' +
+            '<div class="tipo-desc">' + tipo.desc + '</div>' +
+            '<div class="tipo-precio">$' + precio + '</div>' +
+            '<div class="cantidad-row">' +
+                '<button class="btn-cant" onclick="cambiarCantidad(\'' + tipo.id + '\', -1, event)" disabled>−</button>' +
+                '<span class="cant-num" id="cant-' + tipo.id + '">0</span>' +
+                '<button class="btn-cant" onclick="cambiarCantidad(\'' + tipo.id + '\', 1, event)">+</button>' +
+            '</div>';
+        grid.appendChild(cardEl);
+    });
+    
+    document.getElementById('resumenTotal').classList.remove('hidden');
+    document.getElementById('btnComprar').classList.remove('hidden');
+}
+
+function ocultarPasajeros() {
+    document.getElementById('cardPasajeros').classList.add('hidden');
+    document.getElementById('resumenTotal').classList.add('hidden');
+    document.getElementById('btnComprar').classList.add('hidden');
+}
+
+// ========== CANTIDADES ==========
+function cambiarCantidad(tipo, delta, event) {
+    if (event) { event.stopPropagation(); event.preventDefault(); }
+    
+    var totalActual = Object.values(compraActual.cantidades).reduce(function(a, b) { return a + b; }, 0);
+    if (totalActual + delta > 10) { toast('⚠ Máximo 10 pasajeros por compra'); return; }
+    if (compraActual.cantidades[tipo] + delta < 0) return;
+    
+    compraActual.cantidades[tipo] += delta;
+    document.getElementById('cant-' + tipo).textContent = compraActual.cantidades[tipo];
+    
+    // Actualizar botones +/-
+    var card = document.getElementById('pasajero-' + tipo);
+    if (card) {
+        var btns = card.querySelectorAll('.btn-cant');
+        if (btns[0]) btns[0].disabled = compraActual.cantidades[tipo] === 0;
+    }
+    // Actualizar clase seleccionado
+    if (compraActual.cantidades[tipo] > 0) {
+        card.classList.add('seleccionado');
+    } else {
+        card.classList.remove('seleccionado');
+    }
+    
+    actualizarResumen();
+}
+
+function precioPorTipo(tipo) {
+    return Math.round(compraActual.tarifaBase * (1 - (DESCUENTOS[tipo] || 0)));
+}
+
+function totalGeneral() {
+    return Object.keys(compraActual.cantidades).reduce(function(t, tipo) {
+        return t + compraActual.cantidades[tipo] * precioPorTipo(tipo);
+    }, 0);
+}
+
+function totalPasajeros() {
+    return Object.values(compraActual.cantidades).reduce(function(a, b) { return a + b; }, 0);
+}
+
+function actualizarResumen() {
+    var total = totalGeneral();
+    document.getElementById('totalPagar').textContent = '$' + total;
+    document.getElementById('btnComprar').disabled = total === 0;
+}
+
+// ========== COMPRA ==========
+function confirmarCompra() {
+    var total = totalGeneral();
+    var pasajeros = totalPasajeros();
+    if (total === 0 || pasajeros === 0) return;
+    
+    // Generar referencia
+    var ref = 'BOL-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    var fecha = new Date().toLocaleString('es-MX');
+    
+    // Guardar en historial
+    var venta = {
+        ref: ref,
+        fecha: fecha,
+        origen: compraActual.origen.nombre,
+        destino: compraActual.destino.nombre,
+        km: compraActual.kmCalculados,
+        tarifaBase: compraActual.tarifaBase,
+        cantidades: Object.assign({}, compraActual.cantidades),
+        total: total,
+        pasajeros: pasajeros
+    };
+    
+    var historial = JSON.parse(localStorage.getItem('ventaonline_historial') || '[]');
+    historial.unshift(venta);
+    if (historial.length > 50) historial = historial.slice(0, 50);
+    localStorage.setItem('ventaonline_historial', JSON.stringify(historial));
+    
+    // Mostrar boleto
+    mostrarBoleto(venta);
+}
+
+function mostrarBoleto(venta) {
+    var overlay = document.getElementById('boletoOverlay');
+    overlay.classList.remove('hidden');
+    
+    document.getElementById('boletoRef').textContent = 'Ref: ' + venta.ref + ' · ' + venta.fecha;
+    
+    var detalle = 
+        '<strong>📍 ' + venta.origen + ' → ' + venta.destino + '</strong><br>' +
+        'Distancia: ' + (venta.km > 0 ? venta.km.toFixed(1) + ' km' : 'Matriz Querétaro') + '<br>' +
+        'Pasajeros: ' + venta.pasajeros + '<br>';
+    
+    if (venta.cantidades.normal > 0) detalle += '👤 Normal: ' + venta.cantidades.normal + ' × $' + precioPorTipo('normal') + ' = $' + (venta.cantidades.normal * precioPorTipo('normal')) + '<br>';
+    if (venta.cantidades.adulto > 0) detalle += '🧓 Adulto M.: ' + venta.cantidades.adulto + ' × $' + precioPorTipo('adulto') + ' = $' + (venta.cantidades.adulto * precioPorTipo('adulto')) + '<br>';
+    if (venta.cantidades.estudiante > 0) detalle += '🎓 Estudiante: ' + venta.cantidades.estudiante + ' × $' + precioPorTipo('estudiante') + ' = $' + (venta.cantidades.estudiante * precioPorTipo('estudiante')) + '<br>';
+    if (venta.cantidades.maestro > 0) detalle += '📚 Maestro: ' + venta.cantidades.maestro + ' × $' + precioPorTipo('maestro') + ' = $' + (venta.cantidades.maestro * precioPorTipo('maestro')) + '<br>';
+    
+    detalle += '<br><strong>💰 TOTAL PAGADO: $' + venta.total + '</strong>';
+    
+    document.getElementById('boletoDetalle').innerHTML = detalle;
+}
+
+function cerrarBoleto() {
+    document.getElementById('boletoOverlay').classList.add('hidden');
+    // Resetear para nueva compra
+    compraActual.cantidades = { normal: 0, adulto: 0, estudiante: 0, maestro: 0 };
+    mostrarPasajeros();
+    actualizarResumen();
+    toast('✅ Boleto registrado. Puedes comprar otro.');
+}
+
+// ========== ADMIN ==========
+function mostrarAdmin() {
+    var card = document.getElementById('cardAdmin');
+    card.classList.toggle('hidden');
+    document.getElementById('adminTarifaKm').textContent = TARIFA_POR_KM;
+    document.getElementById('adminTarifaMin').textContent = TARIFA_MINIMA;
+    document.getElementById('inputTarifaKm').value = TARIFA_POR_KM;
+    document.getElementById('inputTarifaMin').value = TARIFA_MINIMA;
+    document.getElementById('historialContainer').classList.add('hidden');
+}
+
+function guardarConfigAdmin() {
+    var nuevoKm = parseFloat(document.getElementById('inputTarifaKm').value);
+    var nuevaMin = parseFloat(document.getElementById('inputTarifaMin').value);
+    
+    if (isNaN(nuevoKm) || nuevoKm <= 0) { toast('⚠ Tarifa por km inválida'); return; }
+    if (isNaN(nuevaMin) || nuevaMin <= 0) { toast('⚠ Tarifa mínima inválida'); return; }
+    
+    TARIFA_POR_KM = nuevoKm;
+    TARIFA_MINIMA = nuevaMin;
+    localStorage.setItem('ventaonline_tarifaPorKm', nuevoKm);
+    localStorage.setItem('ventaonline_tarifaMinima', nuevaMin);
+    
+    document.getElementById('adminTarifaKm').textContent = TARIFA_POR_KM;
+    document.getElementById('adminTarifaMin').textContent = TARIFA_MINIMA;
+    toast('✅ Configuración guardada: $' + TARIFA_POR_KM + '/km · mín. $' + TARIFA_MINIMA);
+}
+
+function exportarHistorial() {
+    var historial = JSON.parse(localStorage.getItem('ventaonline_historial') || '[]');
+    var container = document.getElementById('historialContainer');
+    container.classList.remove('hidden');
+    
+    if (historial.length === 0) {
+        container.innerHTML = '<p class="text-center" style="color:#94a3b8;">No hay ventas registradas.</p>';
+        return;
+    }
+    
+    var html = '<div class="card-title mt-8"><span class="icono">📋</span> Historial de Ventas (' + historial.length + ')</div>';
+    historial.forEach(function(v) {
+        html += 
+            '<div class="historial-item">' +
+                '<div class="hist-header"><span>' + v.origen + ' → ' + v.destino + '</span><span style="color:var(--verde);">$' + v.total + '</span></div>' +
+                '<div class="hist-body">Ref: ' + v.ref + ' · ' + v.fecha + ' · ' + v.pasajeros + ' pasajero(s) · ' + (v.km > 0 ? v.km.toFixed(1) + ' km' : 'Matriz') + '</div>' +
+            '</div>';
+    });
+    
+    container.innerHTML = html;
+}
+
+// ========== TOAST ==========
+function toast(msg) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(function() { t.classList.remove('show'); }, 2600);
+}
+
+// ========== INIT ==========
+llenarSelects();
+console.log('🚌 ' + SISTEMA_DEMO);
+console.log('📦 Módulo de Ventas Online listo.');
+</script>
+
+</body>
+</html>

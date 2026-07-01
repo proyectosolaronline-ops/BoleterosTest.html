@@ -192,8 +192,33 @@ function actualizarHorarios(){var fv=document.getElementById('inputFecha').value
 function generarBoleto(){if(!compraActual.origen||!compraActual.destino||!compraActual.tipoSeleccionado||!compraActual.fecha||!compraActual.horario)return;var folio=generarFolio(),fechaEmision=new Date().toLocaleString('es-MX'),fechaViaje=formatearFecha(compraActual.fecha);var h24=parseInt(compraActual.horario.split(':')[0]),min=compraActual.horario.split(':')[1],ampm=h24>=12?'PM':'AM',h12=h24>12?h24-12:(h24===0?12:h24),horarioMostrar=h12+':'+min+' '+ampm;var boleto={folio,fechaEmision,fechaViaje,horario:compraActual.horario,horarioMostrar,tipo:compraActual.tipoSeleccionado.id,tipoNombre:compraActual.tipoSeleccionado.nombre,origen:compraActual.origen.nombre,destino:compraActual.destino.nombre,origenId:compraActual.origen.id,destinoId:compraActual.destino.id,km:compraActual.kmCalculados,tarifaBase:compraActual.tarifaBase,precio:compraActual.precioFinal,descuento:compraActual.tipoSeleccionado.descuento};var hist=JSON.parse(localStorage.getItem('ventaonline_historial')||'[]');hist.unshift(boleto);if(hist.length>100)hist=hist.slice(0,100);localStorage.setItem('ventaonline_historial',JSON.stringify(hist));ultimoBoletoGenerado=boleto;imagenBoletoDataURL=null;mostrarModalBoleto(boleto);reiniciarSistema();}
 function formatearFecha(f){var p=f.split('-'),d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));var dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];return dias[d.getDay()]+' '+parseInt(p[2])+' de '+meses[parseInt(p[1])-1]+' de '+parseInt(p[0]);}
 function generarFolio(){var a=new Date();return'BOL-'+a.getFullYear().toString().slice(-2)+('0'+(a.getMonth()+1)).slice(-2)+('0'+a.getDate()).slice(-2)+'-'+('0'+a.getHours()).slice(-2)+('0'+a.getMinutes()).slice(-2)+('0'+a.getSeconds()).slice(-2)+'-'+Math.random().toString(36).substring(2,6).toUpperCase();}
-function reiniciarSistema(){compraActual={origen:null,destino:null,tipoSeleccionado:null,tarifaBase:0,kmCalculados:0,precioFinal:0,fecha:null,horario:null};ocultarTodo();document.getElementById('origenSeleccionadoId').value='';document.getElementById('origenSeleccionadoTexto').textContent='';document.getElementById('destinoSeleccionadoId').value='';document.getElementById('destinoSeleccionadoTexto').textContent='';document.getElementById('buscadorOrigen').value='';document.getElementById('buscadorDestino').value='';document.getElementById('buscadorDestino').disabled=true;document.getElementById('listaOrigen').innerHTML='';document.getElementById('listaDestino').innerHTML='';document.getElementById('inputFecha').value='';document.getElementById('selectHorario').innerHTML='<option value="">— Primero elige fecha —</option>';document.getElementById('selectHorario').disabled=true;document.getElementById('btnPagar').disabled=true;inicializarBuscadores();}
 
+    
+    function reiniciarSistema(){
+    var origenGuardado = compraActual.origen;
+    compraActual = { origen: origenGuardado, destino: null, tipoSeleccionado: null, tarifaBase: 0, kmCalculados: 0, precioFinal: 0, fecha: null, horario: null };
+    ocultarTodo();
+    if (compraActual.origen) {
+        document.getElementById('origenSeleccionadoId').value = compraActual.origen.id;
+        document.getElementById('origenSeleccionadoTexto').textContent = '✅ ' + compraActual.origen.nombre;
+        document.getElementById('buscadorDestino').disabled = false;
+    } else {
+        document.getElementById('origenSeleccionadoId').value = '';
+        document.getElementById('origenSeleccionadoTexto').textContent = '';
+        document.getElementById('buscadorDestino').disabled = true;
+    }
+    document.getElementById('buscadorOrigen').value = '';
+    document.getElementById('destinoSeleccionadoId').value = '';
+    document.getElementById('destinoSeleccionadoTexto').textContent = '';
+    document.getElementById('buscadorDestino').value = '';
+    document.getElementById('listaOrigen').innerHTML = '';
+    document.getElementById('listaDestino').innerHTML = '';
+    document.getElementById('inputFecha').value = '';
+    document.getElementById('selectHorario').innerHTML = '<option value="">— Primero elige fecha —</option>';
+    document.getElementById('selectHorario').disabled = true;
+    document.getElementById('btnPagar').disabled = true;
+    inicializarBuscadores();
+    }
 // ========== MODAL BOLETO (CORREGIDO) ==========
 function mostrarModalBoleto(b){
     document.getElementById('boletoOverlay').classList.remove('hidden');
